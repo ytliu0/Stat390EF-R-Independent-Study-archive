@@ -64,7 +64,7 @@ sort(x, decreasing=TRUE)
 ## Variance and Standard Deviation
 
 The `var()` and `sd()` functions calculate the variance and standard deviation of a vector. Note that they are defined as 
-$$ {\rm var}(X)= \frac{1}{N-1}\sum_{i=1}^N (X_i -\mu_X)^2 \ \ \ , \ \ \ {\rm sd}(X)=\sqrt{{\rm var}(X)} ,$$
+$$Var(X)= \frac{1}{N-1}\sum_{i=1}^N (X_i -\mu_X)^2 \ \ \ , \ \ \ sd(X)=\sqrt{Var(X)} ,$$
 where $N$ is the number of elements in $X$ and $\mu_X$ is the mean of $X$. These are called the *sample variance* and *sample standard deviation*. They are used to estimated the population variance and population standard deviation based on the random sample. Recall that as you have learned in Stat 100, the population variance $\sigma^2$ is defined as 
 $$ \sigma^2 = \frac{1}{N}\sum_{i=1}^N (X_i -\mu_X)^2$$
 So you have to be careful in using the `var()` and `sd()` functions in R. For example, if we want to calculate the population standard deviation, defined as the square root of  $\sigma^2$ above, for the `x` vector, we need to use the expression 
