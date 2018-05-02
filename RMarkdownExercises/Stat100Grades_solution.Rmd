@@ -1,0 +1,367 @@
+---
+title: "Comparing Grades Between Online and In-Person Stat 100 Classes"
+output: html_document
+---
+
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+Stat 100 is one of the most popular courses at U of I. There are about 1500 students every semester. Starting from Fall 2016, three sections of Stat 100 classes (L1, L2 and online) are synchronized. The L1 and L2 sections were in-person classes taught by the same instructor and students had to attend the lectures at the Lincoln Hall Theater. In Spring 2017, L1 classes were on Mondays, Wednesdays and Fridays from 12:00pm to 12:50pm; L2 classes were on Tuesdays and Thursdays from 11:00am to 12:20pm. Students in the online section did not have to go to class. Students in all three sections were given the exact same lectures, homework assignments, bonus assignments, and exams. They also had the same TAs and office hours. The only difference between the online and in-person classes was that students in the online class watched videos recorded from the L2 lectures. Each lecture video was usually available for the online students within two hours after the L2 class ended.
+
+In this exercise, you are going to analyze the scores of the Stat 100 students in Spring 2017 and see if there is any significant difference between the online and in-person sections. The data can be downloaded <a href="http://courses.atlas.illinois.edu/spring2017/STAT/STAT200/RProgramming/data/Stat100Spring2017_combined.csv" target="_blank">here</a>. The file has the following 8 columns:
+
+**Availability**: Yes/No indicating whether the student was still enrolled in the class at the end of the semester.</p>
+
+**Section**: STAT_100_L1 is L1 section; STAT_100_L2 is L2 section; STAT_100_ONL is online section.
+
+**Bonus**: Total bonus points
+
+**HWavg**: Average homework score (lowest 3 dropped)
+
+**Exam1**: Exam 1 score
+
+**Exam2**: Exam 2 score
+
+**Exam3**: Exam 3 score 
+
+**Final**: Final Exam score
+
+Note: all scores range from 0 to 100 (theoretically), although sometimes extra bonus points may be awarded to students.
+
+Data cleaning: It is often said that in a typical data analysis project, 90% of the time is spent in cleaning data and transform them into a format suitable for analysis. There is also a joke that <a href="https://www.theverge.com/2017/11/1/16589246/machine-learning-data-science-dirty-data-kaggle-survey-2017" target="_blank">80 percent of data science is cleaning the data and 20 percent is complaining about cleaning the data</a>. Real-world data are messy with many missing values. In this course, we don't deal with dirty data. The data in this exercise, however, are slightly unclean but they can be cleaned with only two lines of R code. 
+
+After loading the data to R, you should take some time to explore the data before attempting the following questions. If you use `read.csv()` command to load the data without specifying any other options, you will see missing values in your data frame. Pay attention to the locations of the missing values. Open the csv file in, e.g. Excel and look at the locations of the missing values. When you are done exploring the data, answer the following questions.
+
+Hint: All of the questions below that are worth 1 point can be done with one line of R code, and none of the questions requires more than 5 lines of R code. If you find yourself writing a long code (e.g. more than 10 lines) for any one question, you are either not going in the right direction or not taking advantage of R's vectorized operations.
+
+##Questions and Solution
+
+###1. (1 point) 
+
+**Some students dropped the course and we don't want to include them in the data. Remove the dropped students (Availability = No) from the data frame.**
+
+```{r}
+# Load data 
+stat100 <- read.csv("Stat100Spring2017_combined.csv")
+
+# Remove dropped students
+stat100 <- stat100[stat100$Availability=="Yes",]
+```
+
+###2. (1 point) 
+
+**If you investigate the origin of the missing values, you will find that they correspond to the blank fields in the exam scores. When a student did not take an exam, there is no score and the field is blank. So the exam score should be 0. Replace all the missing values by 0. (Hint: You only need a one-line R code. You've seen this code in Week 5's exercise on calculating HW grades.)**
+
+This is the one-line code:
+```{r}
+stat100[is.na(stat100)] <- 0
+```
+
+###3. (1 point) 
+
+**How many students are there in each of the L1, L2 and online section? (Hint: You've done this in your very first RMarkdown exercise. You only need to use a single R command.)**
+
+The `table()` function does the job.
+```{r}
+table(stat100$Section)
+```
+```{r, echo=FALSE}
+nstd <- table(stat100$Section)
+```
+There are `r nstd[1]` students in the L1 section, `r nstd[2]` students in the L2 section, and `r nstd[3]` students in the online section.
+
+<br />
+**To determine if there is any difference between the online and in-person sections, we are going to make three comparisons:**
+
+- **Compare the two group's performance on the exams.**
+- **Compare the two group's weighted total scores by including the HW scores.**
+- **Compare the two group's letter grades.**
+
+<br />
+
+
+###4. (1 point) 
+
+**There were 3 midterm exams and one final exam. Each of the 3 exams counted 20% and the final was 25%. Compute the weighted average of the exam scores according to the formula [20&times;(Exam1 + Exam2 + Exam3) + 25&times;Final]/85 and store it in a new column of the data frame.**
+
+```{r}
+stat100$Examavg <- with(stat100, (20*(Exam1 + Exam2 + Exam3) + 25*Final)/85 )
+```
+
+
+###5. (5 points) 
+
+**Make a density plot of the weighted average exam score for the in-person sections. Then add a density plot of the weighted average exam score for the online section on the same graph. In other words, your graph should have two lines: one for the combined L1 and L2 sections and the other for the online section. Use two different colors for the lines. Explain your color code (i.e. which color represents in-person sections and which represents the online section) in either a figure legend (preferred) or a figure caption. (Hint: See Week 10's notes. Many of you have also made similar plots in Week 10's RMarkdown assignment.)**
+
+We are going to work on the combined L1-L2 sections and the online section in this problem. It is convenient to create the following logical vector.
+```{r}
+online <- stat100$Section=="STAT_100_ONL"
+```
+The value of `online` is TRUE if the student is in the online section, and FALSE if the student is not in the online section (i.e. in either L1 or L2 section). 
+
+With this logical vector, the weighted average exam scores from the online section can be extracted using `stat100$Examavg[online]` and the weighted average exam scores from the in-person sections are `stat100$Examavg[!online]`. Here are the plots:
+```{r}
+plot(density(stat100$Examavg[online]), xlab="score", col="red", 
+                   lty=2, lwd=2, las=1, main="Stat 100 Weighted Exam Average")
+lines(density(stat100$Examavg[!online]))
+legend("topleft",c("in-person sections", "online section"),col=1:2, lty=1:2, lwd=1:2)
+```
+
+###6. (4 points) 
+
+**Use the `summary()` function to calculate the mean and quartiles of the weighted average exam score for the in-person (L1 and L2 combined) and online sections. Based on the result, which section performs better on the exams?** 
+
+The mean and quartiles can be computed using the `summary()` function:
+```{r}
+# mean and quartiles for the in-person sections:
+summary(stat100$Examavg[!online])
+# mean and quartiles for the online sections:
+summary(stat100$Examavg[online])
+```
+You can also use `tapply()` to compute the quantites for the two groups in one line:
+```{r}
+tapply(stat100$Examavg,online,summary)
+```
+We see that the online section students out-perform the in-person section students since their mean and quartiles are all higher than those of the in-person section students.
+
+###7. (4 points) 
+
+**Perform a Wilcoxon test to determine if the observed difference between the two groups is significant at &alpha;=5%. Note: You should treat L1 and L2 sections as one group and the online section as another group.**
+
+Again, the logical vector `online` makes the analysis very easy.
+```{r}
+wilcox.test(stat100$Examavg ~ online)
+```
+Since the p-value < 5%, we reject the null and conclude that the difference is significant.
+
+Another method of doing the same analysis is
+```{r}
+with(stat100, wilcox.test(Examavg[online], Examavg[!online]))
+```
+
+###8. (1 point) 
+
+**Homework counted 15%, each of the 3 exams counted 20% and final exam counted 25% of the total grade. Bonus points will be added later. Calculate the weighted total according to the formula**
+
+**weighted total = 0.15&times;HWavg + 0.20&times;(Exam1 + Exam2 + Exam3) + 0.25&times;Final** 
+
+**and store the result in a new column of the data frame.**
+
+```{r}
+stat100$wt <- with(stat100, 0.15*HWavg + 0.2*(Exam1 + Exam2 + Exam3) + 0.25*Final)
+```
+
+###9. (5 point) 
+
+**Make a density plot of the weighted total for the in-person sections. Then add a density plot of the weighted total for the online section on the same graph. Use two different colors for the lines and explain your color code.**
+
+This is basically the same as question 5. We can simply replace `stat100$Examavg` by `stat100$wt`. 
+```{r}
+plot(density(stat100$wt[online]), xlab="score", col="red", 
+                   lty=2, lwd=2, las=1, main="Stat 100 Weighted Total")
+lines(density(stat100$wt[!online]))
+legend("topleft",c("in-person sections", "online section"),col=1:2, lty=1:2, lwd=1:2)
+```
+
+###10. (4 points)
+
+**Use the `summary()` function to calculate the mean and quartiles of the weighted total for the in-person (L1 and L2 combined) and online sections. Based on the result, which section performs better?**
+
+This is basically the same as question 6. We can simply replace `stat100$Examavg` by `stat100$wt`.
+```{r}
+tapply(stat100$wt, online, summary)
+```
+We again see that the mean and quartiles of the online section are all higher than those of the in-person section. So the online section students appear to perform better than the in-person section students on the weighted total. 
+
+###11. (4 points) 
+
+**Perform a Wilcoxon test on the weighted total between the in-person and online sections. Is there significant difference between the in-person and online sections?**
+
+```{r}
+wilcox.test(stat100$wt ~ online)
+```
+OR
+```{r}
+with(stat100, wilcox.test(wt[online], wt[!online]))
+```
+The p-value is again < 5%, so the difference is significant.
+
+###12. (2 points) 
+
+**Now add the bonus points to the weighted total according to the formula stated on the <a href="http://courses.las.illinois.edu/stat/stat100/grade.html" target="_blank">Stat 100 Grading webpage</a>:**
+
+**weighted total with bonus = (weighted total + 0.25&times;Bonus)/(100 + 0.25&times;Bonus) &times; 100.**
+
+**The final factor of 100 is to make the maximum possible score equal to 100 instead of 1. Round the scores to 2 decimal places and store the result in a new column of the data frame.**
+
+```{r}
+stat100$wtb <- round(with(stat100, (wt + 0.25*Bonus)/(100+0.25*Bonus)*100),2)
+```
+
+###13. (7 points) 
+
+**Based on the weighted total (with bonus) and the letter grade table below (copied from the <a href="http://courses.las.illinois.edu/stat/stat100/grade.html" target="_blank">Stat 100 Grading webpage</a>), assign letter grades to the students and store the result in a new column of the data frame. There are many ways to do this, some good and some bad. This is your last assignment and we really want you to use a good method. Read <a href="http://go.illinois.edu/stat390/grade_assignment.html" target="_blank">this page</a>, where you will see a comparison of three methods.**
+
+| &nbsp; | &nbsp;       | &nbsp;| &nbsp;       | &nbsp; | &nbsp;       |
+|--------|--------------|-------|--------------|--------|--------------|
+| **A+** | **97-100**   | **A** | **93-96.99** | **A-** | **90-92.99** |
+| **B+** | **87-89.99** | **B** | **83-86.99** | **B-** | **80-82.99** |
+| **C+** | **77-79.99** | **C** | **73-76.99** | **C-** | **70-72.99** |
+| **D+** | **67-69.99** | **D** | **63-66.99** | **D-** | **60-62.99** |
+|        |              | **F** | **< 60**     |        |              |
+|        |              |       |              |        |              |
+
+We're going to use Method 3 on <a href="http://go.illinois.edu/stat390/grade_assignment.html" target="_blank">this page</a>. First, create the vectors `break_pts` and `grades` in accord with the grade table. Then use the `cut()` function to assign grades. 
+```{r}
+break_pts <- c(-Inf, 59.995, 62.995, 66.995, 69.995, 72.995, 76.995, 79.995, 
+               82.995, 86.995, 89.995, 92.995, 96.995, Inf)
+grades <- c('F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+')
+stat100$grade <- cut(stat100$wtb, break_pts, grades)
+```
+
+<a href="#fn01" id="fnref01">Common mistake</a>
+
+###14. (3 points) 
+
+**Consistency check. What is the percentage of students who get A or A+? Do it in two ways: (1) by counting the percentage of students with weighted total (with bonus) &geq; 93; (2) by counting the percentage of A and A+ in the column you created in the previous question. Make sure the two methods give the same result.**
+
+Method 1: Count percentage of `stat100$wtb` &geq; 93.
+```{r}
+mean(stat100$wtb >= 93)*100
+```
+
+Method 2: Count percentage of A and A+ in `stat100$grade`. 
+```{r}
+with(stat100, mean(grade=="A" | grade=="A+")*100)
+```
+The both give the same result: `r as.character(round(mean(stat100$wtb >= 93)*100,3))`%.
+
+###15. (3 points)
+
+**Make a barplot showing the percentage of students in each letter grade.**
+
+Calculate the percentage of students in each grade:
+```{r}
+(tbl <- table(stat100$grade)/nrow(stat100)*100)
+```
+
+Create barplot:
+```{r}
+barplot(tbl,las=1)
+```
+
+If you want, you can add the percentage information on the top of each bar. The following is a customized barplot function I wrote a while ago. I won't explain how it works here. Try to figure it out yourself if you are interested.
+```{r}
+my_barplot <- function(percents,title,...) {
+  # round percents to 2 sig. fig. and change it to a character
+  perc_char <- paste0(as.character(signif(percents,2)),"%")
+  # set ymax on the plot
+  yup <- signif(min(100,max(percents)+5),2)
+  mp <- barplot(percents,ylim=c(0,yup),ylab="percent",cex.lab=1.2,main=title,las=1,...)
+  # Add percent value above each bar
+  text(mp,percents+1.2,labels=perc_char )
+}
+```
+It was based on a trick I saw on a stackoverflow forum (a good place to 'steal' tricks). Let's see how it looks when applied on the grade data:
+```{r, fig.width=9}
+my_barplot(tbl,"Stat 100 Grade Distribution")
+```
+
+<br />
+**The final comparison is to see if there is significant difference on the letter grades between the online and in-person sections. Since letter grades are categories, we will need to do a $\chi^2$ independence test. If you do that, you will get a warning message. This is because the $\chi^2$ test is inaccurate for small values of expected frequencies. If you look into the problem, you will find that the small expected values occur for the letter grades D- and D. One method to solve this problem is pooling: combining categories of small expected values. The following code combines the letter grades D-, D and D+ to D:**
+```{r, eval=FALSE}
+pooled <- as.character(stat100$grade)
+pooled[pooled=="D-" | pooled=="D+"] <- "D"
+```
+**Here it is assumed that `stat100$grade` is a factor vector that stores the students' letter grades. You will need to change the code to match your variable name. You can verify using the command `table(pooled)` that the D+, D and D- grades are combined to the D grade.**
+<br />
+
+###16. (4 points) 
+
+**Perform a $\chi^2$ independence test to determine if there is significant difference on the pooled letter grades stored in `pooled` between students in the in-person and online sections.**
+
+```{r}
+pooled <- as.character(stat100$grade)
+pooled[pooled=="D-" | pooled=="D+"] <- "D"
+table(online,pooled)
+chisq.test(online,pooled)
+```
+OR
+```{r}
+chisq.test(table(online,pooled))
+```
+We again see that the p-value < 5%, so there is significant difference between the in-person and online sections.
+
+<hr />
+**Aside**: Another method to overcome the inaccuracy of the $\chi^2$ test as a result of small expected frequencies is to calculate the p-value by a Monte Carlo simulation. As explained in `?chisq.test`, if the parameter `simulate.p.value` is set to TRUE, `chisq.test()` will calculate the p-value by a Monte Carlo test with `B` replicates. The default value of `B` is 2000 but it can be changed to other values. Here is an example:  
+```{r}
+set.seed(827328)
+chisq.test(stat100$grade, online, simulate.p.value = TRUE, B=100000)
+```
+We see that this test also gives a small p-value. The conclusion is the same: there is significant difference on the course grades between the in-person and online sections.
+
+<br />
+<hr />
+<h3 id="fn01">Note on a common mistake</h3>
+
+In previous semesters, some students set the break points exactly the same as the cutoff points listed on the table and then used the `cut()` function to assign grades:
+```{r}
+break_pts2 <- c(0, 60, 63, 67, 70, 73, 77, 80, 83, 87, 90, 93, 97, 100)
+grades <- c('F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+')
+stat100$grade2 <- cut(stat100$wtb, break_pts2, grades)
+```
+The result is wrong. First, you get 2 NAs in the vector:
+```{r}
+sum(is.na(stat100$grade2))
+```
+If you trace the origin of these NAs, you'll find that they correspond to the value of `stat100$wtb` being 0:
+```{r}
+stat100$wtb[is.na(stat100$grade2)]
+```
+As mentioned in Week 13's notes, the default setting in the `cut()` function is that the lowest break point is not included, so R doesn't know what to assign score 0 to and turn it into an NA. To fix the issue, you can add the option `include.lowest=TRUE` in the cut function as mentioned in Week 13's notes:
+```{r}
+stat100$grade2 <- cut(stat100$wtb, break_pts2, grades, include.lowest=TRUE)
+sum(is.na(stat100$grade2))
+```
+This fixes the NA issue, but the result is still incorrect. Let's compare `stat100$grade` and `stat100$grade2`:
+```{r}
+with(stat100, identical(grade,grade2))
+ind_disagree <- with(stat100, which(grade != grade2))
+stat100[ind_disagree, c("wtb","grade","grade2")]
+```
+We see that there are disagreements between `grade` and `grade2` at the boundary points 93, 97 and 87. According to the grade table, the grades of 93, 97 and 87 are A, A+ and B+ respectively. So we see that `grade` is correct and `grade2` is wrong. If you look at the documentation of `cut` in `?cut`, you'll see that the default setting is that intervals are closed on the right (open on the left). For our specific case, it means, e.g., 93 is assigned to A- instead of A. The behavior can be changed by using the option `right=FALSE`:
+```{r}
+stat100$grade2 <- cut(stat100$wtb, break_pts2, grades, include.lowest=TRUE, right=FALSE)
+```
+The result should now be identical to `grade`. Let's check:
+```{r}
+with(stat100, identical(grade,grade2))
+```
+It works for this data set, but as we mention sometimes `wtb` could exceed 100. If that happens, the command will fail again. 
+
+You should now understand why we deliberately move the break points away from the cutoff points in order to avoid issues associated with the boundary points.
+<a href="#fnref01">&#8617;</a>
+<br />
+<br />
+<br />

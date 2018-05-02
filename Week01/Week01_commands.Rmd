@@ -1,0 +1,48 @@
+---
+title: "Commands and Functions - Week 1"
+output: html_document
+fontsize: 12pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: 
+
+Summary of R commands you encounter in Week 1, from swirl lessons 1 and 3.
+
+## Basic Commands
+
+Command                        Purpose                                                  Example 
+--------------------------  -----------------------------------------------  ----------------------------------
+?                            pull up a help page                                ?seq
+:                            colon operator(generate regular sequence)         1.5:4
+<-                           assignment                                       x <- 5 + 7
+c                            concatenate                                      c(1.1, 9, 3.14)
+seq, seq_along               sequence generation                              seq(1,10,0.5)
+length                       return the length of a vector                    length(pi:100)
+rep                          replicate elements of vectors                    rep(c(1,2,3),5)
+
+
+<br />
+<br />
+<br />

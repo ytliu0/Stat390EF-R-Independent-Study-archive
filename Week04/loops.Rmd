@@ -1,0 +1,268 @@
+---
+title: "For-Loops and If-else Statements: Examples"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<!-- Written by Yuk Tung Liu -->
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: 
+
+#Introduction
+
+Loops and conditional statements are essential features in all programming languages. Unlike many other programming languages, however, the use of for-loops are discouraged in R. You should avoid using for-loops if they can be replaced by vectorized operations, which are in general faster, simpler to write, and less error prone.
+
+We will demonstrate the use of for-loops and if-else statements by a few examples here. You should have read Chapter 14 of the textbook before reading this note (you can't take on higher level things before you have mastered the basics).
+
+#Example 1: Find the Maximum of Average Exam Scores
+
+The scores of two exams of 10 students are stored in a data frame `exam` with two columns `Exams1` and `Exams2`:
+```{r}
+exam <- data.frame(Exam1 = c(97,91,33,86,40,48,27,53,58,31), 
+                   Exam2 = c(68,76,70,27,43,46,100,92,73,98))
+```
+Suppose we want to find the highest average exam score and the corresponding scores of this student's 2 exams. Assume that there are no ties, the easiest method is to calculate the averages using a vectorized operation and then pick the observation with the maximum average:
+```{r}
+exam$avg <- (exam$Exam1 + exam$Exam2)/2
+(max.scores <- exam[exam$avg==max(exam$avg),])
+```
+We see that the maximum average exam score is `r max.scores[["avg"]]`, and the corresponding Exam 1 and Exam 2 scores are `r max.scores[["Exam1"]]` and `r max.scores[["Exam2"]]`, respectively. In the above code chunk, we use a parenthesis in the second line. Without the parenthesis, it just creates the variable `max.scores`. With the parenthesis, the content of `max.scores` is printed after the assignment.
+
+Now let's do the same calculation but do it using an if-statement and a for-loop. This is how it has to be done in many other programming languages in which vectorized operations are not supported. 
+
+The procedure is as follows. First temporarily assign a maximum average exam score variable `maxAvg` to a the number -Inf, which represents negative infinity. Initialize a variable `maxScores` to NULL. It will be used to store the exam 1 and exam 2 scores of the student with the highest average exam score. Then use `i` as the looping variable to loop over the 10 students (from i=1 to i=10). Inside the loop, calculate the average exam score and put it to the variable `Avg` and compare it to `maxAvg`. If `Avg` > `maxAvg`, replace `maxAvg` by `Avg` and set `maxScores <- c(Exam1[i], Exam2[i])`. When the loop is over, `maxAvg` stores the maximum value of the average exam scores and `maxScores` store the corresponding scores of Exam 1 and Exam 2. Here is the code:
+```{r}
+maxAvg <- -Inf
+maxScores <- NULL
+for (i in 1:10) {
+  Avg <- (exam$Exam1[i] + exam$Exam2[i])/2
+  if (Avg > maxAvg) {
+    # update maxAvg and maxScores
+    maxAvg <- Avg
+    maxScores <- c(exam$Exam1[i],exam$Exam2[i])
+  }
+}
+max.scores2 <- c(maxScores, maxAvg)
+names(max.scores2) <- c("Exam1","Exam2","ExamAvg")
+max.scores2
+```
+We get the same result as before, as expected.
+
+Compare the code using an if-statement and a for-loop to the code that takes advantage of vectorized operations, you can see why a for-loop is not recommended to solve this problem. 
+
+However, there are situations where vectorized operations cannot be used, as illustrated in the next example.
+
+#Example 2: Maximum and Minimum Temperature
+
+The U.S. Climate Reference Network has <a href="https://www.ncdc.noaa.gov/crn/qcdatasets.html" target="_blank">weather data</a> of various cities in the U.S. For example, it has the weather data of Champaign, IL over the past 14 years or so. Each year's data are stored in a separate file. Suppose we want to find the maximum and minimum daily temperature of Champaign over the past 14 years, we have to search over 14 different files. In this case, a for-loop is convenient for this problem. 
+
+I have downloaded the daily climate data of Champaign, IL from the year 2003 to 2016 from the website. A copy of the data files has been uploaded to the class website in a <a href="http://courses.atlas.illinois.edu/spring2017/stat/stat200/RProgramming/data/cmi.zip">zip file</a>. To follow along the calculation here, download the zip file and unzip it. The weather data files are in a directory named "cmi". Place the cmi directory in your R's working directory. The names of the 14 files are `CRND0103-YYYY-IL_Champaign_9_SW.txt` where YYYY are numbers between 2003 and 2016, indicating the year of the weather data. Each file has 28 columns, but it doesn't have a header. The column information can be found near the end of <a href="https://www1.ncdc.noaa.gov/pub/data/uscrn/products/daily01/README.txt" target="_blank">this page</a>. Of all the 28 columns, we are only interested in 3 columns: column 2 containing the date in the format YYYYMMDD; column 6 the maximum daily temperature in Celsius and column 7 the minimum daily temperature in Celsius. Missing values in the temperature columns are indicated by the number -9999. 
+
+To find the minimum and maximum daily temperature over the past 14 years, we have to go through the 14 files and search for the maximum and minimum. First, create a character vector `files` containing the 14 file names, including the directory:
+```{r}
+files <- paste0("cmi/CRND0103-",2003:2016,"-IL_Champaign_9_SW.txt")
+```
+Recall that `paste()` is the function to combine strings, as you have learned in Lesson 4 of swirl. `paste0()` is `paste()` with the default setting `sep=''`, so the strings are joined together without any separation character. Here is the content of `files`:
+```{r}
+files
+```
+These are exactly the 14 files we want to loop over. (If you are forgot (or never really understand) how `paste()` works, read <a href="https://trinkerrstuff.wordpress.com/2013/09/15/paste-paste0-and-sprintf-2/" target="_blank">this blog post</a>.)
+
+Next we follow the same procedure as in the previous example to find maximum and minimum. Initialize two variables `Tmin` and `Tmax`, loop over the 14 files, update the values of `Tmin` and `Tmax`, as well as the dates when the minimum and maximum occurred. We get the result after the loop is finished. Here is the code.<a href="#fn01" id="fnref01"><sup>1</sup></a>
+```{r}
+# Find the maximum and minimum daily temperature in Champaign, IL in 2003-2016
+Tmin <- Inf # initialize Tmin to infinity
+Tmax <- -Inf # initial Tmax to negative infinity
+
+# start the loop
+for (file in files) {
+  # read data using read.table()
+  weather <- read.table(file)
+  
+  # extract the daily maximum and minimum T from columns 6 and 7
+  Tmax_daily <- weather[[6]]
+  Tmin_daily <- weather[[7]]
+  
+  # Find the maximum and minimum T in this year, 
+  # but need to remove the missing values indicated by -9999.
+  Tmax_this_year <- max(Tmax_daily[Tmax_daily != -9999])
+  Tmin_this_year <- min(Tmin_daily[Tmin_daily != -9999])
+  
+  # update Tmax and the date of Tmax
+  if (Tmax_this_year > Tmax) {
+    Tmax <- Tmax_this_year
+    # update the date of Tmax; the date info is in column 2
+    date_Tmax <- weather[Tmax_daily==Tmax_this_year,2]
+  }
+  
+  # update Tmin and the date of Tmin
+  if (Tmin_this_year < Tmin) {
+    Tmin <- Tmin_this_year
+    # update the date of Tmin
+    date_Tmin <- weather[Tmin_daily==Tmin_this_year,2]
+  }
+}
+
+# loop finished. Look at the result
+c(Tmin, date_Tmin)
+c(Tmax, date_Tmax)
+```
+We find that the minimum daily temperature was `r Tmin`&deg;C (= `r 32+1.8*Tmin`&deg;F), which occurred on `r date_Tmin` (Feb 24, 2015). The maximum was `r Tmax`&deg;C (= `r 32+1.8*Tmax`&deg;F), which occurred on `r date_Tmax` (July 25, 2012).
+
+Note that the for-loop is used only to go over the data files. For example, we don't use the for-loop to calculate `Tmin_this_year` and `Tmax_this_year` as in the previous example. They are more easily calculated using the `max()` and `min()` functions.
+
+#Example 3: Creating Monthly Average Data
+
+Suppose we want to get more information from the weather data. We want to calculate the monthly average of the maximum, minimum, and average daily temperature for each month in the past 14 years. We want to create a data frame to store the monthly average data. This data frame has 5 columns: year, month, monthly average Tmax, monthly average Tmin, and monthly average Tavg. Since there are 12&times;14=168 months in 14 years, the data frame will have 168 observations. To carry out the calculation, we have to go over the 14 files, compute the monthly averages and add them to the data frame. 
+
+First, we create an empty data frame so that we can append data to it later.
+```{r, eval=FALSE}
+MonthlyAvg <- data.frame(NULL)
+```
+Data frames can be appended by the `rbind()` function in the same way as combining matrices that you have learned in Chapter 5 of the textbook.
+
+Next, we need to calculate the monthly averages for each year. To do that, we need to extract the month information from the data. The date information is in column 2 of each file, containing 8-digit integers in the form YYYYMMDD. The first 4 digits are the year; the 5th and 6th digits are the month. There are many ways to extract the year and month information from the 8-digit numbers. One method is to first convert the integers to characters. Then extract the digits using the `substr()` function. In particular, `substr(x,i,j)` returns a substring from the ith character to the jth character in the string `x`. As an example, consider the 8-digit integer `date_Tmax` we calculated in the previous example. We can extract the year, month, and day using the `substr()` function as follows.
+```{r}
+# save date_Tmax as a string
+x <- as.character(date_Tmax)
+# extract year: pull out the first 4 characters from x
+substr(x,1,4)
+# extract month: pull out the 5th and 6th characters from x
+substr(x,5,6)
+# extract day: pull out the 7th and 8th characters from x
+substr(x,7,8)
+```
+The `substr()` function returns a string, but we can convert it to an integer using the `as.integer()` function. 
+
+There are missing values in the temperature columns. They are represented by the number -9999. It is more convenient to use NA to represent missing values since we can set the parameter `na.rm=TRUE` in `mean()` to remove missing values when computing the average. So we want to turn all -9999 to NA, which can be done using the command `weather[weather==-9999] <- NA`, where `weather` is the temporary data frame storing the weather data read from the files. Although missing values are also represented by -99 in some columns (see <a href="https://www1.ncdc.noaa.gov/pub/data/uscrn/products/daily01/README.txt" target="_blank">this documentation</a>), we don't need to convert them since we are only interested in columns 6 (daily Tmax), 7 (daily Tmin) and 9 (daily Tavg) in which all missing values are -9999.
+
+Now that we have all the tools, we can carry out the monthly average calculation. Here is the code.
+```{r}
+# create an empty data frame 
+MonthlyAvg <- data.frame(NULL)
+
+# loop over the 14 files
+for (file in files) {
+  # read data from file
+  weather <- read.table(file)
+  
+  # change missing values from -9999 to NA 
+  weather[weather==-9999] <- NA
+  
+  # save the second column as strings
+  dates <- as.character(weather[[2]])
+  
+  # extract year from dates: they are all the same, 
+  # so we only need to do the first date
+  year <- as.integer(substr(dates[1],1,4))
+  
+  # extract month from dates
+  month <- as.integer(substr(dates,5,6))
+  
+  # calculate monthly averages, first initialize vectors to store the averages
+  Tmin_monthlyAvg <- rep(NA, 12)
+  Tmax_monthlyAvg <- rep(NA, 12)
+  Tavg_monthlyAvg <- rep(NA, 12)
+  # calculate the averages from Jan - Dec
+  for (i in 1:12) {
+    ind_month_i <- which(month==i) 
+    Tmax_monthlyAvg[i] <- mean(weather[ind_month_i,6], na.rm=TRUE)
+    Tmin_monthlyAvg[i] <- mean(weather[ind_month_i,7], na.rm=TRUE)
+    Tavg_monthlyAvg[i] <- mean(weather[ind_month_i,9], na.rm=TRUE)
+  }
+  
+  # create a data frame for the averages 
+  MonthlyAvg_this_year <- data.frame(Year=rep(year,12), Month=1:12, 
+                                    Tmax=Tmax_monthlyAvg,
+                                    Tmin=Tmin_monthlyAvg,
+                                    Tavg=Tavg_monthlyAvg)
+  
+  # append data to the data frame MonthlyAvg using the rbind() function 
+  MonthlyAvg <- rbind(MonthlyAvg, MonthlyAvg_this_year)
+}
+
+# loop finished.
+# check to see if we have a data frame with 168 observations and 5 columns
+dim(MonthlyAvg)
+
+# look at the beginning of the data frame
+head(MonthlyAvg)
+```
+We can use this new data frame `MonthlyAvg` to further compute the monthly average temperatures over the 14 years. This involves another loop over the 12 months:
+```{r}
+Tmin_avg <- rep(NA,12)
+Tmax_avg <- rep(NA,12)
+Tavg_avg <- rep(NA,12)
+for (i in 1:12) {
+  subset_ind <- which(MonthlyAvg$Month==i)
+  Tmin_avg[i] <- mean(MonthlyAvg$Tmin[subset_ind])
+  Tmax_avg[i] <- mean(MonthlyAvg$Tmax[subset_ind])
+  Tavg_avg[i] <- mean(MonthlyAvg$Tavg[subset_ind])
+}
+
+# assign names to the vector components
+month_names <- c("Jan","Feb","Mar","Apr","May","Jun",
+                 "Jul","Aug","Sep","Oct","Nov","Dec")
+names(Tmin_avg) <- month_names
+names(Tmax_avg) <- month_names
+names(Tavg_avg) <- month_names
+Tmax_avg
+Tmin_avg
+Tavg_avg
+```
+These are the monthly average temperatures (in Celsius) over 2003-2014. We can convert temperatures to Fahrenheit using the formula $F=32+1.8C$, where F is temperature in Fahrenheit and C is temperature in Celsius. We carry out the conversion below and also round the result to 1 decimal place.
+```{r}
+round(32+1.8*Tmin_avg,1)
+round(32+1.8*Tmax_avg,1)
+round(32+1.8*Tavg_avg,1)
+```
+The result can be compared to the climate data listed on <a href="http://www.usclimatedata.com/climate/champaign/illinois/united-states/usil2051" target="_blank">this webpage</a>. We see that the temperatures are close (mostly within 1&deg;F or 2&deg;F), but not exactly the same. It is because their result was obtained by averaging over 1981-2010. 
+
+We can also compare the annual average temperatures. For our data, we can simply apply the `mean()` function over the temperature columns of our `MonthlyAvg` data frame:
+```{r}
+# annual high temperature in Fahrenheit
+round(32 + 1.8*mean(MonthlyAvg$Tmax),1)
+# annual low temperature in Fahrenheit
+round(32 + 1.8*mean(MonthlyAvg$Tmin),1)
+# annual average temperature in Fahrenheit
+round(32 + 1.8*mean(MonthlyAvg$Tavg),1)
+```
+These are also close to the values listed on <a href="http://www.usclimatedata.com/climate/champaign/illinois/united-states/usil2051" target="_blank">this webpage</a>.
+
+<hr />
+
+This concludes our demonstration in using for-loops and if-else statements. You see that for-loops are particularly useful in processing data across multiple files.
+
+<hr />
+## Footnote
+
+<p id="fn01">Some students have trouble understanding the variable `file` in the loop. It is a variable that loops over the values in the `files` vector, in the same way as the variable `i` that loops over numbers in the vector `1:10` in the first example. So at the beginning, it takes the value `files[1]`, which is "`r files[1]`". Hence, the line `weather <- read.table(file)` is equivalent to `weather <- read.table("`r files[1]`")`. As a result, `weather` is a data frame storing the weather data at Champaign, IL in 2003. The lines below will be exectuted one by one until it reaches the end of the loop. Then the loop starts again with `file` taking on the value of `files[2]`, which is "`r files[2]`". The line `weather <- read.table(file)` becomes `weather <- read.table("`r files[2]`")`. Now, `weather` is a data frame storing the weather data at Champaign, IL in 2004. The rest of lines inside the loop will then be exectuted. Next, the loop starts again with `file` taking the value `files[3]`, which is "`r files[3]`"... and so on.<a href="#fnref01">&#8617;</a></p>
+
+<br />
+<br />
+<br />

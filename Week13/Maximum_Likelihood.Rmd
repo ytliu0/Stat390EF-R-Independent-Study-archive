@@ -1,0 +1,341 @@
+---
+title: "Maximum Likelihood and Logistic Regression"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file - Default.csv
+
+## Introduction
+
+The maximum likelihood estimation (MLE) is a general class of method in statistics that is used to estimate parameters in a statistical model. Here we will not discuss MLE in the general form. Instead, we will consider a simple case of MLE that is relevant to the logistic regression.
+
+## A Simple Box Model
+
+Consider a box with only two types of tickets: one has '1' written on it and another has '0' written on it. Let p be the fraction of the '1' tickets in the box. The value of p is unknown. Suppose that 100 tickets are drawn from the box and 20 of the tickets are '1'. What is the best estimate for the value of p? We imagine there are many tickets in the box, so it doesn't matter whether the tickets are drawn with or without replacement. In the context of MLE, p is the parameter in the model we are trying to estimate. 
+
+Consider another question: given p, what is the probability that we get 20 tickets with '1' from 100 draws? This is not a difficult question. The probability that we get a '1' ticket in each draw is p, and the probability that we get a '0' ticket is (1-p). So the probability that we get 20 '1' tickets and 80 '0' tickets in 100 draws is <a href="#fn01" id="fnref01"><sup>1</sup></a>
+$$L(p) = P(20 | p) = p^{20}(1-p)^{80}$$ 
+This is a function of the unknown parameter p, called the *likelihood function*. It is the probability of getting the data if the parameter is equal to p. The maximum likelihood estimate for the parameter is the value of p that maximizes the likelihood function. 
+
+Instead of working with the likelihood function $L(p)$, it is more convenient to work with the logarithm of $L$:
+$$\ln L(p) = 20 \ln p + 80 \ln(1-p)$$
+where $\ln$ denotes natural logarithm (base e). The equation results from two identities of logarithm: 
+$$\log_c (ab) = \log_c (a) + \log_c (b) \ \ \ , \ \ \ \log_c (a^x) = x \log_c (a)$$ 
+Here $\log_c$ is the logarithm function with base c and c can be any positive real numbers. 
+
+Since $\ln(x)$ is an increasing function of $x$, maximizing $L(p)$ is the same as maximizing $\ln L(p)$. So the maximum likelihood estimate for $p$ boils down to find $p$ that maximizes the function $20\ln p + 80\ln(1-p)$. We can plot the function to see what it looks like:
+```{r}
+curve(20*log(x)+80*log(1-x), xlim=c(0,1),ylim=c(-150,-50), las=1, xlab="p", 
+      ylab="ln L(p)")
+```
+
+Note that in R (and in most programming languages), log denotes natural logarithm ln. The plot shows that the maximum occurs around p=0.2. If you know calculus, you will know how to do the maximization analytically. The answer is that the maximum likelihood estimate for p is p=20/100 = 0.2. 
+
+In general, it can be shown that if we get $n_1$ tickets with '1' from N draws, the maximum likelihood estimate for p is
+$$p = \frac{n_1}{N}$$
+In other words, the estimate for the fraction of '1' tickets in the box is the fraction of '1' tickets we get from the N draws. We can express the result in a more abstract way that will turn out to be useful later. 
+
+Suppose $y_i$ is a variable encoding the result of the ith draw. We set $y_i=1$ if the ticket in the ith draw is '1'. We set $y_i=0$ if the ticket in the ith draw is '0'. After N draws, we have the variables $y_1, y_2, \cdots, y_N$. The number of '1' tickets in N draws is 
+$$n_1 = \sum_{i=1}^N y_i$$ 
+and so the maximum likelihood estimate for p is 
+$$p=\frac{n_1}{N} = \frac{1}{N}\sum_{i=1}^N y_i = \bar{y}$$
+In other words, the maximum likelihood estimate for p is the mean of the $y$ variable from the N draws. 
+
+We can also express the likelihood function $L(p)$ in terms of $y_i$. If $y_i=1$, we get the '1' ticket in the ith draw and the probability is p. If $y_i=0$, we get the '0' ticket and the probability is (1-p). Combining these two results, we have the probability of getting $y_i$ being 
+$$P(y_i | p) = p^{y_i} (1-p)^{1-y_i}$$ 
+We can check that the formula gives the correct answers for the two cases. If $y_i=1$, $p^{y_i}=p^1=p$ and $(1-p)^{1-y_i}=(1-p)^0=1$. It follows that $p^{y_i} (1-p)^{1-y_i}=p$, consistent with our previous result. If $y_i=0$, $p^{y_i}=p^0=1$ and $(1-p)^{1-y_i}=(1-p)^1=(1-p)$ and so $p^{y_i} (1-p)^{1-y_i}=(1-p)$, which is also consistent with our previous result. So we conclude that the formula works for both $y_i=1$ and $y_i=0$. The likelihood function is the probability that we get $y_1, y_2, \cdots, y_N$ from N draws. Since each draw is independent, we use the multiplication rule to calculate the joint probability, or the likelihood function: 
+$$L(p) = P(y_1, y_2, \cdots, y_N | p) = [p^{y_1}(1-p)^{1-y_1}] [p^{y_2}(1-p)^{1-y_2}] \cdots [p^{y_N}(1-p)^{1-y_N}]$$ 
+Using the product notation, we can write 
+$$L(p) = \prod_{i=1}^N p^{y_i} (1-p)^{1-y_i}$$
+The log-likelihood is given by 
+$$\ln L(p) = \sum_{i=1}^N [y_i \ln p + (1-y_i) \ln (1-p)]$$
+The result says that the value of p that maximizes the log-likelihood function above is $p=n_1/N=\bar{y}$.
+
+## Drawing from Two Boxes
+
+Now consider a slightly more general case of drawing tickets from two boxes. We label them box 1 and box 2. In each box, there are only two types of tickets: those with '1' written on it and those with '0' written on it. The fraction of the '1' tickets in the two boxes are $p_1$ and $p_2$. These are unknown parameters we want to determine using the MLE. 
+
+Suppose N tickets are drawn from the two boxes. We record the result in two variables $x$ and $y$. The variable $y$ is the same as before: $y_i=1$ if the ticket in the ith draw is '1'; $y_i=0$ if the ticket in the ith draw is '0'. The variable $x$ is a categorical (factor) variable. It records whether the draws are from box 1 or box 2. That is, $x_i=$"box 1" if the ith draw is from box 1; $x_i$="box 2" if the ith draw is from box 2. Following a similar math, one can show that the log-likelihood function is given by 
+$$\ln L(p_1, p_2) = \sum_{i=1}^N \{ y_i \ln p(x_i) + (1-y_i) \ln [1-p(x_i)] \}$$
+where 
+$$p(x_i) = \left \{ \begin{array}{ll} p_1 & \mbox{ if } x_i = \mbox{ "box 1"} \\ 
+p_2 & \mbox{ if } x_i = \mbox{"box 2"} \end{array} \right. $$
+In MLE, the parameters are determined by finding the values of $p_1$ and $p_2$ that maximize $\ln L$. Again, if you know calculus, it won't be difficult to solve the maximization problem. Here we skip the math and just tell you the answer: 
+$$p_1 = \frac{n_1 (\mbox{box 1})}{N(\mbox{box 1})} = \overline{y(\mbox{box 1})} \ \ \ , \ \ \ p_2 =\frac{n_1 (\mbox{box 2})}{N(\mbox{box 2})} = \overline{y(\mbox{box 2})}$$
+Here $n_1 (\mbox{box 1})$ denotes the total number of '1' tickets drawing from box 1, $N(\mbox{box 1})$ denotes the total number of draws from box 1, and $\overline{y(\mbox{box 1})}$ means taking the average of $y$ coming from box 1. The variables $n_1 (\mbox{box 2})$, $N(\mbox{box 2})$ and $\overline{y(\mbox{box 2})}$ are the same quantities associated with box 2. 
+
+In words, the maximum likelihood estimate for the fraction of the '1' tickets in each box is the same as the fraction of the '1' tickets drawn from each box. In R, the calculations of $p_1$ and $p_2$ are done by splitting the vector y into two groups and then computing the group means, which can be done more conveniently using the `tapply()` function.
+
+## Drawing from Multiple Boxes 
+
+Consider a more general case where the tickets are drawn from $k$ boxes ($k > 2$). Here again, we only consider the boxes with tickets '0' and '1' only. The unknown parameters are $p_1, p_2, \cdots, p_k$, the fractions of the '1' tickets in boxes $1, 2, ..., k$. We want to determine the values of these parameters using MLE from the results of N draws from these boxes. 
+
+The $y$ variable is still the same as before: $y_i=1$ if the ticket in the ith draw is '1'; $y_i=0$ if the ticket in the ith draw is '0'. Our factor variable $x$ now contains $k$ levels: $x_i=$"box 1" if the ith draw is from box 1; $x_i=$"box 2" if the ith draw is from box 2; ...; $x_i=$"box k" if the ith draw is from box k. The log-likelihood function still takes the same form
+$$\ln L(p_1, p_2, \cdots, p_k) = \sum_{i=1}^N \{ y_i \ln p(x_i) + (1-y_i) \ln [1-p(x_i)] \}$$
+The only difference is in the value of $p(x_i)$: $p(x_i) = p_j$ ($j=1, 2, \cdots, k$) if $x_i=$"box j". The maximization can be done analytically using calculus. It probably wouldn't surprise you that the maximum likelihood estimate for the parameters is given by 
+$$p_j = \frac{n_1 (\mbox{box j})}{N(\mbox{box j})} = \overline{y(\mbox{box j})} \ \ , \ \ j=1,2,\cdots, k.$$ 
+In R, the calculation of $p_1, p_2, \cdots, p_k$ amounts to splitting the y vector by the factor variable x and then computing the group means, which again can be done more conveniently using the `tapply()` function.
+
+Before we go on to discuss an even more general case, it is useful to consider a few examples to demonstrate the use of these box models.
+
+## Example: Credit Card Defaults
+
+A credit card company is naturally interested in predicting the risk of a customer defaulting on his/her credit card payment. We will analyze a <a href="http://finzi.psych.upenn.edu/library/ISLR/html/Default.html" target="_blank">simulated data</a>, freely available from the ISLR package for the book <a href="http://www-bcf.usc.edu/~gareth/ISL/" target="_blank"><i>An Introduction to Statistical Learning</i></a>. A copy of the data has been uploaded <a href="Default.csv" target="_blank">here</a>. You can download the file to your R's work space and then load the data to R using the command 
+```{r}
+Default <- read.csv("Default.csv")
+```
+The data contain 10,000 observations and 4 columns. The first column, 'default', is a two-level (No/Yes) factor variable indicating whether the customer defaulted on their debt. The second column, 'student', is also a two-level (No/Yes) factor variable indicating whether the customer is a student. The third column, 'balance', is the average balance that the customer has remaining on their credit card after making their monthly payment. The last column, 'income', lists the income of the customer. Here is a quick look at the first few rows of the data:
+```{r}
+head(Default)
+```
+
+### One-Box Model
+
+The simplest model has only one parameter: the fraction of customers who defaulted on their debt. Mapping to the one-box model, we imagine the customers (current and future) represent tickets in a box. The customers who defaulted are the tickets with '1' written on it. The undefaulted customers are the tickets with '0' written on it. The $y$ variable is 0 for undefaulted customer and 1 for defaulted customers. We want to know the fraction of customers who will default, based on the data we have on the current customers. 
+
+We first create the $y$ vector in a new column: 
+```{r}
+Default$y <- as.integer(Default$default=="Yes")
+```
+The expression `Default$default=="Yes"` creates a logical vector of length 10,000 (the length of `Default$default`), whose values are TRUE for defaulted customers and FALSE for undefaulted customers. When the  `as.integer()` function is applied to a logical value, it turns TRUE to 1 and FALSE to 0. Thus, the vector y represents the desired y variable. The maximum likelihood estimate of the fraction is the average of y: 
+```{r}
+mean(Default$y)
+```
+This shows that 3.33% of the current customers defaulted on their debt. This is also the maximum likelihood estimate for all the customers (current and future) who have defaulted/will default on their debt.
+
+### Two-Box Model
+
+The one-box model is too crude. It only tells you the fraction of customers who will default, but doesn't tell you what kind of customers are likely to default. Let's consider a refined model where we divide the customers into two categories: students and non-students. Mapping to the two-box model, we imagine student customers represent tickets from box 1 and non-student customers represent tickets from box 2. The parameter $p_1$ is the fraction of student customers who defaulted, and $p_2$, the fraction of non-student customers who defaulted. The factor variable $x$ is therefore `Default$student`. The maximum likelihood estimate for $p_1$ and $p_2$ are the group means: 
+```{r}
+tapply(Default$y, Default$student, mean)
+```
+This shows that 4.3% of students defaulted and 2.9% of non-students defaulted. So students appear to be more likely to default on their debt compared to non-students. We can perform a $\chi^2$ independence test to see if the difference is significant: 
+```{r}
+with(Default, chisq.test(y,student))
+```
+The small p-value indicates that the difference is significant.
+
+### Multiple-Box Model
+
+Next we want to know if the fraction of defaults depends on the credit balance. We can look at the following box plots:
+```{r}
+plot(balance ~ default, data=Default, las=1)
+```
+
+The box plots show that the defaulted customers tend to have larger balance. We want to find out *how* the fraction of defaults depends on the credit balance. The probability that a customer defaults can be considered as a function of balance p(balance). The problem is that `balance` is not a factor variable, but a continuous variable that can in principle take infinite number of values. The multiple-box model described above cannot be applied to this variable. We will study a method to tackle a continuous variable in the next section. Here we will construct a factor variable from `balance` by breaking the variable into many intervals. 
+
+Let's first look at the values in the `balance` vector:
+```{r}
+summary(Default$balance)
+```
+The minimum is 0 and the maximum is 2654. We can create a factor variable that split the range [0,2654] into 10 equally-spaced intervals using the `cut()` function: 
+```{r}
+balance_cut1 <- cut(Default$balance, breaks=10)
+levels(balance_cut1)
+```
+`balance_cut` is a factor vector of length 10,000 (same length as `Default$balance`) with 10 levels. Just like `hist()`, the parameter `breaks` can be an integer (specifying the number of intervals) or a numeric vector (specifying the break points). The names of the levels in `balance_cut1` are shown above. This means that values in `balance` between -2.65 and 265 are assigned to level 1, named "(-2.65,265]". Values in `balance` between 265 and 531 are assigned to level 2, named "(265,531]" and so on. We can see the number of observations in each level using the `table` function:
+```{r}
+table(balance_cut1)
+```
+As can be seen, one disadvantage of breaking the variable in equally-spaced intervals is that there are unequal number of observations in each interval. Computation of group means becomes less accurate if we don't have enough data in an interval. In the extreme case that there are no observation in an interval, the mean cannot be calculated. 
+
+One way to overcome the difficulty is to split the range in equal number of observations instead of equally-spaced intervals. This can be done using `quantile()`, which computes the percentiles. For examples, we can split the range into 10 intervals of equal number of observations. We first compute the 0th, 10th, 20th, 30th, ..., 90th, and 100th percentiles using the `quantile()` function:
+```{r}
+quantiles <- quantile(Default$balance, probs=seq(0,1,0.1))
+```
+In the command above, `seq(0,1,0.1)` generates 11 numbers (0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1) with equal spacing. The option `probs=seq(0,1,0.1)` tells R to compute the 0th, 10th, 20th, ..., 100th percentiles in `Default$balance`, corresponding to probs = 0, 0.1, 0.2, ..., 1. The result is 
+```{r}
+quantiles
+```
+We can now use `quantiles` and `cut()` to create the following factor variable.
+```{r}
+balance_cut2 = cut(Default$balance, breaks=quantiles)
+levels(balance_cut2)
+```
+Just like `balance_cut1`, there are 10 levels in `balance_cut2`, but they are not equally spaced. Instead, they should have equal number of observations because the break points are created from the percentiles. Let's check to see if that's the case:
+```{r}
+table(balance_cut2)
+```
+We see that there are 1000 observations in levels 2-10, but only 501 observations in level 1. The total number of observations is 9501. We are missing 499 observations! What is going on? Clearly, something is wrong in the first level. The name of the first level is "(0,181]". This is the problem: `balance`=0 is not included in this level. These are the missing 499 observations! Looking at the help page of cut, `?cut`, we see that the parameter `include.lowest` is set to FALSE by default. This means that the lowest `breaks` value is not included. To fix the problem, we just need to set this parameter to TRUE:
+```{r}
+balance_cut2 = cut(Default$balance, breaks=quantiles, include.lowest=TRUE)
+table(balance_cut2)
+```
+Now we see that the first level is named "[0,181]" and there are 1000 observations in this level.<a href="#fn03" id="fnref03"><sup>2</sup></a> We have successfully created 10 intervals with equal number of observations within.  
+
+Mapping to the box model, we imagine customers in the 10 `balance` intervals represent tickets in 10 boxes. There are 10 parameters $p_1$, $p_2$, ..., $p_{10}$ corresponding to the fractions of customers in the intervals who defaulted on their debt. The maximum likelihood estimate of the parameters are simply the group means of y:
+```{r}
+p <- tapply(Default$y, balance_cut2, mean)
+p
+```
+This shows that the fraction of defaults generally increases as `balance` increases. About 27% of customers with `balance` greater than $1470 defaulted. We can visualize the result by making a plot. To do that, we first create a numeric vector of length 10 storing the midpoints of the quantiles using the index shifting trick mentioned in last week's notes and also in one of Week 4's Lon Capa homework problems:
+```{r}
+balance_cut2_midpoints <- (quantiles[-11] + quantiles[-1])/2
+balance_cut2_midpoints
+```
+The first point, `r round(balance_cut2_midpoints[1],2)` is the average of the 0th and 10th percentiles (`r quantiles[1]` and `r round(quantiles[2],2)`); the second point is the average of the 10th and 20th percentiles and so on. We create the midpoints so that we can plot the parameters $p_i$ at the midpoints of the intervals. Here is the plot:
+```{r}
+plot(y ~ balance, data=Default, las=1, pch=20, xlab="Balance")
+points(balance_cut2_midpoints, p, col="red", pch=20)
+abline(v=quantiles, col="blue")
+```
+
+The black points are data: points at $y=1$ represent customers who defaulted; points at $y=0$ represent customers who did not default. The vertical blue lines are the 0th, 10th, 20th, ..., 90th and 100th percentiles of `balance`, indicating the boundaries of the 10 intervals. The red points are the maximum likelihood estimate for the fractions of defaulted customers in the intervals. 
+
+Obviously, the credit card company will pay special attention to the customers in the last interval. To get a more detailed information of these customers, we split the last interval into several smaller intervals. The last interval corresponds to the customers between the 90th and 100th percentiles of `balance`. We can split this interval by specifying break points at the 92th, 94th, 96th, 98th and 100th percentiles:
+```{r}
+quan_last <- quantile(Default$balance, probs=c(0.92,0.94,0.96,0.98,1))
+```
+We then combine the percentiles by taking the first 10 elements in `quantiles` and `quan_last`:
+```{r}
+quan_combined <- c(quantiles[1:10], quan_last)
+quan_combined
+```
+The new variable `quan_combined` stores the 0th, 10th, 20th, ..., 90th, 92th, 94th, 96th, 98th and 100th percentiles of `balance`. We can now construct a 14-box model corresponding to the 14 intervals of `balance` by creating a new factor variable:
+```{r}
+balance_cut3 <- cut(Default$balance, breaks=quan_combined, include.lowest=TRUE)
+table(balance_cut3)
+```
+We see that the first 9 intervals are the same as before, but the last 5 intervals have 200 observations each. In this 14-box model, the maximum likelihood estimate for the fractions in the intervals are the group means:
+```{r}
+(p <- tapply(Default$y, balance_cut3, mean))
+```
+This shows how the fraction of defaults changes in the last few intervals. We can make another plot summarizing the result.
+```{r}
+nq <- length(quan_combined)
+# Compute the midpoints of intervals
+balance_cut3_midpoints <- (quan_combined[-1] + quan_combined[-nq])/2
+# Plot
+plot(y ~ balance, data=Default, las=1, pch=20, xlab="Balance")
+points(balance_cut3_midpoints, p, col="red", pch=20)
+abline(v=quan_combined, col="blue")
+```
+
+## Logistic Regression 
+
+The plot above might remind you of the plot on the second page of <a href="http://www.stat.illinois.edu/courses/stat100/Notes/Chap7.pdf" target="_blank">these notes</a> on linear regression. In that plot, a continuous variable is split into 15 intervals and the average of the y variable is computed in each interval. The linear regression fits a straight line to the data in place of the averages in the intervals. In our case, a straight line won't be a good fit to the data. Instead, we want to fit a curve that goes from 0 to 1. In *logistic regression* an S-shaped curve is fitted to the data in place of the averages in the intervals. 
+
+In MLE, we want to maximize the log-likelihood function:
+$$\ln L(\{ p(x) \}) = \sum_{i=1}^N \{ y_i \ln p(x_i) + (1-y_i) \ln [1-p(x_i)] \}$$
+If $x$ is a factor variable with k levels, $\{ p(x) \}$ contains k values corresponding to the k parameters $p_1, p_2,\cdots,p_k$. If $x$ is a continuous variable, $\{ p(x) \}$ in principle has infinite possible values. In this case, we can specify a functional form for $p(x)$ containing a few parameters. In (one-variable) logistic regression, we specify the function having the form 
+$$p(x) = p(x; \beta_0,\beta_1) =  \frac{e^{\beta_0 + \beta_1 x}}{1+e^{\beta_0+\beta_1 x}} 
+= \frac{1}{1+e^{-\beta_0-\beta_1 x}}$$ 
+This is called the *logistic function* or *sigmoid function*. The curve is S-shaped. We can make plots to take a look at the logistic curves. First, we write a function that computes the logistic curve.
+```{r}
+# Define the logistic function
+logit <- function(x,beta0,beta1) {
+  1/(1+exp(-beta0 - beta1*x))
+}
+```
+Next we fix $\beta_1=1$ and see how the curve changes with different values of $\beta_0$:
+```{r}
+# Plot the logistic function with beta1=1 and 3 different values of beta0.
+curve(logit(x,0,1),xlim=c(-10,10), lwd=2,ylab="Logistic Function", las=1)
+curve(logit(x,-2,1), lwd=2, lty=2, col="red", add=TRUE)
+curve(logit(x,2,1), lwd=2, lty=2, col="blue", add=TRUE)
+legend(-10,1,c(expression(paste(beta[0]," = 0")),expression(paste(beta[0]," = -2")),expression(paste(beta[0]," = 2"))), lwd=2, lty=1:3, col=c("black","red","blue"))
+```
+
+We see that changing $\beta_0$ simply shifts the curve horizontally. Now we fix $\beta_0=0$ and see how the curve changes with different values of $\beta_1$:
+```{r}
+# Plot the logistic function with beta0=0 and 3 different +ve values of beta1.
+curve(logit(x,0,1),xlim=c(-10,10), lwd=2,ylab="Logistic Function", las=1)
+curve(logit(x,0,2), lwd=2, lty=2, col="red", add=TRUE)
+curve(logit(x,0,0.5), lwd=2, lty=3, col="blue", add=TRUE)
+legend(-10,0.9,c(expression(paste(beta[1]," = 1")),expression(paste(beta[1]," = 2")),expression(paste(beta[1]," = 0.5"))), lwd=2, lty=1:3, col=c("black","red","blue"))
+# Plot the logistic function with beta0=0 and 3 different -ve values of beta1.
+curve(logit(x,0,-1),xlim=c(-10,10), lwd=2,ylab="Logistic Function", las=1)
+curve(logit(x,0,-2), lwd=2, lty=2, col="red", add=TRUE)
+curve(logit(x,0,-0.5), lwd=2, lty=3, col="blue", add=TRUE)
+legend(5,0.9,c(expression(paste(beta[1]," = -1")),expression(paste(beta[1]," = -2")),expression(paste(beta[1]," = 0.5"))), lwd=2, lty=1:3, col=c("black","red","blue"))
+```
+
+All three curves with positive $\beta_1$ smoothly increase from nearly 0 to nearly 1. For negative values of $\beta_1$, the curves decrease smoothly from nearly 1 to nearly 0. The magnitude $|\beta_1|$ determines how steep the curve is in the transition from one extreme value to the other extreme value.
+
+As you have learned in Stat 200, the logistic function is constructed so that the log odds, $\ln [p/(1-p)]$, is a linear function of $x$. There are two parameters $\beta_0$ and $\beta_1$ in this function. They are determined by maximizing the log-likelihood function
+$$\ln L(\beta_0,\beta_1) = \sum_{i=1}^N \{ y_i \ln p(x_i; \beta_0,\beta_1) + (1-y_i) \ln [1-p(x_i;\beta_0,\beta_1)] \}$$
+The maximization equations can be derived using calculus. However, unlike linear regression, the equations of logistic regression are nonlinear and cannot be solved analytically. They must be solved numerically using a computer. Fortunately, there are robust algorithms for solving these equations numerically.
+
+In R, the function `glm()` stands for *generalized linear model*. Logistic regression belongs to a family of generalized linear models. Therefore, `glm()` can be used to perform a logistic regression. The syntax is similar to `lm()`. We will study the function in more detail in the next notes. Here, we demonstrate how it can be used to obtain the parameters $\beta_0$ and $\beta_1$. 
+
+Let's use the logistic regression to fit the credit card data. We want to fit a logistic curve for the fraction of defaults as a function of `balance`. So the x variable is `Default$balance` and the y variable is the vector `y` we created above indicating whether a customer defaulted (y=1) or not (y=0). To find $\beta_0$ and $\beta_1$, we use the following syntax.
+```{r}
+fit <- glm(y ~ balance, data=Default, family=binomial)
+```
+The `glm()` function can be used to fit a family of generalized linear models. The parameter `family=binomial` tells `glm()` that we want to fit a logistic curve to the data. The coefficients $\beta_0$ and $\beta_1$ can be obtained by typing `fit` or `summary(fit)`.
+```{r}
+fit
+summary(fit)
+```
+The parameter $\beta_0$ = `r round(fit$coefficients[1],2)` is the 'intercept' and $\beta_1$ = `r round(fit$coefficients[2],5)` is the slope of 'Default$balance'. We can add the logistic curve with these values of $\beta_0$ and $\beta_1$ to the plot of `y` vs `balance` above:
+```{r}
+# Re-create the y vs 'balance' plot 
+plot(y ~ balance, data=Default, las=1, pch=20, xlab="Balance")
+points(balance_cut3_midpoints, p, col="red", pch=20)
+abline(v=quan_combined, col="blue")
+# Add a logistic curve with beta0 = fit$coefficients[1], beta1 = fit$coefficients[2]
+curve(logit(x,fit$coefficients[1],fit$coefficients[2]), col="green", add=TRUE)
+```
+
+We see that the logistic model provides a good fitting curve (green line) to the result of the 14-box model, but it does the fit with only two parameters $\beta_0$ and $\beta_1$.
+
+Just like linear regression, we can use the `predict()` function to predict the outcome for a new data set. The syntax is similar to the linear regression. A detailed description of the command can be found by typing `?predict.glm`. For example, the following command predicts the ln(odds) for `balance` = 1500 and 2000:
+```{r}
+predict(fit, newdata=data.frame(balance=c(1500,2000)))
+```
+The `predict()` function returns the values of ln(odds) by default. We can verify the result by plugging in the values in `balance` to the ln(odds) equation:
+```{r}
+(lnodds <- fit$coef[1] + fit$coef[2]*c(1500,2000) )
+```
+We get the same numbers, as expected. If we want the values of probability, we use the option `type="response"` in `predict()`:
+```{r}
+predict(fit, newdata=data.frame(balance=c(1500,2000)), type="response")
+```
+We can verify the result by computing probability = odds/(1+odds):
+```{r}
+odds <- exp(lnodds)
+odds/(1+odds)
+```
+We again get the same numbers, as expected. The result shows that the predicted probability of default for a customer with `balance` = $1500 is about 8%. The predicted probability increases to about 59% when `balance` increases to $2000. 
+
+<br /> <hr /> <br />
+
+## Footnotes
+
+<ol>
+<li id="fn01"><p>Actually, the expression should be multiplied by a factor if we don't care about the order of getting '1' and '0'. If you are familiar with combinatorics, you will know that the factor is ${100 \choose 20} = 100!/(20! 80!)=5.359834\times 10^{20}$. But this factor does not affect the result we are interested in and so is omitted. <a href="#fnref01">&#8617;</a></p></li>
+
+<li id="fn03"><p>We deliberately make mistakes here to demonstrate the usefulness of the help pages. A help page is to an R command as a dictionary is to a word. The ability to look up a help page is essential in learning R, just like the fact that the ability to look up a dictionary is essential in learning a human language. If you find difficulty in understanding the help page, try google. <a href="#fnref03">&#8617;</a></p></li>
+</ol>
+
+<br />
+<br />
+<br />

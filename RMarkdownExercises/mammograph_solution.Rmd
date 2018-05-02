@@ -1,0 +1,246 @@
+---
+title: "Mammographic Mass"
+output: 
+   html_document:
+     toc: yes
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+Breast cancer is common. It is estimated that 1 out of 8 women will develop a breast cancer at some point. A mammogram is an x-ray picture of the breast. Mammograms are used to check for breast cancer in women who have no signs or symptoms of the disease (screening mammograms). If a breast abnormality is found, further mammograms may be necessary to determine if the abnormality is benign or malignant (diagnostic mammograms). 
+
+After mammography, the mammograms are examined by radiologists to look for abnormalities in breast tissue. Sometimes a *mass*, something more substantial and clear than a *lesion*, may be found. Most breast masses are benign, but certain characteristics of mass may suggest a breast cancer. A radiologist will write a report to describe and assess the nature of any abnormality found. BI-RADS (Breast Imaging Reporting and Data System) is a standard system to describe mammogram findings and results. It sorts the results into categories numbered 0 through 6 (see <a href="https://www.cancer.org/cancer/breast-cancer/screening-tests-and-early-detection/mammograms/understanding-your-mammogram-report.html" target="_blank">this page</a> and <a href="http://breast-cancer.ca/bi-rads/" target="_blank">this page</a> for an explanation of the assessment codes). In addition to the BI-RADS assessment codes, several other BI-RADS attributes are also reported: shape (round/oval/lobular/irregular), density (the amount of fat cells present and density of suspicious cells) and margin (characteristics of its edge, circumscribed/microlobulated/obscured/ill-defined/spicularted). A more detailed explanation can be found on <a href="http://breast-cancer.ca/mass-chars/" target="_blank">this page</a>.
+
+Although mammograms are currently the best tool for detecting a breast cancer, mammogram results are not accurate. About 70% of the positive results turned out to be false positives when biopsies were performed, causing major mental and physical discomfort for the patients. Several computer-aided diagnosis (CAD) systems were proposed based on the BI-RADS attributes, hoping to improve the accuracy. 
+
+In this exercise, you are going to construct a logistic regression model to predict if a mammographic mass is benign or malignant based on the BI-RADS attributes (i.e. shape, density, margin) and the patient's age. That is, you are going to ignore the BI-RADS assessment code and rely only on the BI-RADS attributes and the patient's age to predict if a mass is benign or malignant. You will use a version of the mammographic mass data set from the UCI machine learning repository. The csv data file can be downloaded <a href="http://courses.atlas.illinois.edu/fall2017/STAT/STAT200/RProgramming/data/mammographic_masses_cleaned.csv" target="_blank">here</a> and the data description is on <a href="http://courses.atlas.illinois.edu/fall2017/STAT/STAT200/RProgramming/data/MammographicMasses.html" target="_blank">this page</a>. The data were collected at the Institute of Radiology of the
+University Erlangen-Nuremberg between 2003 and 2006. The data set has been cleaned. They contain the patients' ages, BI-RADS assessment codes, the three BI-RADS attributes (shape, margin, density). The last column, named severity, is a binary 0/1 variable indicating whether the mass is benign or malignant. Take some time to explore the data.
+<br />
+```{r, echo=FALSE}
+q_num <- 1L
+```
+
+###`r letters[q_num]`. (1 point) 
+**Use `read.table()` with an appropriate parameter to load the data to R.**
+
+**Note: The data file is not in csv form. In Week 9, some students did not know how to read a non-csv data file properly with R. Many real-world data are not in csv form, so it is very important to know how to read a non-csv file properly. As emphasized in Section 6.2 of Peng's textbook, it is worth reading the help file in `?read.table` in its entirety.**
+
+```{r}
+mammo <- read.table("mammographic_masses_cleaned.txt", header=TRUE)
+```
+
+<br />
+Before building a model, it is useful to make some plots to visualize how the different variables are correlated with the probability of a breast cancer.
+
+There are 72 different values of `age` in the data set, as can be seen from the output of the `table()` applied on the `age` column. We can calculate the fraction of people with malignant mass (`severity`=1) versus the different values of age using the command `f_age <- with(data_frame_name, tapply(severity, age, mean))` (replace `data_frame_name` by the name of the data frame you use when you load the data set). The 72 different values of age are in the names of f_age, which are characters. We can extract the ages by converting the characters to numbers using the command `age <- as.numeric(names(f_age))`.
+
+```{r, echo=FALSE}
+q_num <- q_num+1L
+```
+
+###`r letters[q_num]`. (2 points)      
+**Make a scatter plot showing the fraction of patients with malignant mass versus age in the data set. (1 pt)**
+
+Calculate f_age and extract the unique ages in the data set:
+```{r}
+f_age <- with(mammo, tapply(severity, age, mean))
+age <- as.numeric(names(f_age))
+```
+Plot `f_age` vs `age`:
+```{r}
+plot(f_age ~ age, pch=16, las=1, xlab="Age", ylab="Breast Cancer Fraction")
+```
+
+<hr />
+**Aside**: You should know from this week's notes and from this week's exercises that the values of `f_age` is the same as the predicted probability of getting a breast cancer from a logistic regression model predicting `severity` from `age` treating `age` as a factor variable, as demonstrated below:
+```{r}
+logit.age <- glm(severity ~ as.factor(age), data=mammo, family=binomial)
+plot(logit.age$fitted.values ~ mammo$age, pch=16, las=1, xlab="Age", 
+     ylab="P(Breast Cancer)")
+```
+<hr />
+
+**How does the chance of getting a breast cancer change with a patient's age? (1 pt)**
+
+It is clear from the graph that the chance of getting a breast cancer generally increases with age.
+
+```{r, echo=FALSE}
+q_num <- q_num + 1L
+```
+
+###`r letters[q_num]`. (4 points)
+
+**Calculate the percentage of malignant masses for each of the 4 categories in `shape`. (2 pts)**
+
+```{r}
+(p_shape <- with(mammo, tapply(severity, shape, mean)*100))
+```
+
+**Then make a barplot showing the percentages for the 4 categories. (2 pts)**
+
+```{r}
+barplot(p_shape, las=1, xlab="Shape", ylab="% of Malignant Masses")
+```
+
+<hr />
+**Aside**: If you want, you can add the percentage information on the top of each bar. The following is a customized barplot function I wrote a while ago. I won't explain how it works here. Try to figure it out yourself if you are interested.
+
+```{r}
+my_barplot = function(x,...) {
+  # calculate percentage
+  # round percents to 2 sig. fig. and change it to a character
+  perc_char = paste0(as.character(signif(x,2)),"%")
+  # set ymax on the plot
+  yup = signif(min(100,max(x)+10),1)
+  mp = barplot(x,ylim=c(0,yup),las=1,...)
+  # Add percent value above each bar
+  text(mp,x+3,labels=perc_char )
+}
+```
+It was based on a trick I saw on a stack overflow forum (a good place to 'steal' tricks). Let's see how it looks when applied on this data set:
+```{r}
+my_barplot(p_shape, xlab="Shape", ylab="% of Malignant Masses")
+```
+
+Again, the values of `p_shape` are exactly the same as the probability estimate from a logistic regression model predicting `severity` from `shape`.
+<hr />
+
+```{r, echo=FALSE}
+q_num <- q_num + 1L
+```
+
+###`r letters[q_num]`. (2 points)
+**Do the same calculations for the `margin` variable. That is, calculate the percentages of malignant masses for each category in `margin` and then make a barplot of percentages for the categories.**
+
+```{r}
+(p_margin <- with(mammo, tapply(severity, margin, mean)*100))
+barplot(p_margin, las=1, xlab="Margin", ylab="% of Malignant Masses")
+```
+
+OR use `my_barplot()` to add % on top of each bar:
+```{r}
+my_barplot(p_margin, xlab="Margin", ylab="% of Malignant Masses")
+```
+
+```{r, echo=FALSE}
+q_num <- q_num + 1L
+```
+
+###`r letters[q_num]`. (2 points)
+**Do the same calculations for the `density` variable. That is, calculate the percentages of malignant masses for each category in `density` and then make a barplot of percentages for the categories.**
+
+```{r}
+(p_density <- with(mammo, tapply(severity, density, mean)*100))
+barplot(p_density, las=1, xlab="Density", ylab="% of Malignant Masses")
+```
+
+OR use `my_barplot()` to add % on top of each bar:
+```{r}
+my_barplot(p_density, xlab="Density", ylab="% of Malignant Masses")
+```
+
+```{r, echo=FALSE}
+q_num <- q_num + 1L
+```
+
+###`r letters[q_num]`. (4 points)
+**Build a logistic regression model predicting `severity` from `age`, `shape`, `margin` and `density`. Treat `age` as a continuous variable and the other 3 BI-RADS attributes as factor variables. (2 pts)**
+
+```{r}
+logit.model <- glm(severity ~ age+shape+margin+density, data=mammo, family=binomial)
+summary(logit.model)
+```
+The model can also be constructed using the command `logit.model <- glm(severity ~ .-BIRADS, data=mammo, family=binomial)`. The syntax `severity ~ .-BIRADS` means to fit `severity` using all other variables in the data frame except `BIRADS`.
+
+**How many parameters (intercept and slopes) are returned by the model? Which slopes are *not* significant at the 5% level? (2 pts)**
+
+From the summary output, we see that there are 12 parameters (1 intercept and 11 slopes). The p-values for `densityhigh`, `densityiso` and `densitylow` are greater than 5% and so they are not significant at the 5% level. This means that the probability of a mass being malignant is insensitive to whether the mass density being high, iso or low, keeping all the other variables fixed.
+
+```{r, echo=FALSE}
+q_num <- q_num + 1L
+```
+
+###`r letters[q_num]`. (7 points)
+**Suppose we decide that a mass is malignant if the predicted probability from the logistic regression model above is greater than 0.5.** 
+
+**Calculate the percentage of wrong predictions of this model (3 pts)**
+
+The predicted probability of each case is stored in the vector `logit.model$fitted.values`. We create a variable `pred` to store the prediction of this model for each case by setting `pred`=1 (malignant) if the predicted probability is greater than 0.5 and `pred`=0 (benign) if the probability is equal to or less than 0.5. This can be done by the following one-line command:
+```{r}
+pred <- as.integer(logit.model$fitted.values > 0.5)
+```
+The percentage of wrong prediction, the misclassification rate, can be calculated by 
+```{r}
+(p_misclassify <- mean(pred != mammo$severity))
+```
+So the percentage of wrong predictions is `r signif(p_misclassify*100,3)`%.
+
+**Calculate the probability of Type I and Type II error. (4 pts)**
+
+Probability of Type I error is the percentage of benign masses misclassified as malignant, which can be calculated by the following command.
+```{r}
+(p1 <- mean(pred[mammo$severity==0]))
+```
+You can also get the same answer by a somewhat obscure command `mean(pred[!mammo$severity])`.
+
+Probability of Type II error is the percentage of malignant masses misclassified as benign, which can be calculated by the following command
+```{r}
+(p2 <- mean(pred[mammo$severity==1]==0))
+```
+or a somewhat obscure command `mean(!pred[mammo$severity==1])`.
+
+So the probabilities of Type I and Type II errors are <span class="boxed">`r round(p1,3)`</span> and <span class="boxed">`r round(p2,3)`</span>, respectively.
+
+You can also construct a confusion matrix to calculate the errors:
+```{r}
+(cm <- with(mammo, table(pred,severity)))
+```
+```{r}
+n <- nrow(mammo)
+```
+The prediction error is the percentage of wrong preditions = (`r cm[1,2]` + `r cm[2,1]`)/total number = (`r cm[1,2]` + `r cm[2,1]`)/`r n` = `r p_misclassify`. 
+
+P(Type I error) = `r cm[2,1]`/(`r cm[1,1]` + `r cm[2,1]`) = `r p1`.
+
+P(Type II error) = `r cm[1,2]`/(`r cm[1,2]` + `r cm[2,2]`) = `r p2`.
+
+```{r, echo=FALSE}
+q_num <- q_num + 1L
+```
+
+###`r letters[q_num]`. (3 points)
+**Suppose doctors decide that it is more important to make sure that a breast cancer be detected, so they would want to reduce the Type II error. This can be achieved by setting a lower threshold value for the classification of malignant masses. Instead of 0.5, suppose now we classify a mass to be malignant if the predicted probability from the logistic regression model above is greater than 0.3. Calculate the probability of Type I and Type II error in this case.**
+
+The new prediction and probabilities can be calculated using these commands:
+```{r}
+pred_new <- as.integer(logit.model$fitted.values > 0.3)
+(p1_new <- mean(pred_new[mammo$severity==0]))
+(p2_new <- mean(pred_new[mammo$severity==1]==0))
+```
+The probability of Type I error increases to <span class="boxed">`r round(p1_new,3)`</span> but the probability of Type II error decreases to <span class="boxed">`r round(p2_new,3)`</span>.
+
+<br /><br />
+<hr />
+You should see from your calculation that we can decrease the Type II error rate in the expense of increasing the Type I error rate for a fixed detection system. This is the tradeoff between the Type I/Type II error described in Chapter 1 of your Stat 200 notes. Thus, a better approach is to construct a better detection system to reduce both type of errors. In our example here, we need to build a model better than the logistic regression model considered in this exercise. However, a sophisticated model usually involves many parameters and the model is prone to overfitting &mdash; it gives accurate prediction on the data the model is constructed but doesn't perform very well on new data. A commonly used strategy to prevent overfitting is to split the data randomly into two sets, called the traning set and the test set (or the held-out data). Models are constructed using the training set and then the accuracy is evaluated by applying the models to predict responses for the data on the test set.
+
+<br /><br /><br />

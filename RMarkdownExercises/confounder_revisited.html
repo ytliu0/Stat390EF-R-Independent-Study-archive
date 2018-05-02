@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<meta charset="UTF-8" />
+<meta name="keywords" content="Statistics, Stat 200, Stat 390, R, RMarkdown Exercise" />
+<head>
+<title>R Markdown Exercise: Shoe Number vs Shoe Size Confounder Problem Revisited</title>
+<link rel="stylesheet" href="../styles.css">
+    
+<style>
+ol.question {
+  margin: 0 0 1.5em;
+  padding: 0;
+  counter-reset: item;
+}
+
+ol.question > li {
+  margin: 0;
+  padding: 1em 0em 0 2em;
+  line-height: 1.25;
+  text-indent: -1em;
+  list-style-type: none;
+  counter-increment: item;
+}
+
+ol.question > li:before {
+  display: inline-block;
+  width: 1em;
+  padding-right: 0.5em;
+  font-weight: bold;
+  text-align: right;
+  content: counter(item, lower-alpha) ".";
+}
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+<article>
+<br />
+<h1>R Markdown Exercise: Shoe Number vs Shoe Size Confounder Problem Revisited</h1>
+
+<p>In <a href="https://library1.lon-capa.uiuc.edu/res/uiuc/ytliu/R-Programming/open/03/confounder.problem" target="_blank">Week 3's confounder problem</a>, you analyzed the Stat 100 survey data from Spring 2013. You identified gender as a confounder to the apparent negative correlation between the shoe size and the number of shoes owned by stratification. As you have learned from Stat 200, another way to control for a possible confounding variable is by modelling. In this problem, you are going to compare the results of stratification and modelling. The data you are going to analyze is from Stat 100's survey 1 data in spring 2017. It can be downloaded <a href="Stat100_2017spring_survey01M2.csv">here</a>. <a href="Stat100_2017spring_survey01M2.html" target="_blank">This webpage</a> contains a description of the column variables. Save the csv file to the same directory as your R markdown file. Then load the file to R using the command (replace "filename" by the actual file name)</p>
+
+<p><code>survey &lt;- read.csv("filename")</code></p>
+    
+<ol class="question">
+    
+<li> (2 points) What is the correlation coefficient between the shoe size and number of shoes owned?</li>
+
+<li> (6 points) Fit a linear model predicting the number of shoes from shoe size. What are the intercept and slope? Is the slope statistically significant? Make a scatter plot of shoe number versus shoe size and add the regression line to the plot.</li>
+<br /> 
+<h2>Stratification</h2>
+    
+<p>In Week 3's problem, you subsetted the <code>survey</code> data frame into male and female groups, created two data frames and fitted a linear model separately on the two groups. Here we introduce another method to do the same calculation. First, create two logical vectors <code>male</code> and <code>female</code> using the following commands:</p>
+<pre><code>male &lt;- (survey$gender == "male")
+female &lt;- !male</code></pre>
+<p>The object <code>male</code> is a logical vector. The elements of the vector that correspond to observations with the gender "male" are set to TRUE, whereas those correspond to "female" are set to FALSE. The logical vector <code>female</code> is just the opposite of <code>male</code>. As you have learned before, these logical vectors can be used to subset the data frame. For example, <code>survey[male,]</code> creates a data frame with only the "male" observations. However, we don't need to create a new data frame to fit a regression. The <code>lm()</code> function has an optional parameter <code>subset</code> that can be used to specify a subset of observations to be used in the fitting process. Therefore, we can fit a separate regression line for male and female using the following commands.</p>
+<pre><code>fit_male &lt;- lm(shoeNums ~ shoeSize, data=survey, subset=male)
+fit_female &lt;- lm(shoeNums ~ shoeSize, data=survey, subset=female)</code></pre>
+
+<br />
+
+<li> (2 points) What are the regression equations for the male and female groups? Express the equations in the following form.<br />
+Male: Shoe numbers = (some number) + (some number)×(shoe size)<br />
+Female: Shoe numbers = (some number) + (some number)×(shoe size)<br /><br />
+(2 points) Use <code>xyplot()</code> to plot the shoe number vs shoe size for these two groups on the same graph and show the regression lines.<br />
+(2 points) In which group(s) is the slope statistically significant?
+</li>
+
+<br />
+<h2>Modelling</h2>
+    
+<p>Now you will analyze the problem by fitting linear models predicting shoe numbers from shoe size and gender. Note that <code>gender</code> is a factor variable in the data frame <code>survey</code> with two levels: female and male. To be consistent with the coding in Stat 200 notes, we want to change the reference level to male. This can be done using the command</p>
+<p><code>survey$gender &lt;- relevel(survey$gender, "male")</code></p>
+<br />
+
+<li> (4 points) Fit a linear model predicting the number of shoes from shoe size and gender <b>without an interaction term</b>. Express the result in an equation as follows.<br />
+Shoe numbers = (some number) + (some number)&times;(shoe size) + (some number)&times;(genderfemale)<br />
+Note that 'genderfemale' is a binary variable: genderfemale=0 for males and genderfemale=1 for females.</li>
+
+<li> (5 points) Split the equation in (d) into male and female groups. Show your steps. Express your equations in the same form as part (c). <b>Note: Do the splitting the same way as you do in Stat 200 (also in this week's notes). You don't need to use any R commands.</b><br />
+(1 point) Are the equations exactly the same as in part (c)?</li>
+    
+<li> (5 points) Fit a linear model predicting the number of shoes from shoe size and gender <b>with an interaction term</b>. Express the result in an equation as follows.<br />
+Shoe numbers = (some number) + (some number)&times;(shoe size) + (some number)&times;(genderfemale) + (some number)&times;(genderfemale)&times;(shoe size)</li>
+    
+<li> (5 points) Split the equation in (f) into male and female groups. Show your steps. Write the equations in the same form as in part (c). <b>Note: Do the splitting the same way as you do in Stat 200 (also in this week's notes). You don't need to use any R commands.</b><br />
+(1 point) Are the equations exactly the same as in part (c)?</li>
+</ol>
+    
+<h2>Guidelines</h2>
+    
+<ul>
+<li>Write down your name in the R markdown file.</li>    
+<li>Generate an html file from the markdown file by knitr.</li>
+<li>You should download the survey data to your computer and then load it to R, instead of loading it directly from the website. This is for the purpose of reproducibility: the file at the remote website may be changed or disappear later and your R markdown file cannot be run. By saving it to your computer in the same location of the markdown file, you can be sure that your markdown result is reproducible.</li>
+<li>Show all codes and output. If your code chunk contains more than a few lines, include a brief explanation of what you are doing unless you write your code in a self-explanatory style.</li>
+<li>Label and state the answers to each question clearly. Don't just show the code and say that the information is in the output.</li>
+</ul>
+
+<br />
+    
+<h2>Solution</h2>
+<ul>
+<p><li><a href="confounder_revisited_solution.Rmd">RMarkdown file</a> (Download the file and save it in the same folder as the data file you downloaded above. Open it with R Studio and then click "Knit".)</li></p>
+<p><li><a href="confounder_revisited_solution.html">Knitted html file</a></li></p>
+</ul>
+</article>
+</div>
+<br/><br />
+</body>
+</html>

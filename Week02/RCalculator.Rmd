@@ -1,0 +1,199 @@
+---
+title: "Using R as a Calculator"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+fontsize: 18pt
+---
+<!-- Written by Yuk Tung Liu -->
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require files - harmonic_mean_solution.html, geometric_mean_solution.html
+
+You should have completed lessons 1 and 3 of R programming in swirl before reading this article.
+
+One thing you notice when opening an R console is that you can use it as a calculator. In addition to the basic arithmetic operations addition (+), subtraction (-), multiplication (*) and division (/), R has built-in standard mathematical functions. The following is a short list of standard mathematical functions.
+
+Function                    Name                                                  Example 
+---------------------- -----------------------------------------------  ----------------------------------
+abs                      absolute value                                        abs(3-6)   = 3  
+sqrt                     square root                                          sqrt(16)  = 4 
+^                       exponentiation                                      3^10 = $3^{10}$  = 59049
+exp                      exponential function                                  exp(1.7) = $e^{1.7}$  = 5.473947 
+log                      log function (base e)                              log(10)  = 2.302585
+log10                    base 10 log ($\log_{10}$)                             log10(100)  = 2
+pi                      mathematical constant $\pi$                         pi  = 3.141593
+sin, cos, tan           trigonometric functions (argument in radians)      sin(pi/2)  = 1
+asin, acos, atan        inverse trigonometric functions                     acos(1)  = 0
+sinh, cosh, tanh        hyperbolic functions                                cosh(0) = 1
+asinh, acosh, atanh     inverse hyperbolic functions                        atanh(tanh(12)) = 12
+round(x,n)               round x to n decimal places                        round(pi,2)  = 3.14
+floor                          rounds down                                   floor(14.7)  = 14
+ceiling                       rounds up                                      ceiling(14.7)  = 15
+
+There are also useful statistical functions that we will talk about later. The ability of using R as a calculator allows us to analyze data interactively, as we will demonstrate later in the course. One distinct advantage of R over a conventional scientific calculator is its ability to perform vectorized operations, as demonstrated below.
+
+## Vectorized Operations
+
+As explained in lesson 3 of R programming in swirl, we can generate a sequential list of integer vector using `:`. For example, `1:100` generates a vector of length 100 with values 1, 2, 3, ... 100. Here "vector" simply means an array of numbers/characters/objects of the same class. We can also store the integer vector to a variable using the assignment operator `<-`: 
+```{r}
+x <- 1:100
+``` 
+Many other programming languages use `=` as an assignment operator. In R, you can use `=` as an assignment operator too. For example, `x = 1:100` is equivalent to `x <- 1:100` in this context. However, as you will learn later that the `=` operator in R has other uses. Assignments can also be made in the other direction, using the obvious change in the assignment operator. For example, `1:100 -> x` is equivalent to `x <- 1:100`. 
+
+Suppose now I type 
+```{r}
+x <- 2*x - 1
+```
+What happens is that the original integer vector (1, 2, 3, ..., 100) is replaced by (1, 3, 5, 7, ..., 199) as each element is multiplied by 2 and then subtracted by 1. You can confirm this by typing `x` to auto print its content:
+```{r}
+x
+```
+What happens if I type the following? 
+```{r}
+x <- c(1,-1)*x
+```
+As explained in lesson 1 of R programming in swirl, since `c(1,-1)` is a vector of length 2 and `x` is a vector of length 100, R "recycles" the `c(1,-1)` vector 50 times to carry out the multiplication. The result is that the first element of the original vector is multiplied by 1, the second element is multiplied by -1, the third is multiplied by 1 and so on. So the content of x becomes: 
+```{r}
+x
+```
+Now let's do the following: 
+```{r}
+x <- sum(1/x)
+```
+`sum()` is a built-in R function that returns the sum of a vector. Thus, `x` is now just a number (numeric vector of length = 1): 
+```{r}
+x
+```
+It is the result of the sum
+$$ 1-\frac{1}{3}+\frac{1}{5}-\frac{1}{7}+\cdots + \frac{1}{199}=\sum_{n=1}^{100} \frac{(-1)^{n-1}}{2n-1} $$
+The same calculation can be compressed into a one-line expression: 
+```{r}
+sum( c(1,-1)/(2*(1:100)-1) )
+```
+or this one-line expression
+```{r}
+sum(c(1,-1)/seq(1,199,2))
+```
+The `seq()` function is introduced in lesson 3 of the R programming in swirl. If you forget how it is used, type `?seq` in the R console to pull up a help page. 
+
+We see that a lengthy calculation can be carried out by just a one-line expression. If you are not impressed yet, try this: 
+```{r}
+s <- 4*sum( c(1,-1)/(2*(1:1e6)-1) )
+```
+By typing the above single line expression, we have just told R to carry out a sum over one million terms and then multiply by 4! The number `1e6` means `1000000` (1 followed by 6 zeros, or $10^6$), which is one million. The value stored in the variable `s` is equal to 
+$$4\left( 1-\frac{1}{3}+\frac{1}{5}-\frac{1}{7}+\cdots + \frac{1}{1999999}\right) = 4\sum_{n=1}^{10^6} \frac{(-1)^{n-1}}{2n-1} $$
+The value is 
+```{r}
+s
+```
+If this number seems familiar to you, it's because it's close to the number $\pi= 3.141592653589...$. In R, the variable `pi` stores this number: 
+```{r}
+pi
+```
+By default, R displays floating-point numbers to 7 significant figures even though R uses 8 bytes to store a floating-point number, corresponding to about 16 significant figures. You can change this default by the command `options(digits=n)`, where `n` is the number of significant figures you want R to display. For example, 
+```{r}
+options(digits=15)
+```
+sets the default printout to 15 significant figures: 
+```{r}
+c(s,pi)
+```
+So we see that `s` and `pi` only agree in the first 6 digits. In fact, it is well-known by mathematicians that the infinite series  
+$$ 4 \sum_{n=1}^{\infty} \frac{(-1)^{n-1}}{2n-1} $$
+converges to $\pi$ but the convergence is very slow. 
+
+Now you can tell your friends that you have just learned a new skill to quickly compute the sum of a long series. You show your friends that you can sum the series of two million terms 
+$$ 1+\frac{1}{2^2}+\frac{1}{3^2}+\cdots + \frac{1}{(2\times 10^6)^2}$$
+by just typing
+```{r}
+sum(1/(1:2e6)^2)
+```
+Be aware, though, that if one of your friends is knowledgeable in math, he/she will laugh and point out that 
+$$ \sum_{n=1}^{\infty} \frac{1}{n^2}=\frac{\pi^2}{6} \ ,$$
+which was first figured out by the famous mathematician Leonhard Euler in 1735. You will be amazed and type  
+```{r}
+pi^2/6
+```
+to confirm that your sum is indeed close to this number. 
+
+<!-- 
+<blockquote>
+Exercise 1: The *harmonic mean* of positive real numbers $x_1, x_2, \cdots, x_n$ is defined as 
+$$H = \frac{n}{\frac{1}{x_1}+\frac{1}{x_2}+\cdots + \frac{1}{x_n}}$$ 
+Write an R expression to calculate the harmonic mean of the numbers 1, 2, 3, &middot;&middot;&middot;, 1000. 
+
+<a href="harmonic_mean_solution.html" target="_blank">See solution</a>.
+</blockquote>
+-->
+
+The `sum()` function returns the sum of a vector. The `prod()` function returns the product of a vector. For example, the vector `3:5` is an integer vector consisting of 3, 4, and 5, whereas `prod(3:5)` returns $3\times 4\times 5$ or 60:
+```{r}
+prod(3:5)
+```
+Like the `sum()` function, `prod()` can be useful in some problems. Let's consider the birthday problem encountered in Stat 100 to further illustrate its use. 
+
+### The Birthday  Problem
+
+What is the probability that at least two people share the same birthday in a set of $n$ randomly chosen people? This is the famous birthday problem. If you forget how to solve it, look up your Stat 100 note or visit <a href="http://mathforum.org/dr.math/faq/faq.birthdayprob.html" target="_blank">this website</a>. The answer is given by the expression (ignore the leap date)
+$$P = 1 - \frac{365}{365}\cdot \frac{364}{365}\cdot \frac{363}{365}\cdots \frac{366-n}{365}$$
+In a class of 100 students, the probability that at least two students share the same birthday is
+$$
+  P = 1 - \frac{365}{365}\cdot \frac{364}{365}\cdot \frac{363}{365}\cdots \frac{266}{365} 
+$$
+What is the numerical value of this $P$? Your Stat 100 instructor told you that it's very close to 1. Do you believe it? Have you checked the calculation? When I first read the birthday problem from a book, I was suspicious of the claim. I used a calculator to carry out the calculation and confirmed the result. It took me a few minutes to finish the calculation. With R, it can be done by the following one-line expression: 
+```{r}
+1-prod((365:266)/365)
+```
+We see that it is indeed very close to 1. Let's break down the expression to see why it gives the desired result. `365:266` is an integer vector containing 365, 364, 363, ..., 266. `(365:266)/365` divides each element in `365:266` by 365, so it's a vector containing 
+$$ \frac{365}{365}, \ \ \ \ \  \frac{364}{365}, \ \ \ \ \  \frac{363}{365}, \ \ \ \ \  \cdots \ \ \ \ \  \frac{266}{365}$$ 
+`prod((365:266)/365)` returns the product of the vector in `(365:266)/365`. 
+That is, 
+$$ {\rm prod((365:266)/365)} = \frac{365}{365}\cdot \frac{364}{365}\cdot \frac{363}{365}\cdots \frac{266}{365}$$ 
+which is the probability that all of the 100 students have different birthdays. This is a very small number: 
+```{r}
+prod((365:266)/365)
+```
+Finally, `1-prod((365:266)/365)` is the probability that at least two students share the same birthday. Since `prod((365:266)/365)` is very small ($\approx 3 \times 10^{-7}$), `1-prod((365:266)/365)` $\approx 1$ as claimed.
+
+Interestingly, R has a built-in function for the birthday problem. It is called the probability of coincidences. The function `pbirthday(n)` returns the probability that at least 2 people share the same birthday among $n$ randomly chosen people. For $n=100$, the function gives 
+```{r}
+pbirthday(100)
+```
+exactly the same value calculated above. `pbirthday()` has other optional parameters you can specify for generalized birthday problems. There is also an associated function `qbirthday()`. Type `?pbirthday` for more information. 
+
+<!--
+<blockquote>
+Exercise 2: The *geometric mean* of positive numbers $x_1, x_2,\cdots, x_n$ is defined as 
+$$G = (x_1 x_2 \cdots x_n)^{1/n}$$
+Write an R expression to calculate the geometric mean of 1, 2, 3, &middot; &middot; &middot;, 100. Can you use the same expression to calculate the geometric mean of 1, 2, 3, &middot; &middot; &middot;, 1000? If not, how would you calculate it?
+
+<a href="geometric_mean_solution.html" target="_blank">See solution</a>.
+</blockquote>
+-->
+
+<br />
+<br />
+<br />

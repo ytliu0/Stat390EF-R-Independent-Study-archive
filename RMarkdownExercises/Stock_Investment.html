@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<meta charset="UTF-8" />
+<meta name="keywords" content="Statistics, Stat 200, Stat 390, R, RMarkdown Exercise" />
+<head>
+<title>R Markdown Exercise: Investment in Two Stocks</title>
+<link rel="stylesheet" href="../styles.css">
+    
+<style>
+ol.question {
+  margin: 0 0 1.5em;
+  padding: 0;
+  counter-reset: item;
+}
+
+ol.question > li {
+  margin: 0;
+  padding: 1em 0em 0 2em;
+  line-height: 1.25;
+  text-indent: -1em;
+  list-style-type: none;
+  counter-increment: item;
+}
+
+ol.question > li:before {
+  display: inline-block;
+  width: 1em;
+  padding-right: 0.5em;
+  font-weight: bold;
+  text-align: right;
+  content: counter(item, lower-alpha) ".";
+}
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+<article>
+<br />
+<h1>R Markdown Exercise: Investment in Two Stocks</h1>
+    
+<p>In this R markdown exercise, you are going to generalize the Monte Carlo simulation in this week's notes to analyze the investment of two stocks.</p>
+
+<p><b>We strongly recommand you to use <a href="Stock_Investment_template.Rmd" target="_blank">this RMarkdown template</a> for this exercise</b>. Download the <a target="_blank" href="Stock_Investment_template.Rmd">template</a> (right click the link and choose Save Link As...) and fill in the calculations as indicated in the file.</p>
+
+<p>Conventional wisdom says that it's unwise to put all of your investment money into one stock. Instead, it's better to split the money into two or more different financial investments. In this problem, we consider investment of two stocks. The following shows the the annual returns of two hypothetical stocks, as well as the inflation rates, in the 35 years from 1981 to 2015. The first stock is the same as the one used in the notes. The provided RMarkdown template already has the code written for you.</p>
+
+<p><code>historical_stock1_return &lt;- c(-0.0470239, 0.2041906, 0.2233716, 0.06146142, 0.3123515, 0.1849458, 0.05812722, 0.1653719, 0.3147518, -0.03064452, 0.3023484, 0.07493728, 0.09967052, 0.01325921, 0.371952, 0.2268097, 0.3310365, 0.2833795, 0.2088535, -0.09031819, -0.1184976, -0.2196605, 0.283558, 0.1074278, 0.04834477, 0.1561256, 0.05484735, -0.3655234, 0.2593523, 0.1482109, 0.02098375, 0.1589059, 0.3214509, 0.1352442, 0.01359949)</code></p>
+<p><code>historical_stock2_return &lt;- c(-0.3516, 0.3503, -0.1841, 0.1949, -0.2446, 0.8409, 1.0741, -0.0417, -0.1242, 0.2199, 0.311, 0.0599, -0.5105, 0.3333, -0.1827, -0.3451, -0.3713, 2.119, 1.5115, -0.7106, 0.4723, -0.3457, 0.4913, 2.0136, 1.2326, 0.1801, 1.3347, -0.5691, 1.469, 0.5307, 0.2556, 0.314, 0.0542, 0.3772, -0.0464)</code></p>
+<p><code>historical_inflation &lt;- c(0.1031553, 0.06160616, 0.03212435, 0.04317269, 0.03561116, 0.01858736, 0.03740876, 0.04009088, 0.04827003, 0.05397956, 0.04234964, 0.0302882, 0.02951657, 0.02607442, 0.0280542, 0.02931204, 0.0233769, 0.01552279, 0.02188027, 0.03376857, 0.02826171, 0.01586032, 0.02270095, 0.02677237, 0.03392747, 0.03225944, 0.02852672, 0.038391, -0.003555463, 0.01640043, 0.03156842, 0.02069337, 0.01464833, 0.01622223, 0.001186271)</code></p>
+
+<ol class="question">
+    
+<li> (2 points) Convert the historical returns of the two stocks to the inflation-adjusted returns using the same formula as in the notes. Save the adjusted returns of the two stocks to two numeric vectors, each of length 35.</li>
+    
+<li>(3 points) Calculate the means and sample standard deviations of the inflation-adjusted annual returns of the two stocks. Make a histogram or density plot for each stock's adjusted returns. Which stock, on average, has a higher adjusted annual return rate? Which stock will be expected to have larger fluctuations from year to year? (In the classical portfolio theory the risk of a stock is quantified by the standard deviation.)</li>
+    
+<li>(5 points) Write a function that takes three arguments P1, P2 and n. Here P1 is the initial amount of money invested in stock 1, P2 is the initial amount of money invested in stock 2, and n is the number of years. Your function should return the inflation-adjusted total amount of money, A<sup>*</sup>, after n years.  The formula for A<sup>*</sup> is given by</li>
+<p style="padding-left:50px;">A<sup>*</sup> = P1 (1+r1<sup>*</sup><sub>1</sub>)(1+r1<sup>*</sup><sub>2</sub>)&middot;&middot;&middot;(1+r1<sup>*</sup><sub>n</sub>) + P2 (1+r2<sup>*</sup><sub>1</sub>)(1+r2<sup>*</sup><sub>2</sub>)&middot;&middot;&middot;(1+r2<sup>*</sup><sub>n</sub>)</p>
+<p style="padding-left:30px;">Here r1<sup>*</sup><sub>1</sub>, r1<sup>*</sup><sub>2</sub>, ..., r1<sup>*</sup><sub>n</sub> are the inflation-adjusted annual returns for stock 1; r2<sup>*</sup><sub>1</sub>, r2<sup>*</sup><sub>2</sub>, ..., r2<sup>*</sup><sub>n</sub> are the inflation-adjusted annual returns for stock 2.</p> 
+<p style="padding-left:30px;">In this part, you will assume that the inflation-adjusted annual returns of the two stocks are independent of each other. So in your function, assign r1<sup>*</sup><sub>1</sub>, r1<sup>*</sup><sub>2</sub>, ..., r1<sup>*</sup><sub>n</sub> by taking n random samples of the historical r1<sup>*</sup> you calculated in (a) with replacement; assign r2<sup>*</sup><sub>1</sub>, r2<sup>*</sup><sub>2</sub>, ..., r2<sup>*</sup><sub>n</sub> by taking n random samples of the historical r2<sup>*</sup> you calculated in (a) with replacement. Your function will be a generalization of the <code>stock4()</code> function in the notes.</p>
+    
+<li>(4 points) Suppose you invest P1 = $20,000 in stock 1 and P2 = $10,000 in stock 2. Perform a Monte Carlo simulation by calling the function 100,000 times as in the notes to obtain a distribution for the inflation-adjusted amount A<sup>*</sup> after 10 years (<code>n</code> = 10). Use <code>summary()</code> to look at the summary statistics of A<sup>*</sup>.</li>
+<p style="padding-left:30px;">Note: Your calculation must be <b>reproducible</b>, meaning that every time you hit <code>knit</code> you should see the same numbers. Since the calculations involve random numbers, you must set a seed number in order for your result to be reproducible. Use <code>set.seed(your UIN)</code> to set the seed before running any code that involves random number generation. Any positive integer can be used in the <code>set.seed()</code> function. Using your UIN is just a convenient way to make sure that each student will use a different seed number.</p>
+    
+<li>(3 points) Are the mean and median of A<sup>*</sup> close to each other? If not, which one (mean or median) is a better number representing the typical amount of money you'd get from the investment? Explain your answer.</li>
+    
+<li>(3 points) Make a histogram or density plot for A<sup>*</sup>. You will need to tweak the plot to make them look reasonably good. Set the 'xlim' parameter to plot the range between 0 and 500,000. Adjust the 'breaks' parameter (if you plot histograms) or the 'n' parameter (if you make density plots) so that the sampling points in the plotting range are sufficiently large to make a smooth plot.</li>
+    
+<li>(4 points) What is the probability of getting A<sup>*</sup> &gt; $300,000 (more than 10 times the purchasing power of the initial $30,000)? What is the probability of getting A<sup>*</sup> &lt; $30,000 (the investment fails to keep up with inflation)?</li>
+    
+<li>(9 points)</li>
+    <ol type="i">
+        <li>Write a new version of the function in (c), where you change the way r1<sup>*</sup> and r2<sup>*</sup> are assigned. Instead of taking random samples independently of each other, you first choose n random integers with replacement between 1 and 35 and store them to an integer vector i of length n. Then set <code>r1star</code> and <code>r2star</code> to the <code>i</code>th element of the inflation-adjusted returns you computed in part (a). This new model takes into account any possible correlation between the inflation-adjusted annual returns of the two stocks.</li>
+        <li>Rerun the Monte Carlo simulation with this new function. Don't forget to use <code>set.seed(your UIN)</code> for reproducibility.</li>
+        <li>Compare the results of the two models by plotting the density curves of A<sup>*</sup> for both models in a single graph. Indicate the model represented by each curve either in a legend (as in the notes) or a figure caption.</li>
+        <li>Compare the median of A<sup>*</sup> for both models. Also compare the probabilities P(A<sup>*</sup> &lt; $30,000) and P(A<sup>*</sup> &gt; $300,000) for both models.</li>
+    </ol>
+</ol>
+    
+<h2>Guidelines</h2>
+    
+<ul>
+<li>Write down your name in the R markdown file.</li>    
+<li>Generate an html file from the markdown file by knitr.</li>
+<li>Show all codes and output. If your code chunk contains more than a few lines, include a brief explanation of what you are doing unless you write your code in a self-explanatory style.</li>
+<li>Label and state the answers to each question clearly. Don't just show the code and say that the information is in the output.</li>
+</ul>
+
+<br />
+    
+<h2>Solution</h2>
+<ul>
+<p><li><a href="Stock_Investment_Solution.Rmd">RMarkdown file</a> (Download the file. Open it with R Studio and then click "Knit".)</li></p>
+<p><li><a href="Stock_Investment_Solution.html">Knitted html file</a></li></p>
+</ul>
+</article>
+</div>
+<br/><br />
+</body>
+</html>

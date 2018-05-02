@@ -1,0 +1,541 @@
+---
+title: "Statistical Tests"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file - none
+
+We will introduce several commands in R that perform statistical tests. It should be pointed out that there are many options in these commands that can be used to do more sophisticated analyses, but we will only cover topics that have been introduced in Stat 100 and Stat 200.  
+
+## $\chi^2$ Goodness-Of-Fit Test
+
+We will use Examples 2 and 3 in <a href="http://www.stat.illinois.edu/courses/stat100/Notes/Chap22a.pdf" target="_blank">Chapter 22, part 1</a> of the Stat 100 notes to demonstrate the tests. (See <a href="https://youtu.be/JdvTYjFUXZY" target="_blank">this video</a> for a review on the $\chi^2$ goodness-of-fit Test)
+
+**Do people's astrological signs affect their success?** Fortune magazine published the zodiac signs of the 264 top executives of Fortune-400 Companies. Here are the data of the observed frequencies. 
+```{r}
+Observed <- c(23, 25, 30, 24, 20, 19, 23, 20, 20, 19, 21, 20)
+names(Observed) <- c("Capricorn", "Aquaries", "Pisces", "Aries", "Taurus", 
+                     "Gemini", "Cancer", "Leo", "Virgo", "Libra", 
+                     "Scorpio", "Sagittarius")
+Observed
+```
+To answer the question, we perform a $\chi^2$ goodness-of-fit test. The null hypothesis is that people's astrological signs do not affect their success. The differences in the observed frequencies are simply due to chance variation. The command `chisq.test()` can be used to do the test. The syntax is 
+```{r, eval=FALSE}
+chisq.test(x, p = rep(1/length(x), length(x)))
+```
+Here `x` is a numeric vector storing the observed frequencies. The parameter `p` is a numeric vector of the same length as `x`, giving the expected probabilities. The default value of `p` are set to `rep(1/length(x), length(x))`, which simply means that the expected probability is the same for each element in `x`. In our case, `x` is `Observed` and we expect that each zodiac sign is equally likely under the null hypothesis, so we can use the default value of `p`. 
+```{r}
+chisq.test(Observed)
+```
+The test gives $\chi^2$ = 5.1818 with df = 11, the same as the values calculated in the Stat 100 notes. The large p-value of 0.922 indicates that the null is not rejected. So the conclusion is that there is no evidence to indicate that people's astrological signs affect their success.
+
+**Random Sample?** A town has 50% Christian, 30% Jewish, and 20% Muslim children. 100 children were chosen to participate in a community project. Of the 100, 50 were Christians, 40 were Jewish and 10 were Muslim. Could this have been a random sample?
+
+First, we enter the data.
+```{r}
+Observed <- c(50, 40, 10)
+names(Observed) <- c("Christian", "Jewish", "Muslim")
+Observed
+```
+Unlike the previous example, the probabilities are not expected to be equal but should be 0.5 for Christians, 0.3 for Jewish and 0.2 for Muslim. The $\chi^2$ goodness-of-fit test can be done using the following command.
+```{r}
+chisq.test(Observed, p=c(0.5, 0.3, 0.2))
+```
+The test returns $\chi^2$ = 8.3333 with df = 2, and the corresponding p-value is 0.0155. These numbers are again consistent with the calculations in the Stat 100 notes. Since the p-value is less than 0.05, the null is rejected at the significant level $\alpha$=0.05 and the conclusion is that the children were not chosen randomly from the town. 
+
+## $\chi^2$ Independence Test
+
+In Spring 2014, 858 Stat 100 students responded to a survey. The csv file of the survey data has been uploaded <a href="Stat100_2014spring_survey02.csv" target="_blank">here</a>. You can download it to your work space and then load it to R using the command
+```{r}
+survey <- read.csv("Stat100_2014spring_survey02.csv")
+```
+The description of the data can be found on <a href="Stat100_2014spring_survey02.html" target="_blank">this webpage</a>.
+
+In the survey data, the column named 'homeTown' records whether the students are from a small town, a medium sized city (like Champaign Urbana), a big city suburb (like Chicago suburb) or from a big city (like Chicago but not the suburbs). Suppose we want to know if there is any difference in students' home towns among different ethnic groups. We first create a contingency table to look at the data. The contingency table can be generated easily using the `table()` function:
+```{r, echo=FALSE}
+survey <- read.csv("Stat100_2014spring_survey02.csv")
+```
+```{r}
+tbl <- with(survey, table(homeTown, ethnicity))
+tbl
+```
+To visualize the data, we can make bar plots:
+```{r, fig.height=7}
+plot(homeTown ~ ethnicity, data=survey)
+```
+
+It appears from the plots that there are differences among the groups. For example, the majority of Black and Hispanic students live in big cities, but the majority of White students live in big city suburbs.
+
+We can perform a $\chi^2$ independence test to test if the observed differences are statistically significant. If you forget what a $\chi^2$ independence test is, read <a href="http://www.stat.illinois.edu/courses/stat100/Notes/Chap22b.pdf" target="_blank">Chapter 22, part 2</a> of Stat 100 notes or watch <a href="https://youtu.be/apgxQSwwQG4" target="_blank">this video</a>. The null hypothesis is that a student's home town is independent of his/her ethnicity. The $\chi^2$ independence test can be done using the `chisq.test()` function. The simplest syntax is 
+```{r, eval=FALSE}
+chisq.test(x)
+```
+Unlike the $\chi^2$ goodness-of-fit test, `x` here is a matrix of the observed frequencies. Since we already have a contingency table `tbl`, which is a matrix, we can simply apply the function on `tbl`: 
+```{r}
+chisq.test(tbl)
+```
+```{r, echo=FALSE}
+ct <- chisq.test(tbl)
+chi2 <- unname(round(ct$statistic,2))
+df <- unname(ct$parameter)
+pval <- unname(ct$p.value)
+if (pval < 2.2e-16) {
+  pval <- "< 2.2e-16"
+}
+```
+The test indicates that $\chi^2$ = `r chi2` with df = `r df` and the p-value is `r pval`. This means that the null is rejected, or there is significant difference between at least one ethnic group. 
+
+Another syntax of `chisq.test()` is 
+```{r,eval=FALSE}
+chisq.test(x,y)
+```
+where both x and y are vectors. For example, we can perform the same $\chi^2$ independence test for the home town example using the command 
+```{r}
+with(survey, chisq.test(homeTown, ethnicity))
+```
+We see that the result is exactly the same as before. A contingency table is not necessary in this syntax. 
+
+<hr />
+
+Like all other commands you will encounter in this note, you can use `chisq.test()` as a black box without knowing what exactly it is doing behind the scene. However, we encourage you to go through at least one calculation to verify that the result outputted by `chisq.test()` is exactly the same as what you get from the calculation you learned in Stat 100. Here we will demonstrate that. As a bonus, you get to learn a new R command as we go along. 
+
+Recall that in the $\chi^2$ test, the value of $\chi^2$ is calculated by the formula 
+$$\chi^2 = \sum \frac{(Obs - Exp)^2}{Exp} \ \ \ \ \ (1)$$ 
+where $Obs$ is the observed frequency and $Exp$ is the expected frequency. The sum goes over each cell in the contingency table. The values of $Obs$ are given by the `tbl` variable we created above. The expected frequency at a particular cell is given by the formula 
+$$Exp = \frac{({\rm row\ total})\times ({\rm column\ total})}{\rm overall\ total}$$
+The row total in a given row is the sum of the observed frequencies in that row. The column total in a given column is the sum of the observed frequencies in that column. These can be computed by the `rowSums()` and `colSums()` functions you learned in Week 7 (Section 18.8 of Peng's textbook):
+```{r}
+row_tot <- rowSums(tbl)
+col_tot <- colSums(tbl)
+row_tot
+col_tot
+```
+The overall total is the same as the total number of observations, which is `r nrow(survey)`. 
+```{r}
+overall_tot <- nrow(survey)
+```
+The next step is to create a 4&times;5 matrix to store the expected frequencies in all cells. We want the (i,j) element of the matrix to store the product of the ith element of `row_tot` and the jth element of `col_tot` divided by `overall_tot`. The operation involves what mathematicians called the "outer product" of two vectors. We can of course use two nested for-loops to implement the calculation, but since this is a well-known operation you will think that there should be a built-in command in R for this type of operations. A quick search over the internet confirms our guess. The function `%o%` is exactly what we want to carry out the outer product (presumably `o` stands for "outer product"). It works like this. Suppose `x` is a vector of length `n` and `y` is a vector of length `m`. Then `x %o% y` returns an n&times;m matrix with the (i,j) element equal to the product of the ith element of `x` and the jth element of `y`. So the expected frequencies can be computed as follows. 
+```{r}
+Exp <- row_tot %o% col_tot / overall_tot
+Exp
+```
+With the observed and expected frequencies, we can now compute $\chi^2$ using equation (1):
+```{r}
+chisq <- sum( (tbl-Exp)^2/Exp )
+chisq
+```
+```{r, echo=FALSE}
+chisqc <- round(chisq,2)
+```
+The df is given by (number of rows -1)&times;(number of columns - 1), which is 3&times;4 or 12. So we have $\chi^2$ = `r chisqc` with df = 12, the same as the values returned by `chisq.test()`. The p-value can be calculated using the `pchisq()` function introduced in Week 3.
+```{r}
+pchisq(chisq,12,lower.tail=FALSE)
+```
+The result is again consistent with the output of `chisq.test()`. 
+
+One nice thing about our calculation is that we can also get an idea of how the groups differ by computing the fractional difference of the observed and expected frequencies:
+```{r}
+(tbl-Exp)/Exp
+```
+We see that there are unexpectedly large proportions of Black and Hispanic students living in big cities, unexpectedly small proportion of White students living in big cities, unexpectedly small proportions of Asian and Black students living in small towns.
+
+<hr />
+
+## Two-Sample t-Test
+
+In the Spring 2014 Stat 100 survey, one question was:
+<blockquote>
+On a scale of 0&ndash;10 rate where you fall: "0" means you strongly favor gay marriage... and "10" means you strongly oppose gay marriage.
+</blockquote>   
+We want to know if there is any difference between males and females towards gay marriage. 
+
+The response on the gay marriage question is in the column labelled 'gayMarriage' and the gender information is in the column 'gender'. We plot histograms for males and females to see if there is any obvious difference: 
+```{r, fig.height=7}
+library(lattice)
+histogram(~gayMarriage | gender, data=survey, layout=c(1,2))
+```
+
+Here we use R's lattice graphics function `histogram()` to create conditional plots. The `layout=c(1,2)` option specifies the histograms should be plotted on a single column with two rows. 
+
+Another useful plots are box plots, which can be generated by the `boxplot()` or simply the  `plot()` command 
+```{r}
+plot(gayMarriage ~ gender, data=survey,las=1)
+```
+
+When the x-axis variable is a factor, the `plot()` command generates a box plot for each category[^1]. Note that the thick lines are medians. It is useful to indicate the means on the plots as well since the t-test compares the group means not medians. We can use `tapply()` to calculate the group means and `points()` to add them to the box plots:
+```{r}
+means <- tapply(survey$gayMarriage, survey$gender, mean)
+plot(gayMarriage ~ gender, data=survey,las=1)
+points(means, col="red", pch="+")
+```
+
+The red +'s denote the means in the box plots. It appears from the histograms and box plots that females have lower values in the 'gayMarriage' variable, suggesting that females tend to favor gay marriage compared to males. 
+
+[^1]: To make a box plot on 'gayMarriage' without splitting it into categories, use `boxplot(survey$gayMarriage)`.
+
+We can perform a t-test to see if the group means for 'gayMarriage' show a significant difference between males and females. The command `t.test()` can be used for this analysis. In particular, if `x` is a binary factor variable and `y` is a numeric/integer vector,
+```{r, eval=FALSE}
+t.test(y ~ x, data=data_name, alternative=c("two-sided","less","greater"), 
+       var.equal=TRUE)
+```
+compares the means of `y` in the two groups specified by the factor variable `x`. The optional parameter `alternative` specifies what alternative hypothesis is. The default is "two-sided". In this case, the hypotheses are 
+<blockquote>
+null H<sub>0</sub>: the means are the same for the two groups  
+alternative H<sub>a</sub>: the means are different for the two groups
+</blockquote>
+The option `var.equal=TRUE` assumes that `x` and `y` have the same variances and the pooled variance is calculated. If the option `var.equal=TRUE` is omitted, `t.test()` performs a more complicated analysis assuming the two variances are not equal. The Welch t-test, which some of you may have learned in a more advanced Stat course, is performed in that case. We will always use the option `var.equal=TRUE` in this course. Let's apply the function to our data: 
+```{r}
+t.test(gayMarriage ~ gender, data=survey, var.equal=TRUE)
+```
+Here gayMarriage is `y` and gender is `x`. Since 'gender' is a two-level factor variable with 'Female' as the reference level, the difference between the means is $mean(gayMarriage_{Female})-mean(gayMarriage_{Male})$. The result shows that the difference between the means for females and males are highly significant. The p-value is 4.4&times;10<sup>-8</sup>, and the 95% confidence interval of $mean(gayMarriage_{Female})-mean(gayMarriage_{Male})$ is (-1.707,-0.812). This means that females tend to favor gay marriage compared to males. The p-value is two-sided since we don't specify the `alternative` parameter and it takes the default value. 
+
+If we want to test whether the mean for females is less than males, we set the `alternative` parameter to "less":
+```{r}
+t.test(gayMarriage ~ gender, data=survey, alternative="less", var.equal=TRUE)
+```
+When we set `alternative="less"`, the alternative hypothesis becomes H<sub>a</sub>: the mean for females is less than males. We see that the p-value is half of the previous value. 
+
+Another syntax of using the `t.test()` function for a two-sample t-test is 
+```{r, eval=FALSE}
+t.test(y1,y2, alternative=c("two.sided","less","greater"), var.equal=TRUE)
+```
+Here y1 and y2 are the integer/numeric vectors whose means are to be compared. For example, the command `t.test(gayMarriage ~ gender, data=survey, var.equal=TRUE)` is the same as 
+```{r}
+with(survey, t.test(gayMarriage[gender=="Female"], gayMarriage[gender=="Male"], 
+       var.equal=TRUE))
+```
+Note that we use the `with(survey, ...)` syntax in order to access the variables 'gayMarriage' and 'gender' in the 'survey' data frame without the need to attach the prefix 'survey$'. The second syntax of `t.test()` will come in handy when a factor variable is not available to separate the two groups. For example, the two groups may be stored in two separate data frames. 
+
+<hr />
+The `t.test()` function described above performs the calculation as stated on P.122 of the Stat 200 notes (Fall 2017 Edition): 
+$$t = \frac{{\rm ObsDiff}}{SE^+_{\rm difference}}$$
+$$SE^+_{\rm difference} = SD^+_{\rm errors}\sqrt{\frac{1}{n_1}+\frac{1}{n_2}}$$
+$$SD^+_{\rm errors}=\sqrt{\frac{SSE}{n-g}}$$
+$$SSE = \sum_{i=1}^n (y_i-\hat{y}_i)^2= \sum_{i=1}^{n_1} (y_{1i}-\bar{y}_1)^2 + \sum_{i=1}^{n_2} (y_{2i}-\bar{y}_2)^2$$
+where $n=n_1+n_2$ is the total number of observations and $g$ is the number of groups. In our case, $n_1$ is the number of females and $n_2$ is the number of males and $g=2$. It is instructive to write our own code for the t-test and confirm that we get the exact same answer as the `t.test()` result: 
+```{r}
+n1 <- sum(survey$gender=="Female")
+n2 <- sum(survey$gender=="Male")
+n <- n1+n2
+means <- tapply(survey$gayMarriage, survey$gender, mean)
+ObsDiff <- means["Female"] - means["Male"]
+SSE <- with(survey, sum( (gayMarriage[gender=="Female"]-means["Female"])^2) 
+            + sum( (gayMarriage[gender=="Male"]-means["Male"])^2) )
+SDplus_err <- sqrt(SSE/(n-2))
+SEplus_diff <- SDplus_err*sqrt(1/n1 + 1/n2)
+(t <- unname(ObsDiff/SEplus_diff))
+```
+As expected, we obtain the same t-value as returned by the `t.test()` function. The one-sided and two-sided p-values can be computed by the `pt()` function: 
+```{r}
+pval1 <- pt(t,n-2)
+pval2 <- 2*pt(t,n-2)
+c(pval1,pval2)
+```
+which are again the same as those returned by `t.test()`.
+<hr />
+
+## F-Test
+
+The F-test is used to compare the means among more than two groups. Consider Example 2 on P.118 of the Stat 200 notes (Fall 2017 Edition), where we want to know if there are any differences between ethnic groups on their attitudes towards gay marriage. Let's first make a few plots. 
+```{r}
+histogram(~gayMarriage | ethnicity, data=survey)
+means <- with(survey, tapply(gayMarriage, ethnicity, mean) )
+plot(gayMarriage ~ ethnicity, data=survey, las=1)
+points(means, col="red", pch="+")
+```
+
+There appears to be differences among the groups. R's `aov()` function can be used to perform an F-test. The syntax is 
+```{r, eval=FALSE}
+aov(y ~ x, data=data_name)
+```
+Here `x` is a factor variable (or an object that can be coerced into a factor) that can contain more than two levels. For our problem, 'gayMarriage' is `y` and 'ethnicity' is `x`: 
+```{r}
+result <- aov(gayMarriage ~ ethnicity, data=survey)
+summary(result)
+```
+The test gives an F value of 8.165 with df1 = 4 and df2 = 853. The corresponding p-value is 1.84&times;10<sup>-6</sup>. Hence the difference is highly significant. We conclude that the mean of at least one group is different from the others. 
+
+In the summary output, the 'Sum Sq' column displays the sum of square quantities. In the 'ethnicity' row, it is the sum of square between groups, or SSB in the Stat 200 notation. In the 'Residual' row, it is the sum of square within groups, or SSW in the Stat 200 notation. The 'Mean Sq.' column is calculated by dividing the value in 'Sum Sq.' column by the Df. In stat 200 notation, the 'Mean Sq.' column in the 'ethnicity' row is MSB; the 'Mean Sq.' column in the 'Residuals' row is MSE. The F-value is calculated by F = MSB/MSW.
+
+<hr />
+The F-test calculation is described on P.120 of the Stat 200 notes (Fall 2017 Edition): 
+$$F = \frac{MSB}{MSW}=\frac{SSB/(g-1)}{SSW/(n-g)}$$
+$$SSB = \sum_{i=1}^n (\hat{y}_i - \bar{y})^2$$
+$$SSW = \sum_{i=1}^n (y_i-\hat{y}_i)^2$$
+Here $n$ is the total number of observations, $g$ is the number of groups, $\bar{y}$ is the overall mean and $\hat{y}_i$ is the predicted value for the ith observation. The value of $\hat{y}_i$ is simply the mean of the group to which the ith observation belongs. We now go through the coding exercise to reproduce the `aov()` result from the formulae:
+```{r}
+y <- survey$gayMarriage
+x <- survey$ethnicity
+n <- nrow(survey)
+g <- length(levels(x))  # number of groups
+bar_y <- mean(y)
+means <- tapply(y,x,mean)
+# Set hat_y[i] to the average of the group to which i belongs
+hat_y <- means[x]
+SSB <- sum((hat_y - bar_y)^2)
+SSW <- sum((y - hat_y)^2)
+SST <- (n-1)*var(y)
+c(SSB,SSW,SST)
+# Sanity check: SST = SSW + SSB ? 
+(SST - SSW - SSB)/SST
+F <- (SSB/(g-1)) / (SSW/(n-g))
+F
+```
+As expected, We obtain the same F value. We have also verified that the equality SST=SSW+SSB holds, as expected. In addition, SSB and SSW are the same numbers as in the 'Sum Sq' column in the output of  `summary(result)` above. To compute the associated p-value, we note that the numerator and denominator degrees of freedom for the F statistics are $g-1$ and $n-g$, respectively. The p-value is the area under the F curve to the right of the F value, which can be calculated using the `pf()` function:
+```{r}
+pf(F,g-1,n-g, lower.tail=FALSE)
+```
+This is the same p-value returned by the `aov()` function. Finally, the square of the correlation between $\hat{y}$ and $y$ is given by $R^2=SSB/SST$, which is `r SSB/SST` in our example.
+<hr />
+
+From the box plots of gayMarriage versus ethnicity, it doesn't seem that there is significant difference between 'Asian' and 'Black' nor among 'Hispanic', 'Mixed/Other' and 'White'. We can test the significance using the `aov()` function on subsets of the data. 
+
+We first create two subset conditions:
+```{r}
+AB <- with(survey, ethnicity=="Asian" | ethnicity=="Black")
+HMW <- !AB
+```
+Here `AB` and `HMW` are logical vectors. `AB` is TRUE if ethnicity is 'Asian' or 'Black' and is FALSE otherwise. `HMW` is the reverse of `AB`: it is TRUE if ethnicity is 'Hispanic', 'Mixed_Other' or 'White' and FALSE otherwise. Like `lm()`, the optional parameter `subset` can be used to specify a subset of data to perform the analysis. For the Asian-Black groups, we have 
+```{r}
+result_AB <- aov(gayMarriage ~ ethnicity, data=survey, subset=AB)
+summary(result_AB)
+```
+The p-value is 0.568, suggesting that there is no significant difference between 'Asian' and 'Black' on the attitude towards gay marriage. For the Hispanic-Mixed-White groups, we have 
+```{r}
+result_HMW <- aov(gayMarriage ~ ethnicity, data=survey, subset=HMW)
+summary(result_HMW)
+```
+This large p-value (0.446) also indicates that there is no significant difference between the Hispanic, Mixed,  and White groups on the attitude towards gay marriage.
+
+## t-Tests for Multiple *Post Hoc* Comparisons
+
+From the previous calculation, we conclude that at least one ethnic group is different from the other on the attitude towards gay marriage. We next want to see which pairs of groups show significant differences. We need to do t-tests between pairs of groups. Before we do the tests, let's guess what the answers may be. Looking at the box plots of gayMarriage versus ethnicity, it appears that Asians and Blacks show no significant difference; Whites, Hispanics and Mixed/Other are also similar. But Asians and Blacks appear to be significantly different from Whites, Hispanics and Mixed/Other. 
+
+We can use the `pairwise.t.test()` function to perform pairwise t-tests. The syntax is
+```{r, eval=FALSE}
+pairwise.t.test(y, x, p.adjust=method, 
+                alternative=c("two.sided", "less", "greater"))
+```
+Here `y` is a numeric/integer vector, `x` is a factor variable, `method` is the name of method you want to adjust the p-value. There are 8 methods, but we will only use "bonferroni" for the Bonferroni correction. You can look at the other 7 methods by typing `?p.adjust`. Just like `t.test()`, the default value of the `alternative` parameter is "two.sided", but you can change it to "less" or "greater". For our problem, `y` is 'survey\$gayMarriage' and `x` is 'survey\$ethnicity' and we will use the default "two.sided" for the `alternative` parameter. The result is as follows.
+```{r}
+pairwise.t.test(survey$gayMarriage, survey$ethnicity, p.adjust="bonferroni")
+```
+The adjusted p-values given here are the same as those on P.123 of the Stat 200 notes (Fall 2017 Edition). The adjusted p-value between Asians and Blacks is 1 (not significant), between Asians and Hispanics is 0.00107 (significant), between Asians and Mixed/Other is 0.08779 (not significant), between Asians and Whites is 0.00054 (significant), between Blacks and Hispanics is 0.00152 (significant), between Blacks and Mixed/Other is 0.05313 (not significant), between Blacks and Whites is 0.00273 (significant), between Hispanics and Mixed/Other is 1 (not significant), between Hispanics and Whites is 1 (not significant), between Mixed/Other and White is 1 (not significant). So we see that the guesses above are mostly correct. The guesses are wrong on the Black-Mixed/Other and Asian-Mixed/Other where the adjusted p-values exceed the 5% cutoff.
+
+## ANOVA and Linear Regression
+
+It can be shown that performing an ANOVA analysis for comparing group means is mathematically equivalent to doing a linear regression on a factor variable. For example, let's look at the result of the linear model predicting 'gayMarriage' from 'gender':
+```{r}
+fit <- lm(gayMarriage ~ gender, data=survey)
+summary(fit)
+```
+Since the reference level of 'gender' is "Female", the intercept is the mean of 'gayMarriage' for females. The slope is the difference between the means of males and female, i.e. $mean(gayMarriage_{Male})-mean(gayMarriage_{Female})$. The difference is 1.2599 with a t-value of 5.524. The corresponding p-value is 4.39&times;10<sup>-8</sup>. This is the same (two-sided) p-value returned by `t.test()` shown above. The 95% confidence interval of $mean(gayMarriage_{Male})-mean(gayMarriage_{Female})$ is the 95% CI for the slope: 
+```{r}
+confint(fit, "genderMale")
+```
+This is again consistent with the `t.test()` result. 
+
+The `lm()` function can also be used to compare group means between more than two groups. For example, gayMarriage ~ ethnicity:
+```{r}
+fit <- lm(gayMarriage ~ ethnicity, data=survey)
+summary(fit)
+```
+We see that the F statistic and the associated p-value are the same as the `aov()` result above. In fact, the help page in `?aov` clearly states that `aov()` provides a wrapper to `lm` for fitting linear models. This means that the `aov()` function actually calls the `lm()` function. The main difference between `lm()` and `aov()` is in the output: the `aov()` output is expressed in the traditional language of the analysis of variance rather than that of linear models.
+
+Since 'Asian' is the reference level in the 'ethnicity' variable, the slopes in the linear model represent the differences between the means of other groups and 'Asian'. The p-value associated with each slope is the unadjusted p-value between 'Asian' and each group. To get the adjusted p-values for Bonferroni correction, the p-values of the slopes need to be multiplied by $g(g-1)/2$ or 10 for $g=5$. Indeed, the adjusted p-values returned by the `pairwise.t.test()` function shown above in the 'Asian' column is exactly 10 times the p-values of the slopes in the linear model (except the Asian-Black comparison where multiplying the p-value of the slope by 10 exceeds 1 and so the adjusted p-value is capped at 1).
+
+## Randomization Test
+
+Here we demonstrate how to use R to perform randomization tests described in Chapter 27 of the Stat 200 notes. It involves scrambling the y variable while keeping the factor variable x fixed. Repeat the experiment many times and calculate R<sup>2</sup> of the scrambled data. In the end, we calculate the fraction of times the values of R = $\sqrt{R^2}$ of the scrambled data exceed the R of the original data. This fraction is an estimate of the p-value from the randomization test. 
+
+There are probably packages in R that can be used to perform randomization tests, but we will write our own code here for demonstration. We first write a function to compute R<sup>2</sup> for any given x and y. The easiest way is to call the `lm()` function: 
+```{r}
+computeR2 <- function(y,x) {
+  summary(lm(y~x))$r.squared
+}
+```
+Recall that the `summary(lm(...))` function returns a number of diagnostics for the linear model. Among them is R<sup>2</sup>, which can be extracted using the command `summary(lm(...))$r.squared`. 
+
+Next we apply `computeR2()` on the `survey` data with `y` being 'gayMarriage' and `x` being 'ethnicity' and check that we reproduce the R<sup>2</sup> calculated above:
+```{r}
+R20 <- computeR2(survey$gayMarriage, survey$ethnicity)
+R20
+```
+This is the value we calculated above. The randomization test involves scrambling the y variable and calculating R<sup>2</sup>, and we have to repeat it many times. We can use the `sample()` function to scramble the y variable, and `replicate()` to repeat the experiment many times. We do it 5000 times here (in order to save time since `lm()` is very slow for the task):
+```{r, eval=FALSE}
+set.seed(63741891)
+R2 <- replicate(5000, computeR2(sample(survey$gayMarriage), survey$ethnicity))
+```
+```{r, echo=FALSE}
+# Don't want to eculate the above code because it's very slow. 
+# Use the following code to calculate R2 instead, which has been checked 
+# to be equivalent to the above code
+f1oNg <- unname(1/table(survey$ethnicity))
+g <- length(f1oNg)
+ind_g <- list()
+for (i in 1:g) {
+  ind_g[[i]] <- which(as.integer(survey$ethnicity)==i)
+}
+y <- survey$gayMarriage
+bar_y <- mean(y)
+n <- length(y)
+SST = (n-1)*var(y)
+f1oSST <- 1/SST
+computeR2 = function(y,bar_y,f1oSST,g,f1oNg,ind_g,hat_y) {
+  for (i in 1:g) {
+    hat_y[ind_g[[i]]] <- f1oNg[i]*sum(y[ind_g[[i]]])
+  }
+  f1oSST*sum((hat_y-bar_y)^2)
+}
+hat_y <- y
+set.seed(63741891)
+R2 <- replicate(5000, computeR2(sample(y),bar_y,f1oSST,g,f1oNg,ind_g,hat_y) )
+```
+This gives us 5000 values of R<sup>2</sup>. The fraction of times R exceeds the original R is the same as the fraction of times R<sup>2</sup> exceeds the original R<sup>2</sup>. It can be calculated by
+```{r}
+mean(R2 > R20)
+```
+This means that for the 5000 experiments we tried, none of the R in the scrambled data exceeds the original R. Thus we conclude that the p-value is *less than* 1/5000 or 2&times;10<sup>-4</sup>. This is consistent with the p-value calculated from the F statistics, which is 1.84&times;10<sup>-6</sup>. The following is a histogram of R for the scrambled data. The vertical red line is the value of the original R.
+```{r}
+hist(sqrt(R2),freq=FALSE,breaks=50, xlim=c(0,0.2), xlab="R")
+abline(v=sqrt(R20), col="red")
+```
+
+This indicates that getting the original R by random sampling is highly unlikely, and hence we conclude that at least one group is significantly different from others on the attitude towards gay marriage. 
+
+We now do the randomization test for the Hispanic-Mixed-White groups, which we find from the calculation above that the p-value is 0.446. This can be easily done by subsetting the data:
+```{r}
+x <- survey$ethnicity[HMW]
+y <- survey$gayMarriage[HMW]
+```
+We first compute the original R<sup>2</sup>: 
+```{r, eval=FALSE}
+(R2_HMW <- computeR2(y,x))
+```
+```{r, echo=FALSE}
+# Strip off extra factors in x
+x <- as.factor(as.character(x)) 
+f1oNg <- unname(1/table(x))
+g <- length(f1oNg)
+ind_g <- list()
+for (i in 1:g) {
+  ind_g[[i]] <- which(as.integer(x)==i)
+}
+y <- survey$gayMarriage[HMW]
+bar_y <- mean(y)
+n <- length(y)
+SST = (n-1)*var(y)
+f1oSST <- 1/SST
+hat_y <- y
+R2_HMW <- computeR2(y,bar_y,f1oSST,g,f1oNg,ind_g,hat_y)
+R2_HMW
+```
+Next we calculate R<sup>2</sup> of the scrambled data and do it 5000 times:
+```{r, eval=FALSE}
+set.seed(32859013)
+R2 <- replicate(5000, computeR2(sample(y),x))
+```
+```{r, echo=FALSE}
+set.seed(32859013)
+R2 <- replicate(5000, computeR2(sample(y),bar_y,f1oSST,g,f1oNg,ind_g,hat_y) )
+```
+Here is the distribution of R: 
+```{r}
+hist(sqrt(R2), freq=FALSE, breaks=50, xlab="R")
+abline(v=sqrt(R2_HMW), col="red")
+```
+
+The p-value is estimated by the fraction of times the values of R<sup>2</sup> are greater than R2_HMW:
+```{r}
+mean(R2 > R2_HMW)
+```
+We see that this estimated p-value is close to that calculated from the F statistics. We have only done the calculation with 5000 experiments. The accuracy improves as the number of experiments increases. With 10<sup>6</sup> experiments, we find that the estimated p-value is 0.447, which is very close to the value from the F statistics.
+
+The `computeR2()` function shown above uses the `lm()` function to compute R<sup>2</sup>. However, the `lm()` function is very slow for randomization tests because it calculates many other unnecessary quantities. We can write a much faster code by computing R<sup>2</sup> directly from the formula R<sup>2</sup>=SSB/SST. We discuss the detail of our code optimization in these <a href="Optimization.html" target="_blank">additional notes</a> for students who are interested in this topic.
+
+## Summary 
+
+Even though there seems to be many calculations involved here. We have only introduced a few R commands. Here is a quick summary of the commands and ideas.
+
+<ul>
+<li>The command `chisq.test()` can be used to perform a $\chi^2$ goodness-of-fit test. The syntax is 
+```{r, eval=FALSE}
+chisq.test(x, p = rep(1/length(x), length(x)))
+```
+Here `x` is a numeric vector storing the observed frequencies, and `p` is a numeric vector of the same length as `x` storing the expected probability of each element in `x`. The default value of `p` is shown above. It is set so that each element in `x` occurs with equal probability.
+
+<li>The command `chisq.test()` can also used to perform a $\chi^2$ independence test. The syntax is 
+```{r, eval=FALSE}
+chisq.test(x)
+```
+Here `x` is a matrix storing the observed frequencies in the contingency table. A contingency table can be generated by the `table()` function. 
+
+Another syntax for `chisq.test()` is 
+```{r, eval=FALSE}
+chisq.test(x, y)
+```
+Here `x` and `y` are numeric/factor vectors.
+
+<li>In `plot(y ~ x)`, if `x` is a factor variable and `y` is a numeric/integer vector, a box plot of `y` for each category in `x` is generated.</li>
+
+<li>The command `t.test()` is used to perform a two-sample t test. The syntax is 
+```{r, eval=FALSE}
+t.test(y ~ x, data=data_name, alternative=c("two-sided","less","greater"), 
+       var.equal=TRUE)
+```
+Here `y` is a numeric/integer vector and `x` is a factor variable with two levels. The default value of `alternative` is "two-sided". The option `var.equal=TRUE` assumes the variance is equal in the two groups, and the pooled variance is calculated. 
+
+Another syntax for the `t.test()` function is 
+```{r, eval=FALSE}
+t.test(y1,y2, alternative=c("two-sided","less","greater"), var.equal=TRUE)
+```
+Here `y1` and `y2` are the numeric/integer vectors for the two groups whose means are to be compared.</li>
+
+<li>The command `aov()` can be used to perform F-tests. The syntax is 
+```{r, eval=FALSE}
+aov(y ~ x, data=data_name)
+```
+Here `y` is a numeric/integer vector and `x` is a factor variable.</li>
+
+<li>Pairwise t-tests can be done using the `pairwise.t.test()` function, the syntax is 
+```{r, eval=FALSE}
+pairwise.t.test(y, x, p.adjust="bonferroni", 
+                alternative=c("two.sided", "less", "greater"))
+```
+Here `y` is a numeric/integer vector and `x` is a factor variable. The option `p.adjust="bonferroni"` means that the p-values will be adjusted for the Bonferroni correction. </li>
+
+<li>The `lm()` function can be used for ANOVA comparing group means in place of `t.test()` and `aov()`.</li>
+
+<li>Randomization tests can be used as an alternative method to estimate the p-value.</li>
+</ul>
+
+<br />
+<br />
+<br />

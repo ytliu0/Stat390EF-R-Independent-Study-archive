@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<meta charset="UTF-8" />
+<meta name="keywords" content="Statistics, Stat 200, Stat 390, R, RMarkdown Exercise" />
+<head>
+<title>R Markdown Exercise: Comparing Grades Between Online and In-Person Stat 100 Classes</title>
+<link rel="stylesheet" href="../styles.css">
+    
+<style>
+.greek {
+    font-family: serif;
+    font-size: 120%;
+}
+    
+ol.question {
+  margin: 0 0 1.5em;
+  padding: 0;
+  counter-reset: item;
+}
+
+ol.question > li {
+  margin: 0;
+  padding: 1em 0em 0 2em;
+  line-height: 1.25;
+  text-indent: -1em;
+  list-style-type: none;
+  counter-increment: item;
+}
+
+ol.question > li:before {
+  display: inline-block;
+  width: 1em;
+  padding-right: 0.5em;
+  font-weight: bold;
+  text-align: right;
+  content: counter(item) ".";
+}
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+<article>
+<br />
+<h1>Comparing Grades Between Online and In-Person Stat 100 Classes</h1>
+
+<p>Use <a href="Stat100Grades_template.Rmd" target="_blank">this RMarkdown template</a> for this exercise.</p>
+
+<p>Stat 100 is one of the most popular courses at U of I. There are about 1500 students every semester. Starting from Fall 2016, three sections of Stat 100 classes (L1, L2 and online) are synchronized. The L1 and L2 sections were in-person classes taught by the same instructor and students had to attend the lectures at the Lincoln Hall Theater. In Spring 2017, L1 classes were on Mondays, Wednesdays and Fridays from 12:00pm to 12:50pm; L2 classes were on Tuesdays and Thursdays from 11:00am to 12:20pm. Students in the online section did not have to go to class. Students in all three sections were given the exact same lectures, homework assignments, bonus assignments, and exams. They also had the same TAs and office hours. The only difference between the online and in-person classes was that students in the online class watched videos recorded from the L2 lectures. Each lecture video was usually available for the online students within two hours after the L2 class ended.</p>
+
+<p>In this exercise, you are going to analyze the scores of the Stat 100 students in Spring 2017 and see if there is any significant difference between the online and in-person sections. The data can be downloaded <a target="_blank" href="Stat100Spring2017_combined.csv">here</a>. The file has the following 8 columns:</p>
+<p><b>Availability</b>: Yes/No indicating whether the student was still enrolled in the class at the end of the semester.</p>
+<p><b>Section</b>: STAT_100_L1 is L1 section; STAT_100_L2 is L2 section; STAT_100_ONL is online section.</p>
+<p><b>Bonus</b>: Total bonus points</p>
+<p><b>HWavg</b>: Average homework score (lowest 3 dropped)</p>
+<p><b>Exam1</b>: Exam 1 score</p>
+<p><b>Exam2</b>: Exam 2 score</p>
+<p><b>Exam3</b>: Exam 3 score</p>
+<p><b>Final</b>: Final Exam score</p>
+<p>Note: all scores range from 0 to 100 (theoretically), although sometimes extra bonus points may be awarded to students.</p>
+
+<p>Data cleaning: It is often said that in a typical data analysis project, 90% of the time is spent in cleaning data and transform them into a format suitable for analysis. There is also a joke that <a target="_blank" href="https://www.theverge.com/2017/11/1/16589246/machine-learning-data-science-dirty-data-kaggle-survey-2017">80 percent of data science is cleaning the data and 20 percent is complaining about cleaning the data</a>. Real-world data are messy with many missing values. In this course, we don't deal with dirty data. The data in this exercise, however, are slightly unclean but they can be cleaned with only two lines of R code.</p>
+
+<p>After loading the data to R, you should take some time to explore the data before attempting the following questions. If you use <code>read.csv()</code> command to load the data without specifying any other options, you will see missing values in your data frame. Pay attention to the locations of the missing values. Open the csv file in, e.g. Excel and look at the locations of the missing values. When you are done exploring the data, answer the following questions.</p>
+
+<p>Hint: All of the questions below that are worth 1 point can be done with one line of R code, and none of the questions requires more than 5 lines of R code. If you find yourself writing a long code (e.g. more than 10 lines) for any one question, you are either not going in the right direction or not taking advantage of R's vectorized operations.</p>
+    
+<ol class="question">
+<li> (1 point) Some students dropped the course and we don't want to include them in the data. Remove the dropped students (Availability = No) from the data frame.</li>
+<br />
+<li> (1 point) If you investigate the origin of the missing values, you will find that they correspond to the blank fields in the exam scores. When a student did not take an exam, there is no score and the field is blank. So the exam score should be 0. Replace all the missing values by 0. (Hint: You only need a one-line R code. You've seen this code in Week 5's exercise on calculating HW grades.)</li>
+<br />
+<li> (1 point) How many students are there in each of the L1, L2 and online section? (Hint: You've done this in your very first RMarkdown exercise. You only need to use a single R command.)</li>
+<br />
+
+<br />
+<p>To determine if there is any difference between the online and in-person sections, we are going to make three comparisons:</p>
+<ul>
+<li>Compare the two group's performance on the exams.</li>
+<li>Compare the two group's weighted total scores by including the HW scores.</li>
+<li>Compare the two group's letter grades.</li>
+</ul>
+<br />
+
+<li> (1 point) There were 3 midterm exams and one final exam. Each of the 3 exams counted 20% and the final was 25%. Compute the weighted average of the exam scores according to the formula [20&times;(Exam1 + Exam2 + Exam3) + 25&times;Final]/85 and store it in a new column of the data frame.</li>
+<br />
+<li> (5 points) Make a density plot of the weighted average exam score for the in-person sections. Then add a density plot of the weighted average exam score for the online section on the same graph. In other words, your graph should have two lines: one for the combined L1 and L2 sections and the other for the online section. Use two different colors for the lines. Explain your color code (i.e. which color represents in-person sections and which represents the online section) in either a figure legend (preferred) or a figure caption. (Hint: See Week 10's notes. Many of you have also made similar plots in Week 10's RMarkdown assignment.)</li>
+<br />
+<li> (4 points) Use the <code>summary()</code> function to calculate the mean and quartiles of the weighted average exam score for the in-person (L1 and L2 combined) and online sections. Based on the result, which section performs better on the exams?</li>
+<br />
+<li> (4 points) Perform a Wilcoxon test to determine if the observed difference between the two groups is significant at <span class="greek">&alpha;</span>=5%. Note: You should treat L1 and L2 sections as one group and the online section as another group.</li>
+<br />
+<li> (1 point) Homework counts 15%, each of the 3 exams counts 20% and final exam counts 25% of the total grade. Bonus points will be added later. Calculate the weighted total according to the formula<br />
+weighted total = 0.15&times;HWavg + 0.20&times;(Exam1 + Exam2 + Exam3) + 0.25&times;Final<br />
+and store the result in a new column of the data frame.</li>
+<br />
+<li> (5 point) Make a density plot of the weighted total for the in-person sections. Then add a density plot of the weighted total for the online section on the same graph. Use two different colors for the lines and explain your color code.</li>
+<br />
+<li> (4 points) Use the <code>summary()</code> function to calculate the mean and quartiles of the weighted total for the in-person (L1 and L2 combined) and online sections. Based on the result, which section performs better?</li>
+<br />
+<li> (4 points) Perform a Wilcoxon test on the weighted total between the in-person and online sections. Is there significant difference between the in-person and online sections?</li>
+<br />
+<li> (2 points) Now add the bonus points to the weighted total according to the formula stated on the <a href="http://courses.las.illinois.edu/stat/stat100/grade.html" target="_blank">Stat 100 Grading webpage</a>:<br /> 
+weighted total with bonus = (weighted total + 0.25*Bonus)/(100 + 0.25*Bonus) * 100.<br />
+The final factor of 100 is to make the maximum possible score equal to 100 instead of 1. Round the scores to 2 decimal places and store the result in a new column of the data frame.</li>
+<br />
+<li> (7 points) Based on the weighted total (with bonus) and the letter grade table below (copied from the <a target="_blank" href="http://courses.las.illinois.edu/stat/stat100/grade.html">Stat 100 Grading webpage</a>), assign letter grades to the students and store the result in a new column of the data frame. There are many ways to do this, some good and some bad. This is your last assignment and we really want you to use a good method. Read <a href="grade_assignment.html" target="_blank">this page</a>, where you will see a comparison of three methods.</li>
+
+    <div style="padding: 1em 0em 0 2em;">
+			<table cellpadding="5" border="1" width="400" style="border-collapse:collapse;">
+					<tr>
+						<td width="10%">A+</td>
+						<td width="15%">97-100</td>
+						<td width="10%">A</td>
+						<td width="15%">93-96.99</td>
+						<td width="10%">A-</td>
+						<td width="15%">90-92.99</td> </tr>
+					<tr>
+						<td width="10%">B+</td>
+						<td width="15%">87-89.99</td>
+						<td width="10%">B</td>
+						<td width="15%">83-86.99</td>
+						<td width="10%">B-</td>
+						<td width="15%">80-82.99</td> </tr>
+					<tr>
+						<td width="10%">C+</td>
+						<td width="15%">77-79.99</td>
+						<td width="10%">C</td>
+						<td width="15%">73-76.99</td>
+						<td width="10%">C-</td>
+						<td width="15%">70-72.99</td> </tr>
+					<tr>
+						<td width="10%">D+</td>
+						<td width="15%">67-69.99</td>
+						<td width="10%">D</td>
+						<td width="15%">63-66.99</td>
+						<td width="10%">D-</td>
+						<td width="15%">60-62.99</td> </tr>
+					<tr>
+						<td width="10%"></td>
+						<td width="15%"></td>
+						<td width="10%">F</td>
+						<td width="15%">&lt; 60</td>
+						<td width="10%"></td>
+						<td width="15%"></td> </tr>
+				</table>
+        </div>
+<br />
+<li> (3 points) Consistency check. What is the percentage of students who get A or A+? Do it in two ways: (1) by counting the percentage of students with weighted total (with bonus) &geq; 93; (2) by counting the percentage of A and A+ in the column you created in the previous question. Make sure the two methods give the same result.</li>
+<br />
+<li> (3 points) Make a barplot showing the percentage of students in each letter grade.</li>
+<br />
+<br />
+<p>The final comparison is to see if there is significant difference on the letter grades between the online and in-person sections. Since letter grades are categories, we will need to do a <span class="greek">&chi;</span><sup>2</sup> independence test. If you do that, you will get a warning message. This is because the <span class="greek">&chi;</span><sup>2</sup> test is inaccurate for small values of expected frequencies. If you look into the problem, you will find that the small expected values occur for the letter grades D- and D. One method to solve this problem is pooling: combining categories of small expected values. The following code combines the letter grades D-, D and D+ to D:</p>
+<pre><code>pooled &lt;- as.character(stat100$grade)
+pooled[pooled=="D-" | pooled=="D+"] &lt;- "D"</code></pre>
+<p>Here it is assumed that 'stat100$grade' is a factor vector that stores the students' letter grades. You will need to change the code to match your variable name. You can verify using the command <code>table(pooled)</code> that the D+, D and D- grades are combined to the D grade.</p>
+<br />
+<li> (4 points) Perform a <span class="greek">&chi;</span><sup>2</sup> independence test to determine if there is significant difference on the pooled letter grades stored in 'pooled' between students in the in-person and online sections.</li>
+</ol>
+    
+    
+<h2>Guidelines</h2>
+    
+<ul>
+<li>Write down your name in the R markdown file.</li>    
+<li>Generate an html file from the markdown file by knitr.</li>
+<li>You should download the data file to your computer and then load it to R, instead of loading it directly from the website. This is for the purpose of reproducibility: the file at the remote website may be changed or disappear later and your R markdown file cannot be run. By saving it to your computer in the same location of the markdown file, you can be sure that your markdown result is reproducible.</li>
+<li>Show all codes and output. If your code chunk contains more than a few lines, include a brief explanation of what you are doing unless you write your code in a self-explanatory style.</li>
+<li>Label and state the answers to each question clearly. Don't just show the code and say that the information is in the output.</li>
+</ul>
+
+<br />
+    
+<h2>Solution</h2>
+<ul>
+<p><li><a href="Stat100Grades_solution.Rmd">RMarkdown file</a> (Download the file and save it in the same folder as the data file you downloaded above. Open it with R Studio and then click "Knit".)</li></p>
+<p><li><a href="Stat100Grades_solution.html">Knitted html file</a></li></p>
+</ul>
+</article>
+</div>
+<br/><br />
+</body>
+</html>

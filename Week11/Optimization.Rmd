@@ -1,0 +1,173 @@
+---
+title: "Code Optimization"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file - none
+
+We discuss some ideas on how to make a code run faster. As an example, we will demonstrate how to modify the code shown near the end of <a href="ANOVA.html" target="_blank">this page</a> to make it run much faster.
+
+## Why is a Code Slow?
+
+Usually we want to optimize a code because it runs very slowly. Sometimes a code running fairly fast becomes slow when it is used in a simulation in which it is called thousands of times. This is precisely the case for the code that performs the randomization tests near the end of <a href="ANOVA.html" target="_blank">this page</a>. For convenience, we copy the code below. 
+```{r, cache=TRUE}
+survey <- read.csv("Stat100_2014spring_survey02.csv")
+computeR2 <- function(y,x) {
+  summary(lm(y~x))$r.squared
+}
+set.seed(63741891)
+t0 <- system.time( R2 <- replicate(5000, computeR2(sample(survey$gayMarriage), survey$ethnicity)) )
+t0
+```
+It takes `r t0["user.self"]` seconds to compute R2 on my home computer and the randomization experiments are done only 5000 times. The `lm()` function runs fairly fast when it is used on a data set that is not very large. When it is called thousands of times, on the other hand, it becomes very slow. For the randomization tests, we only need to compute R<sup>2</sup>. It is a huge waste of time to use the `lm()` function because it also calculates many other quantities we don't need. 
+
+## Optimized Code -- Version 1
+
+It is very easy to make the code run faster. We just don't use the `lm()` function but compute R<sup>2</sup> using the formula R<sup>2</sup>=SSB/SST, where  
+$$SSB = \sum_{i=1}^n (\hat{y}_i - \bar{y})^2$$
+$$SST = \sum_{i=1}^n (y_i - \bar{y})^2$$
+Note that in the randomization tests, we scramble y and so it doesn't change SST and $\bar{y}$. This means that SST and $\bar{y}$ need only be computed once, not 5000 times. The only calculation that needs to be repeated is $\hat{y}_i$, which is the mean of the group to which the ith observation belongs. When we scramble y, the group means change. The following is a new function that replaces `computeR2()`:
+```{r}
+computeR2b <- function(y,x,SST,bar_y) {
+  means <- tapply(y,x,mean) # group means
+  hat_y <- means[x]
+  SSB <- sum((hat_y - bar_y)^2)
+  SSB/SST
+}
+```
+We can now do the randomization test again and see if it runs faster:
+```{r, cache=TRUE}
+y <- survey$gayMarriage
+x <- survey$ethnicity
+n <- length(y)
+bar_y <- mean(y)
+SST <- (n-1)*var(y)
+set.seed(63741891)
+t1 <- system.time( R2b <- replicate(5000, computeR2b(sample(y),x,SST,bar_y)) )
+t1
+```
+This version of the code is `r round(t0["user.self"]/t1["user.self"],1)` times faster. Before we can trust the code, we need to check that we still get the same result with the new code. We can test it by comparing R2 and R2b:
+```{r}
+max(abs(R2-R2b))
+```
+This confirms that the two codes produce the same result within machine round-off error. Can we do better? 
+
+## Optimized Code -- Version 2
+
+There are several things we can try to make the code run faster. Here is a list of things we can change to hopefully speed up the code. 
+<ul>
+<li>The vector `hat_y` inside the `computeR2b()` function is created every time the function is called. Memory allocation takes time. We may save time by allocating the memory once and then overwrite the content inside the function.</li>
+<li>The `tapply(y,x,mean)` function first split y into groups, sums over the numbers in the vector in the group and then divide the length of the vector in the group. Since `x` is fixed, the computation can be done more effectively by specifying the indices of each group.</li>
+<li>We can replace SSB/SST by SSB*f1oSST, where f1oSST=1/SST is just a constant. This may save some time since multiplication is faster than division.</li>
+</ul>
+Most of the changes are straightforward. The most tricky issue is the optimization of the  `tapply(y,x,mean)` calculation. The idea is to find the indices in the data frame corresponding to each group. These indices are fixed since `x` is not changing. We can save the indices to a list. The following is a code that does that. 
+```{r}
+g <- length(levels(x)) # Number of groups
+ind_g <- list() # Initialize a list
+for (i in 1:g) {
+  ind_g[[i]] <- which(as.integer(x)==i)
+}
+```
+In our case, the number of groups g=5 and `ind_g` is a list of length 5. The `which(as.integer(x)==i)` function returns the indices for group i, with i=1, 2, 3, 4, and 5. 
+Next, we want to count the number of observation for each group. This can be done easily using the `table()` function: 
+```{r}
+table(x)
+```
+What we really want is to use these numbers to calculate the group means, which are the sums divided by the numbers. So we want to pass `1/table(x)` to the function. We can store these numbers to a vector `f1oNg`:
+```{r}
+f1oNg <- unname(1/table(x))
+```
+where we used the `unname` function to strip off the names in the vector. It is time to try our second version of the code:
+```{r, cache=TRUE}
+computeR2c <- function(y,bar_y,f1oSST,g,f1oNg,ind_g,hat_y) {
+  for (i in 1:g) {
+    hat_y[ind_g[[i]]] <- f1oNg[i]*sum(y[ind_g[[i]]])
+  }
+  f1oSST*sum((hat_y-bar_y)^2)
+}
+
+f1oSST <- 1/SST
+hat_y <- rep(NA,n) # initialize hat_y
+set.seed(63741891)
+t2 <- system.time( R2c <- replicate(5000, 
+                                    computeR2c(sample(y),bar_y,
+                                               f1oSST,g,f1oNg,ind_g,hat_y)) )
+t2
+```
+That's `r round(t1["user.self"]/t2["user.self"],1)` times faster than the first version, `r round(t0["user.self"]/t2["user.self"],1)` times faster than the unoptimized version! We need to make sure we didn't make any mistakes. So we compare the result with that produced by the old code:
+```{r}
+max(abs(R2-R2c))
+```
+Fantastic! 
+
+Gathering all the pieces, we have the complete second version of the code:
+```{r, eval=FALSE}
+rm(list=ls()) # clear workspace
+
+# Function that calculates R^2
+computeR2c = function(y,bar_y,f1oSST,g,f1oNg,ind_g,hat_y) {
+  for (i in 1:g) {
+    hat_y[ind_g[[i]]] <- f1oNg[i]*sum(y[ind_g[[i]]])
+  }
+  f1oSST*sum((hat_y-bar_y)^2)
+}
+
+# load data
+survey <- read.csv("Stat100_2014spring_survey02.csv")
+y <- survey$gayMarriage
+x <- survey$ethnicity
+
+# Quantities that need to be computed only once
+n <- length(y) # number of observations
+bar_y <- mean(y)
+SST <- (n-1)*var(y)
+f1oSST <- 1/SST
+g <- length(levels(x)) # Number of groups
+ind_g <- list() # Initialize a list
+for (i in 1:g) {
+  ind_g[[i]] <- which(as.integer(x)==i)
+}
+f1oNg <- unname(1/table(x))
+hat_y <- rep(NA, n) # Initialize hat_y
+R20 <- computeR2c(y, bar_y,f1oSST,g,f1oNg,ind_g,hat_y) # original R^2
+
+# Perform the randomization test
+set.seed(63741891)
+R2c <- replicate(5000, computeR2c(sample(y),bar_y,f1oSST,g,f1oNg,ind_g,hat_y))
+```
+ 
+
+##Using Packages
+
+Finally, we should point out that it is a good idea to check to see if there are already existing R packages for the calculations you want to do before writing your own code, especially if the code you want to write involves complicated calculations. Most likely, the code in the existing packages written by experts are already battle-tested and well-optimized. 
+
+<br />
+<br />
+<br />

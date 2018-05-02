@@ -1,0 +1,435 @@
+---
+title: "Regression With Factor Variables"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file -  
+
+## Factor Variables
+
+In this page, we demonstrate using the `lm()` function on categorical variables. We again use the Stat 100 Survey 2, Fall 2015 (combined) data we have been working on for demonstration. First, let's reload the data from the saved RData file. 
+```{r}
+load('Stat100_Survey2_Fall2015.RData')
+```
+The data frame `survey` is loaded, which stores the survey data. As mentioned before, R's factor variables are designed to represent categorical data. In our data set, the `gender` column is a categorical variable: it is either male or female. Right now, the column is a character vector as you can see when you type the command `class(survey$gender)`. We want to change it to a factor variable, with "male" set to the first level:
+```{r}
+survey$gender <- factor(survey$gender, levels=c("male","female"))
+```
+We want to preserve this change so that we won't have to do this again the next time we load the file, so we overwrite the 'Stat100_Survey2_Fall2015.RData':
+```{r}
+save(survey, file='Stat100_Survey2_Fall2015.RData')
+```
+Recall that last time we fit a linear model predicting student's party hours/week from the average number of drinks/week:
+```{r}
+fit <- lm(partyHr ~ drinks, data=survey)
+summary(fit)
+```
+Now we want to know if there is any difference between male and female students. We can include gender in the model by the command 
+```{r}
+fit1 <- lm(partyHr ~ drinks + gender, data=survey)
+summary(fit1)
+```
+```{r, echo=FALSE}
+beta0_char = as.character(round(fit1$coefficients[1],5))
+beta1_char = as.character(round(fit1$coefficients[2],5))
+beta2_char = as.character(round(fit1$coefficients[3],5))
+int_female = as.character(round(fit1$coefficients[1],5)+round(fit1$coefficients[3],5))
+```
+We see that in addition to the intercept and slope for 'drinks', there is a third variable 'genderfemale'. When `lm()` encounters a factor variable with two levels, it creates a new variable based on the second level. In our example, the second level is female, and `genderfemale` is created. It is a binary variable that takes the value 1 if the value of 'gender' is female, and 0 if the value of 'gender' is not female. The fitted model can be written as 
+$${\rm party\ hours/week} = `r beta0_char` + `r beta1_char`\, ({\rm drinks/week}) 
++ `r beta2_char`\, ({\rm female})$$
+where for simplicity we use `female` instead of `genderfemale` to denote the binary variable. In this model, male and female have the same slope (`r beta1_char`) for `drinks` but different intercepts. For male, the intercept is `r beta0_char`. For female, the intercept is 
+`r beta0_char` + `r beta2_char` = `r int_female`. 
+
+Note that since we set "male" to be the first level (also called the base level or reference level), the intercept corresponds to the intercept for "male". We can change the base level by the `relevel()` command: 
+```{r}
+survey$gender2 <- relevel(survey$gender,"female")
+survey$gender2[1:10]
+```
+We see that in `survey$gender2`, "female" is the base level. Let's fit a linear model using `gender2`:
+```{r}
+fit2 <- lm(partyHr ~ drinks + gender2, data=survey)
+summary(fit2)
+```
+```{r, echo=FALSE}
+beta0_char = as.character(round(fit2$coefficients[1],5))
+beta1_char = as.character(round(fit2$coefficients[2],5))
+beta2_char = as.character(round(fit2$coefficients[3],5))
+int_male = as.character(round(fit2$coefficients[1],5)+round(fit2$coefficients[3],5))
+```
+Since "female" is the base level in `gender2`, the intercept returned by the `lm()` is the intercept for female. The binary variable is now called `gender2male`, which is 1 if the value is "male" in `gender2` and 0 if the value is not "male" in `gender2`. We see that the slope for `drinks` remains the same as before. The value of the intercept is `r beta0_char`, which is the intercept for female we calculated above. The intercept for male is `r beta0_char` + (`r beta2_char`) = `r int_male`, consistent with the previous result.
+
+## Interaction
+
+In R, the interaction term is represented by a colon ':'. To fit a model for `partyHr` versus `drinks`, `gender` and interaction between `drink` and `gender`, we can use the command 
+```{r}
+fit3 <- lm(partyHr ~ drinks + gender + drinks:gender, data=survey)
+summary(fit3)
+```
+```{r, echo=FALSE}
+beta0_char = as.character(round(fit3$coefficients[1],4))
+beta1_char = as.character(round(fit3$coefficients[2],4))
+beta2_char = as.character(round(-fit3$coefficients[3],4))
+beta3_char = as.character(round(fit3$coefficients[4],4))
+beta0_female = as.character(round(fit3$coefficients[1]+fit3$coefficients[3],4))
+beta1_female = as.character(round(fit3$coefficients[2]+fit3$coefficients[4],4))
+p_female = as.character(round(summary(fit3)$coefficients[3,4],3))
+```
+Actually, R has a shorthand notation to represent `drinks + gender + drinks:gender`, which is `drinks*gender`. So we can simply type  
+```{r}
+fit3 <- lm(partyHr ~ drinks*gender, data=survey)
+summary(fit3)
+```
+to get the same fitting formula. The coefficients in the above formula mean that the fitted model is given by the equation 
+$$ {\rm party\ hours/week} = `r beta0_char` + `r beta1_char`\, ({\rm drinks/week}) -`r beta2_char`\, ({\rm female}) + `r beta3_char`\, ({\rm drinks/week}) \cdot ({\rm female})$$
+Because of the presence of the interaction term, both the slope and intercept are different for male and female. Also note that in this fit, the coefficient of `genderfemale`, having a p-value of `r p_female`, is not statistically significant, meaning that the intercepts for male and female are probably not very different. However, the slopes for `drinks` for male and female are different. 
+
+As you have learned in Stat 200, the regression equation above can be split into separate equations for male and female. The male equation is obtained by substituting 'female=0' into the equation:
+$${\rm party\ hours/week} = `r beta0_char` + `r beta1_char`\, ({\rm drinks/week}) \ \ \  {\rm for\ male}.$$
+The female equation is obtained by substituting 'female=1' into the equation:
+$${\rm party\ hours/week} = `r beta0_char` + `r beta1_char`\, ({\rm drinks/week})-`r beta2_char` + `r beta3_char`\, ({\rm drinks/week})  \ \ \  {\rm for\ female},$$
+which is simplified to 
+$${\rm party\ hours/week} =`r beta0_female` + `r beta1_female`\, ({\rm drinks/week})  \ \ \  {\rm for\ female}.$$
+Combining the two equations, we can write
+$$ {\rm party\ hours/week} = \left\{ \begin{array}{ll} `r beta0_char` + `r beta1_char`\, ({\rm drinks/week}) & {\rm for\ male} \\ 
+`r beta0_female` + `r beta1_female`\, ({\rm drinks/week}) & {\rm for\ female}\end{array} \right. $$
+Including the interaction term is equivalent to splitting the data into male and female and fit a linear model for each group. We can confirm that this is the result we will get by actually splitting the data into two groups and fit a linear model for each group. Here is the code:
+```{r}
+survey_male <- survey[survey$gender=="male",]
+survey_female <- survey[survey$gender=="female",]
+fit_male <- lm(partyHr ~ drinks, data=survey_male)
+fit_female <- lm(partyHr ~ drinks, data=survey_female)
+fit_male$coefficients
+fit_female$coefficients
+```
+As expected, the regression coefficients for each group are the same as what we find above. 
+
+Let's now plot the data with regression lines:
+```{r}
+plot(partyHr ~ drinks, data=survey, col=gender, xlab="Drinks/week", 
+     ylab="Party hours/week", pch=19, las=1)
+abline(fit_male$coefficients, col=1, lwd=2)
+abline(fit_female$coefficients, col=2, lwd=2)
+```
+
+Since the levels in `gender` are "male" and "female", with "male" as the first level, male data are plotted with col=1, which is black; female data are plotted with col=2, which is red. 
+
+We can also make separate plots for male and female. As we mentioned before, this type of plots is easily made using lattice graphics's `xyplot`. We can add regression lines to the split plots using a panel function. The detail is described in <a href="https://www.youtube.com/watch?v=AhTjV9nAJv0" target="_blank">this video</a>. Here we just show you the command: 
+```{r}
+library(lattice)
+xyplot(partyHr ~ drinks | gender, data=survey, pch=16,
+  panel = function(x, y, ...) {
+       panel.xyplot(x, y, ...)
+       panel.lmline(x, y, col = "red")
+  })
+```
+
+We can also plot residuals. To do it with `xyplot`, it is better to add the residuals to the data frame before plotting: 
+```{r}
+survey$residuals <- fit3$residuals
+xyplot(residuals ~ drinks | gender, data=survey, pch=16,
+  panel = function(x, y, ...) {
+       panel.xyplot(x, y, ...)
+       panel.abline(h=0)
+  })
+```
+
+Since `survey` did not have a column named "residuals", the command `survey$residuals <- fit3$residuals` created a new column to the data frame. Then the residuals can be plotted just like other columns.
+
+Does including `gender` and an interaction term make it a better model? If you compare the summary statistics of `fit` and `fit3`, you will see that the new model doesn't improve much. For example, the R<sup>2</sup> for the new model is only slightly larger and the residual standard error is only slightly smaller. The plots above also show that the residuals for the new models are not much different from <a href="../Week07/SimpleRegression.html#residualp" target="_blank">those of the simple regression model</a>. So adding `gender` and interaction term does not seem to substantially reduce the residuals. 
+
+## Factor Variables are Smart
+
+Here is another demonstration that factor variables can be used to fit two groups of data without splitting the data. We are going to work backward here. We will create two groups of data and then combine them. 
+
+First we create two groups of artificial data x1, y1 and x2, y2: 
+```{r}
+x1 <- seq(0,1,length.out=100)
+x2 <- seq(2.5,3.5,length.out=100)
+set.seed(5619783)
+y1 <- 5 + 2.2*x1 + rnorm(100,sd=0.4)
+y2 <- 11.2 -2.2*x2 + rnorm(100,sd=0.4)
+```
+Each variable x1, x2, y1, and y2 is a numeric vector of length 100; y1 is related to x1 by a linear relationship with a noise `rnorm(100,sd=0.4)` added to it; y2 is also related to x2 by a linear relationship with a noise added to it. Let's now fit a linear model for each group: 
+```{r}
+fit1 <- lm(y1 ~ x1)
+fit2 <- lm(y2 ~ x2)
+fit1$coefficients
+fit2$coefficients
+```
+Now we combine the two data set:
+```{r}
+x <- c(x1,x2)
+y <- c(y1,y2)
+```
+The first 100 elements in x is x1 and the next 100 elements is x2, similarly for y. To label the two group, we create a factor vector `group` of length 200, with the first 100 elements labeled "1" and the second 100 elements labeled "2". There are at least two ways to create the `group` variable. The first way is 
+```{r}
+group <- rep(c(1,2), each=100)
+group <- as.factor(group)
+```
+Another, a simpler, way is to use the `gl()` function: 
+```{r}
+group <- gl(2,100)
+group
+```
+Briefly, `gl(n,k)` creates a factor vector with n levels and each level has k replications. By default, the levels are labeled '1', '2', ..., 'n' but it can be changed by setting the `labels` parameter. See `?gl` for detail. 
+
+The `group` variable sets the first 100 elements to be in level '1' and the next 100 elements to be in level '2'. We can plot the combined data:
+```{r}
+plot(y ~ x, col=group, pch=19, las=1)
+```
+
+Here group 1 data are plotted with col=1, which is black. Group 2 data are plotted with col=2, which is red. Clearly the two groups are widely separated and they each have different intercept and slope when we fit a linear model to them. If we simply fit a linear model to the combined data, the fit won't be good: 
+```{r}
+fit_combined <- lm(y ~ x)
+summary(fit_combined)
+plot(y ~ x, col=group, pch=19, las=1)
+abline(fit_combined, col="green", lwd=2)
+```
+
+When we include the factor variable `group` with the interaction term, we have 
+```{r}
+fit_group <- lm(y ~ x*group)
+summary(fit_group)
+```
+We see that the intercept and slope for 'x' is exactly the same as those for group 1 data as we calculated above with `fit1`. To find the intercept for group 2, we add the intercept to the coefficient of 'group2'. To find the slope for group 2, we add the coefficients of 'x' and 'x:group2'. We can now extract the coefficients for each group: 
+```{r}
+intercept_group1 <- fit_group$coefficients[1]
+slope_group1 <- fit_group$coefficients[2]
+intercept_group2 <- fit_group$coefficients[1] + fit_group$coefficients[3]
+slope_group2 <- fit_group$coefficients[2] + fit_group$coefficients[4]
+c(intercept_group1, slope_group1)
+c(intercept_group2, slope_group2)
+```
+As expected, we get the same numbers as calculated by `fit1` and `fit2`. Let's plot the regression lines: 
+```{r}
+plot(y ~ x, col=as.integer(group), pch=19, las=1)
+abline(fit_combined, col="green", lwd=2)
+abline(intercept_group1, slope_group1, col=1, lwd=2)
+abline(intercept_group2, slope_group2, col=2, lwd=2)
+```
+
+Clearly, the model with 'group' and interaction term (black and red lines) is better than the simple `lm(y ~ x)` fit used by `fit_combined` (green line). Comparing the summary statistics of `fit_combined` and `fit_group`, we clearly see that the residual standard error reduces and R<sup>2</sup> increases substantially. 
+
+## Factor Variables with More Than Two Levels
+
+Recall that `religion` is a factor variable in the `survey` data frame:
+```{r}
+survey$religion[1:10]
+```
+It has 8 levels with Christian as the base level. Suppose we fit 'drinks' versus 'religion':
+```{r}
+fit_drinks <- lm(drinks ~ religion, data=survey)
+summary(fit_drinks)
+```
+The formula `drinks ~ religion` looks like a simple regression with one variable. You might expect one intercept and one slope. However, the output has one intercept and 7 slopes! This is because `religion` is a factor variable with 8 levels. When the `lm()` is applied to a factor variable with k levels, it creates k-1 binary variables corresponding to the last k-1 levels. In the example above, we have 7 binary variables `religionJewish`, `religionMuslim`, `religionHindu`, `religionBuddhist`, `religionOther Religion`, `religionAgnostic` and `religionAtheist`. The value of `religionJewish` is 0 if the value of 'religion' is not 'Jewish' and 1 if 'religion' is 'Jewish', and similarly for the other binary variables. Note that there is no binary variable for 'Christian' because it is the base level. If 'religion' is 'Christian', all of the 7 binary variables are 0. 
+
+```{r, echo=FALSE}
+intercp = as.character(round(fit_drinks$coefficients[1],4))
+c_Jewish = as.character(round(fit_drinks$coefficients[2],4))
+c_Muslim = as.character(round(-fit_drinks$coefficients[3],4))
+c_Hindu = as.character(round(-fit_drinks$coefficients[4],4))
+c_Buddhist = as.character(round(-fit_drinks$coefficients[5],4))
+c_other = as.character(round(fit_drinks$coefficients[6],4))
+c_Agnostic = as.character(round(-fit_drinks$coefficients[7],4))
+c_Atheist = as.character(round(-fit_drinks$coefficients[8],4))
+avg_Hindu = as.character(as.numeric(intercp)-as.numeric(c_Hindu))
+```
+
+The regression equation is 
+$$ {\rm drinks/week} = `r intercp` + `r c_Jewish` f_{\rm Jewish} - `r c_Muslim` f_{\rm Muslim} - `r c_Hindu` f_{\rm Hindu} 
+- `r c_Buddhist` f_{\rm Buddhist}$$
+$$+ `r c_other` f_{\rm other}- `r c_Agnostic` f_{\rm Agnostic} - `r c_Atheist` f_{\rm Atheist}$$
+Note that we use $f_{\rm Jewish}$ to denote the binary variable `religionJewish` and so on. 
+
+Suppose 'religion' is 'Christian', all of the $f$ variables are 0 and the regression equation predicts that drinks/week = `r intercp`. This is the average value of drinks/week for students who are Christians. Suppose 'religion' is 'Hindu', we have $f_{\rm Hindu}=1$ and all other $f$'s are 0, and the regression equation predicts that 
+$${\rm drinks/week} = `r intercp` - `r c_Hindu` = `r avg_Hindu`$$
+This is the average value of drinks/week for students who are Hindus. We see that the slopes of the binary variables is the difference between the predicted value for that group and the predicted value for 'Christian'. If the difference is 0, it means that the average value of drinks/week for that group is the same as that for Christians. Recall that the t-values and p-values are based on the null hypothesis that the slope is 0. We see that the p-value of the slope for 'Other Religion' is 0.87, suggesting that the average value of drinks/week for students in 'Other Religion' is the same as that of Christians. 
+
+In this particular example, we see that the slopes of the binary variables indicate the difference between the average of the base level and the groups. If we change the base level, we change the meaning of the slopes. For example, we define another factor variable with the base level set to 'Atheist'
+```{r}
+rel <- relevel(survey$religion, "Atheist")
+```
+In the model  
+```{r}
+fit_drinks_rel <- lm(survey$drinks ~ rel)
+```
+the slopes now compare the difference between the average of drinks/week to that of Atheists.
+```{r}
+summary(fit_drinks_rel)
+```
+What if we don't want to compare the group average with any particular group? The trick is to remove intercept from the linear model. This can be done with the command 
+```{r}
+fit_drinks_nointercept <- lm(drinks ~ religion - 1, data=survey)
+```
+The `-1` in the formula tells the `lm()` function not to include an intercept. The result is that 8 binary variables are created:
+```{r}
+summary(fit_drinks_nointercept)
+```
+Now each slope represents the group average, and the p-value is based on the null hypothesis that the average is 0. We can confirm that the slopes indeed represent the group averages:
+```{r}
+mean(survey$drinks[survey$religion=="Jewish"])
+mean(survey$drinks[survey$religion=="Hindu"])
+```
+...  
+If you remember, there is an easy method to calculate the group average using `tapply()`:
+```{r}
+tapply(survey$drinks, survey$religion, mean)
+```
+As expected, we get the same numbers as the slopes.  
+
+As a final example, let's fit a model predicting party hours/week from drinks/week and religion, including the interaction terms: 
+```{r}
+fit4 <- lm(partyHr ~ drinks*religion, data=survey)
+summary(fit4)
+```
+```{r, echo=FALSE}
+intercp = as.character(round(fit4$coefficients[1],4))
+c_drinks = as.character(round(fit4$coefficients[2],4))
+c_Jewish = as.character(round(fit4$coefficients[3],4))
+c_Muslim = as.character(round(-fit4$coefficients[4],4))
+c_Hindu = as.character(round(-fit4$coefficients[5],4))
+c_Buddhist = as.character(round(fit4$coefficients[6],4))
+c_other = as.character(round(fit4$coefficients[7],4))
+c_Agnostic = as.character(round(fit4$coefficients[8],4))
+c_Atheist = as.character(round(-fit4$coefficients[9],4))
+ci_Jewish = as.character(round(-fit4$coefficients[10],4))
+ci_Muslim = as.character(round(fit4$coefficients[11],4))
+ci_Hindu = as.character(round(fit4$coefficients[12],4))
+ci_Buddhist = as.character(round(-fit4$coefficients[13],4))
+ci_other = as.character(round(-fit4$coefficients[14],4))
+ci_Agnostic = as.character(round(-fit4$coefficients[15],4))
+ci_Atheist = as.character(round(-fit4$coefficients[16],4))
+intcp_Atheist = as.character(as.numeric(intercp) - as.numeric(c_Atheist))
+slope_Atheist = as.character(as.numeric(c_drinks) - as.numeric(ci_Atheist))
+```
+The reference level in 'religion' is 'Christian'. The regression equation can be written as 
+$$\mbox{party hours/week} = `r intercp` + `r c_drinks` (\mbox{drinks/week}) + `r c_Jewish` f_{\rm Jewish} 
+- `r c_Muslim` f_{\rm Muslim} - `r c_Hindu` f_{\rm Hindu}$$
+$$+ `r c_Buddhist` f_{\rm Buddhist} + `r c_other` f_{\rm other} + `r c_Agnostic` f_{\rm Agnostic} - `r c_Atheist` f_{\rm Atheist}$$
+$$- `r ci_Jewish` f_{\rm Jewish}\cdot (\mbox{drinks/week}) + `r ci_Muslim` f_{\rm Muslim}\cdot (\mbox{drinks/week})$$ 
+$$+ `r ci_Hindu` f_{\rm Hindu}\cdot (\mbox{drinks/week})- `r ci_Buddhist` f_{\rm Buddhist}\cdot (\mbox{drinks/week})$$
+$$-`r ci_other` f_{\rm other}\cdot (\mbox{drinks/week}) -`r ci_Agnostic` f_{\rm Agnostic}\cdot (\mbox{drinks/week})$$
+$$-`r ci_Atheist` f_{\rm Atheist}\cdot (\mbox{drinks/week})$$
+Simple regression equations for each of the 8 groups can be reconstructed from this equation. For example, for Christians, $$f_{\rm Jewish}=f_{\rm Muslim}=f_{\rm Hindu}=f_{\rm Buddhist}=f_{\rm other}=f_{\rm Agnostic}=f_{\rm Atheist}=0$$
+and the regression equation becomes 
+$$\mbox{party hours/week} = `r intercp` + `r c_drinks` (\mbox{drinks/week}) \ \ \ \ \  \mbox{for Christians}$$
+For Atheists, 
+$$f_{\rm Atheist}=1 \ \ \ , \ \ \ f_{\rm Jewish}=f_{\rm Muslim}=f_{\rm Hindu}=f_{\rm Buddhist}=f_{\rm other}=f_{\rm Agnostic}=0$$
+and the regression equation becomes 
+$$\mbox{party hours/week} = `r intercp` + `r c_drinks` (\mbox{drinks/week}) -`r c_Atheist` - `r ci_Atheist`(\mbox{drinks/week}) 
+\ \ \ \ \  \mbox{for Atheists}$$ 
+or 
+$$\mbox{party hours/week} = `r intcp_Atheist` + `r slope_Atheist` (\mbox{drinks/week}) \ \ \ \ \  \mbox{for Atheists}$$
+Regression equations for other groups can be reconstructed in the same way. We see that the slope -`r c_Atheist` in $-`r c_Atheist` f_{\rm Atheist}$ is the difference of the intercept between Christians and Atheists, and the slope -`r ci_Atheist` in the interaction term $-`r ci_Atheist` f_{\rm Atheist}\cdot (\mbox{drinks/week})$ is the difference of the slope of (drinks/week) between Christians and Atheists. The slopes associated with other binary variables and interaction terms can be interpretted in the same way. 
+
+Looking at the summary statistics, it doesn't seem that this model is better than the simple regression model `fit <- lm(partyHr ~ drinks, data=survey)` we had before. We can make a few plots to gain more insight: 
+```{r}
+xyplot(partyHr ~ drinks | religion, data=survey, pch=16,
+  panel = function(x, y, ...) {
+       panel.xyplot(x, y, ...)
+       panel.lmline(x, y, col = "red")
+  })
+survey$residuals <- fit4$residuals
+xyplot(residuals ~ drinks | religion, data=survey, pch=16,
+       panel = function(x, y, ...) {
+       panel.xyplot(x, y, ...)
+       panel.abline(h=0)
+  })
+```
+
+It appears that there are still a lot of scatters even after we split the data into the religion groups. This shows that while the number of drinks/week correlates with party hours/week. The correlation is not perfect even after we split the data into religion groups. There are other important factors we have not included in our model that contribute to the scatters.
+
+## Prediction and Confidence Intervals
+
+As in simple linear regression, we can use the `predict()` function to predict the outcome of a new data set. For example, 
+```{r}
+predict(fit4, newdata=data.frame(drinks=c(1,5,3,8), religion=c("Hindu", "Atheist", "Christian", "Jewish")))
+```
+As before, the new data have to be put into a data frame. In `fit4`, we are predicting `partyHr` from `drinks` and `religion`, so we have to supply both `drinks` and `religion` in the new data frame.
+
+The `confint()` function can be used to calculate the confidence intervals just as in simple regression:
+```{r}
+confint(fit4)
+```
+The default confidence level is 95%, but it can be changed by the optional parameter `level`. For example, to calculate the 99% confidence interval for the 'drinks' coefficient, we use the command
+```{r}
+confint(fit4, 'drinks', level=0.99)
+```
+
+## Model Formulae
+
+Note that the formula in the `lm()` syntax is somewhat different from the regression formula. For example, the command
+```{r, eval=FALSE}
+lm(y ~ x)
+```
+means that a linear model of the form $y=\beta_0 + \beta_1 x$ is to be fitted (if x is not a factor variable). The command 
+```{r, eval=FALSE}
+lm(y ~ x-1)
+```
+means that a linear model of the form $y=\beta_0 x$ is to be fitted. The `-1` means to exclude the intercept. Another expression to exclude the intercept is 
+```{r, eval=FALSE}
+lm(y ~ 0+x)
+```
+It means exactly the same as `lm(y ~ x-1)`.
+
+The following table is a summary of the formulae and model fits.
+
+Formula                           Model
+---------------------------  -------------------------------------------------------------------
+lm(y ~ x)                     $y=\beta_0+\beta_1 x$
+lm(y ~ x-1) or lm(y ~ 0+x)    $y=\beta_0 x$
+lm(y ~ x1 + x2)               $y=\beta_0 + \beta_1 x1 + \beta_2 x2$
+lm(y ~ x1 + x1:x2)            $y=\beta_0 + \beta_1 x1 + \beta_2 x1\cdot x2$
+lm(y ~ x1*x2)                 $y=\beta_0 + \beta_1 x1 + \beta_2 x2 + \beta_3 x1\cdot x2$
+lm(y ~ x1\*x2\*x3)            $y=\beta_0 + \beta_1 x1 + \beta_2 x2 + \beta_3 x3 + \beta_4 x_1\cdot x_2$ 
+                              $+ \beta_5 x_1\cdot x_3 + \beta_6 x_2 \cdot x_3 + \beta_7 x_1\cdot x_2 \cdot x_3$
+
+It is assumed that x, x1 and x2 above are not factor variables. If x1 is a factor variable with, say, 3 levels, two binary variables associated with x1 will be created and there will be extra terms. 
+
+You may wonder what if we want to fit a model of the form $y=\beta_0+\beta_1 (x1+x2)$. We clearly can't use `lm(y~x1+x2)` because it means something different. Other than creating a new variable for `x1+x2`, one way to do it is to use the `I()` function: 
+```{r, eval=FALSE}
+lm(y ~ I(x1+x2))
+```
+This tells `lm()` that `x1+x2` should be considered as one variable. Similarly, if we want to fit a model 
+$$y=\beta_1 (x1 + 4 x1\cdot x2) + \beta_2 (x2)^3$$
+We should type 
+```{r, eval=FALSE}
+lm(y ~ I(x1 + 4*x1*x2) + I(x2^3) - 1)
+```
+or 
+```{r, eval=FALSE}
+lm(y ~ 0 + I(x1 + 4*x1*x2) + I(x2^3))
+```
+Again the `-1` or `0+` is to exclude the intercept. If it is omitted, the model $y=\beta_0 + \beta_1 (x1 + 4 x1\cdot x2) + \beta_2 (x2)^3$ will be fitted. 
+
+<br />
+<br />
+<br />

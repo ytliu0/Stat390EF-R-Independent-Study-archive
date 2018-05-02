@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<meta name="keywords" content="Statistics, Stat 200, Stat 390, R, Tidyverse" />
+<meta charset="UTF-8" />
+
+<head>
+<title>Introduction to Tidyverse</title>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+
+<div id="wrapper">
+
+<article>
+<br /> <br />
+<h1 style="text-align:center;">Introduction to Tidyverse</h1>
+<br /> <br />
+    
+<p>So far in this course, you have been learning the traditional core R syntax, known as the base R. However, base R is pretty old and there are things that were useful 10 or 20 years ago may now get in the way. It is difficult to change base R without breaking existing code, so most modern developments are put into new R packages.</p>
+
+<p>In the past few years, <a href="https://www.tidyverse.org/" target="_blank">Tidyverse</a> has been gaining popularity in the R community. Tidyverse contains a collection of R packages that share an underlying design philosophy, grammar, and data structures. Many companies are switching to using R and tidyverse. Therefore, it is useful for you to know about it. In fact, some people argue that it is easier for beginners to learn tidyverse than base R (see, e.g, <a href="http://varianceexplained.org/r/teach-tidyverse/" target="_blank">this blog post</a>), especially for people with little or no programming experience. Many modern R courses for beginners have switched to the "tidyverse first, base R second" approach. You can learn more about tidyverse by reading the book "R for Data Science" by Hadley Wickham and Garrett Grolemund. This is one of the textbooks used in Stat 385. The book is also freely available <a href="http://r4ds.had.co.nz/" target="_blank">online</a>. Yup, it's free! This is one of the nice things about open-source software. Pretty much everything is free!</p>
+
+<p>In the following set of Lon-Capa exercises, you will be exposed to some tidyverse packages. The main focus will be on the <code>dplyr</code> package, since it's very useful for data manipulation. You will find it less useful in this course and in many statistics courses using R (except Stat 385), because the data you'll be analyzing are mostly clean. However, real-world data are messy and many data analysts working in a company use <code>dplyr</code> every day. To get the most out of these exercises, you have to spend a few hours learning a couple of tidyverse packages. <code>ggplot2</code> is also part of the tidyverse and you've seen some of it in the past weeks if you've paid attendtion to the brown texts in some of the Lon Capa problems. There will be no exercises on <code>ggplot2</code> since it's hard to auto-grade this type of questions on Lon Capa. However, you can do what I did to practice <code>ggplot2</code> if you want: use <code>ggplot2</code> to re-create each and every plot in all the notes and Lon Capa problems.</p> 
+
+<p>To get started, install the tidyverse packages using the command</p>
+<p><code>install.packages("tidyverse")</code></p>
+<p>After installing the packages, read the following material before attempting the problems.</p>
+<ol>
+<li><a href="tibbles.html" target="_blank">A brief introduction to tibbles</a></li>
+<li><a target="_blank" href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html">tibble vignette</a></li>
+<li>Chapter 13 of Peng's textbook (this is the most important reading material)</li>
+<li>Study the following examples that use <code>dplyr</code> to do the 4 Lon Capa problems in Weeks 2, 3, 5 and 8:
+  <ol type="I">
+    <li><p><a target="_blank" href="Week02_Optimization.html">Week 2's Optimization problem</a></p></li>
+    <li><p><a target="_blank" href="Week03_maxSpeed.html">Week 3's Maximum Speed problem</a></p></li>
+    <li><p><a href="Week05_Stock_market_prices.html" target="_blank">Week 5's Stock Market Price problem</a></p></li>
+    <li><p><a href="Week08_Ecological_Correlation.html" target="_blank">Week 8's Ecological Correlation problem</a></p></li>
+  </ol>
+</li>
+</ol>
+    
+<br />
+    
+<h2>Lon Capa Exercises</h2>
+    
+<p><a href="https://library1.lon-capa.uiuc.edu/res/uiuc/ytliu/R-Programming/open/Tidyverse/tibble.problem" target="_blank">Tibbles</a></p>
+    
+<p><a href="https://library1.lon-capa.uiuc.edu/res/uiuc/ytliu/R-Programming/open/Tidyverse/dplyr.problem" target="_blank">Useful dplyr Commands</a></p>
+    
+<p><a href="https://library1.lon-capa.uiuc.edu/res/uiuc/ytliu/R-Programming/open/Tidyverse/Relational_data.problem" target="_blank">Relational Data</a></p>
+
+<br /> <br />
+</article>
+
+</div>
+</body></html>

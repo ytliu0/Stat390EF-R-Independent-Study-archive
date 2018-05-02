@@ -1,0 +1,142 @@
+---
+title: "Week 5's Stock Market Prices Problem"
+output: html_document
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+```{r, message=FALSE}
+# load tidyverse packages
+library(tidyverse)
+```
+
+
+###The daily stock market prices are available on many internet sites. <a href="http://courses.atlas.illinois.edu/spring2017/STAT/STAT200/RProgramming/data/AAPLStock.csv" target="_blank">Here</a> is a data file containing the daily stock price for the Apple Inc.. It was downloaded from <a href="http://finance.yahoo.com/q/hp?s=AAPL+Historical+Prices" target="_blank">Yahoo! Finance</a>. 
+
+```{r}
+# load the data
+stock <- read_csv("AAPLStock.csv")
+```
+
+###Add a column named "Change" to the tibble `stock`, which is the percentage of the change of the stock's closing price (in column `Close`) compared to the closing price in the previous trade day (note that time is decreasing down the rows).
+
+Here I introduce the `lead()` command in `dplyr`. For a given vector `x`, `lead(x,n)` (`n` is a positive integer) shifts the vector `x` ahead by `n` elements and then replace the last `n` elements by `NA`s. The default value of `n` is 1. The following examples should make this clear. 
+```{r}
+(x <- 1:10)
+lead(x)
+lead(x,2)
+lead(x,5)
+lead(x,9)
+```
+There is another similar function called `lag()`. See `?lag` or simply try it out by replacing `lead` by `lag` in the examples above to see how it works.
+
+Now we can easily create the `Change` column using `mutate()` and `lead()`:
+```{r}
+stock <- mutate(stock, Change = (Close - lead(Close))/lead(Close)*100)
+head(stock)
+tail(stock)
+```
+We can check that it gives the same result as the following base R commands given in the Lon Capa solution.
+```{r}
+# remove the newly created `Change` column and copied to a new tibble
+stock2 <- select(stock, -Change) 
+# base R code to create the `Change` column
+n <- nrow(stock2)
+stock2$Change <- NA
+stock2$Change[-n] <- (stock2$Close[-n] - stock2$Close[-1])/stock2$Close[-1] * 100
+# check to see if the result is the same as the tidyverse approach:
+identical(stock,stock2)
+```
+
+
+###A positive value of "Change" means that the price went up. What is the proportion of days where the price went up in the data (not counting the NA in the last row, of course)?
+
+This base R command is still my favorite method:
+```{r}
+n <- nrow(stock)
+mean(stock$Change[-n] > 0)
+```
+If we must use `dplyr`, we can first use `filter()` to filter out the NA and then (`%>%`)  `summarize()` to compute the mean:
+```{r}
+filter(stock, !is.na(Change)) %>% summarize(mean(Change > 0))
+```
+but this seems to be a complicated way to carry out the command `mean(stock$Change > 0, na.rm=TRUE)`.
+
+###On which date did the percentage of the price drop the most? What is the percentage of the drop?
+
+Here `dplyr`'s `arrange()` command comes in handy:
+```{r}
+arrange(stock, Change)
+```
+```{r, echo=FALSE}
+out <- filter(stock, Change==min(Change, na.rm=TRUE))
+```
+Oh-oh, we can't see the `Change` column. No worry. We can use `select()` to rearrange columns:
+```{r}
+arrange(stock, Change) %>% select(Change, Date:`Adj Close`)
+```
+OR 
+```{r}
+arrange(stock, Change) %>% select(Change, everything())
+```
+Here `everything()` is a helper function in `dplyr`. The command above means keeping all other columns to the right of `Change`.
+
+We see that the percentage of the maximum drop was `r round(out$Change,2)`% on `r out$Date`. 
+
+Alternatively, we can also use `filter()` to single out the minimum of `Change`:
+```{r}
+filter(stock, Change==min(Change, na.rm=TRUE))
+```
+
+###Consider a naive model of predicting whether the price will go up or not based on the values of "Change" in the previous two trade days: predict the price going up if the sum of "Change" in the previous two days is positive. Add a column named "UpModel" to the data frame. Set the value to "TRUE" if the model predicts the price goes up; otherwise set it to "FALSE".
+
+Again use the `lead()` function to do the calculation. Also move the `Close`, `Change` and `UpModel` columns to the left so that they can be displayed on the screen.
+```{r}
+stock <- mutate(stock, UpModel = lead(Change)+lead(Change,2) > 0) %>% 
+  select(Date, Close, Change, UpModel, everything())
+head(stock)
+tail(stock)
+```
+You can check that the result is the same as the base R commands given in the Lon Capa solution.
+
+###What is the proportion of days where the model predicts the price going up?
+
+I still prefer this base R command:
+```{r}
+mean(stock$UpModel[1:(n-3)])
+```
+
+
+###The model gives a correct prediction if `stock$UpModel` is TRUE when `stock$Change>0` or `stock$UpModel` is FALSE when `stock$Change`<=0. What is the proportion of days where the model gives correct predictions? 
+
+Again, this base R command is still my favorite:
+```{r}
+mean(stock$UpModel[1:(n-3)] == (stock$Change[1:(n-3)] > 0))
+```
+With `dplyr`, we can do
+```{r}
+filter(stock, !is.na(UpModel)) %>% summarize( mean(UpModel == (Change>0)) )
+```
+This seems to be a complicated way of doing `with(stock, mean(UpModel == (Change>0), na.rm=TRUE))`.
+
+<br /><br /><br />

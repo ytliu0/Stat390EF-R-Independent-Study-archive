@@ -1,0 +1,79 @@
+---
+title: "Week 8's Ecological Correlation Problem"
+output: html_document
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+```{r, message=FALSE}
+# load tidyverse 
+library(tidyverse)
+```
+
+###In the second survey of Stat 100 in Fall 2017, students reported the number of hours they worked per week and the percent of their tuition their parents paid for. The data can be downloaded <a href="http://courses.las.illinois.edu/stat/stat100/survey/archive/stat100_2017fall_survey02.csv" target="_blank">here</a>. The hours students work per week is in the column named `workHr` and the percent of tuition is in the column `tuition`.
+
+```{r}
+# load data
+survey <- read_csv("stat100_2017fall_survey02.csv")
+```
+
+###Calaulate the average of `workHr` and `tuition` for each ethnic group (given in the column `ethnicity`).
+
+Use `group_by()` and `summarize()`:
+```{r}
+(Avg <- group_by(survey, ethnicity) %>% 
+   summarize(workHr_g=mean(workHr), tuition_g=mean(tuition)))
+```
+
+###Which group has the highest average `workHr`? What is the highest average `workHr`? Which group has the lowest average `workHr`? What is the lowest average `workHr`?
+
+Use `arrange()` to sort the observation by `workHr`:
+```{r}
+(Avg <- arrange(Avg, workHr_g))
+```
+```{r, echo=FALSE}
+n <- nrow(Avg)
+workHr_min <- round(Avg$workHr_g[1],2)
+workHr_max <- round(Avg$workHr_g[n],2)
+eth_min <- Avg$ethnicity[1]
+eth_max <- Avg$ethnicity[n]
+```
+
+We see that `r eth_max`s have the highest average `workHr` of `r workHr_max` hours/week, and `r eth_min`s have the lowest average `workHr` of `r workHr_min` hours/week.
+
+By default, `arrange()` sorts the data in ascending order. We can use the function `desc()` to sort the data in descending order:
+```{r}
+arrange(Avg, desc(workHr_g))
+```
+
+###Calculate the correlation between the group means of `workHr` and the group means of `tuition`. This is known as the ecological correlation. Compare the ecological correlation and the correlation between `workHr` and `tuition`.
+
+```{r}
+# correlation between workHr and tuition
+cor(survey$workHr, survey$tuition)
+# ecological correlation
+cor(Avg$workHr_g, Avg$tuition_g)
+```
+We see that the ecological correlation is more negative than the correlation. It is generally true that the magnitude of the ecological correlation is larger than the magnitude of the correlation, as you've learned in Stat 100.
+
+<br /><br /><br />

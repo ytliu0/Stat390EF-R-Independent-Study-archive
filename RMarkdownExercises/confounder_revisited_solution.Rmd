@@ -1,0 +1,242 @@
+---
+title: "Shoe Number vs Shoe Size Confounder Problem Revisited"
+output: html_document
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+In <a href="https://library1.lon-capa.uiuc.edu/res/uiuc/ytliu/R-Programming/open/03/confounder.problem" target="_blank">Week 3's confounder problem</a>, you analyzed the Stat 100 survey data from Spring 2013. You identified gender as a confounder to the apparent negative correlation between the shoe size and the number of shoes owned by stratification. As you have learned from Stat 200, another way to control for a possible confounding variable is by modeling. In this problem, you are going to compare the results of stratification and modelling. The data you are going to analyze is from Stat 100's survey 1 data in spring 2017. It can be downloaded <a href="Stat100_2017spring_survey01M2.csv">here</a>. <a href="Stat100_2017spring_survey01M2.html" target="_blank">This webpage</a> contains a description of the column variables. Save the csv file to the same directory as your R markdown file. Then load the file to R using the command 
+```{r}
+survey <- read.csv("Stat100_2017spring_survey01M2.csv")
+```
+
+```{r, echo=FALSE}
+# Convert number to character
+convert_num_to_char <- function(num) {
+  if (num < 0) {
+    return(paste("-",-num))
+  } else {
+    return(paste("+",num))
+  }
+}
+```
+
+**a. (2 points) What is the correlation coefficient between the shoe size and number of shoes owned?**
+
+The correlation can be computed using the `cor()` function:
+```{r}
+cor(survey$shoeSize, survey$shoeNums)
+```
+You can also wrap the function inside the `with(survey,)` environment if you don't want to type the `survey$` prefix:
+```{r}
+with(survey, cor(shoeSize, shoeNums))
+```
+```{r, echo=FALSE}
+r <- with(survey, cor(shoeSize, shoeNums))
+```
+We see that the correlation coefficient is <span class="boxed">`r r`</span>. This is a negative correlation, as we have seen before.
+
+**b. (6 points) Fit a linear model predicting the number of shoes from shoe size. What are the intercept and slope? Is the slope statistically significant? Make a scatter plot of shoe number versus shoe size and add the regression line to the plot.**
+
+```{r}
+# fit the linear model
+fit_overall <- lm(shoeNums ~ shoeSize, data=survey)
+summary(fit_overall)
+```
+```{r, echo=FALSE}
+intcp <- as.character(round(fit_overall$coefficients[1],4))
+slope <- as.character(round(fit_overall$coefficients[2],4))
+p_slope <- summary(fit_overall)$coefficients[2,4]
+if (p_slope < 2e-16) {
+  p_slope <- "<2e-16"
+} else {
+  p_slope <- as.character(signif(p_slope,3))
+}
+```
+We see that the intercept is <span class="boxed">`r intcp`</span> and the slope is <span class="boxed">`r slope`</span>, consistent with the negative correlation we found in (a). The p-value of the slope is `r p_slope`, which is much smaller than 5%. This means that <span class="boxed">the slope is statistically significant</span>. 
+
+Shown below is a plot of shoe number vs shoe size. The regression line is shown in red.
+```{r}
+plot(shoeNums ~ shoeSize, data=survey, pch=16)
+abline(fit_overall, col="red")
+```
+
+
+### Stratification
+
+We split the `survey` data into male and female groups via the logical vectors `male` and `female`:
+```{r}
+male <- (survey$gender == "male")
+female <- !male
+```
+Now we fit a linear model for each group using `lm()`:
+```{r}
+fit_male <- lm(shoeNums ~ shoeSize, data=survey, subset=male)
+fit_female <- lm(shoeNums ~ shoeSize, data=survey, subset=female)
+```
+
+**c. (2 points) What are the regression equations for the male and female groups?**
+
+Look at the result of regressions:
+```{r}
+summary(fit_male)
+summary(fit_female)
+```
+```{r, echo=FALSE}
+intcp_male <- as.character(round(fit_male$coefficients[1],4))
+slope_male <- convert_num_to_char(round(fit_male$coefficients[2],4))
+intcp_female <- as.character(round(fit_female$coefficients[1],4))
+slope_female <- convert_num_to_char(round(fit_female$coefficients[2],4))
+p_male <- summary(fit_male)$coefficients[2,4]
+p_female <- summary(fit_female)$coefficients[2,4]
+sig <- "none of the slopes is significant"
+if (p_female < 0.05) {sig <- "the slope in the female group is significant but not significant in the male group"}
+p_male <- paste0(as.character(signif(p_male*100,3)),"%")
+p_female <- paste0(as.character(signif(p_female*100,3)),"%")
+```
+From the output, we conclude that the regression equations for the two groups are:
+
+<div class="boxed">
+Male: Shoe numbers = `r intcp_male` `r slope_male`&times;(shoe size)
+
+Female: Shoe numbers = `r intcp_female` `r slope_female`&times;(shoe size)
+</div>
+
+**(2 points) In which group(s) is the slope statistically significant?**
+
+The slope is significant if the p-value is smaller than 5%. The p-value for the slope of males is `r p_male` and the p-value for the slope of females is `r p_female`. This means that <span class="boxed">`r sig`</span>. 
+
+**(2 points) Use `xyplot()` to plot the shoe number vs shoe size for these two groups on the same graph and show the regression lines.**
+
+Below, the parameter `layout=c(1,2)` is to arrange the plot in 2 rows. The regression lines are shown in red.
+```{r}
+library(lattice)
+xyplot(shoeNums ~ shoeSize | gender, data=survey, pch=16, layout=c(1,2), 
+       panel = function(x, y, ...) {
+       panel.xyplot(x, y, ...)
+       panel.lmline(x, y, col = "red")
+       })
+```
+
+
+<br />
+
+### Modeling
+
+Change the reference level of `gender`
+```{r}
+survey$gender <- relevel(survey$gender, "male")
+```
+<br />
+
+**d. (4 points) Fit a linear model predicting the number of shoes from shoe size and gender without an interaction term**.
+
+```{r}
+# model without interaction term
+fit_noint <- lm(shoeNums ~ shoeSize + gender, data=survey)
+summary(fit_noint)
+```
+```{r, echo=FALSE}
+intcp <- as.character(round(fit_noint$coefficients[1],4))
+slope_size <- convert_num_to_char(round(fit_noint$coefficients[2],4))
+slope_gender <- convert_num_to_char(round(fit_noint$coefficients[3],4))
+```
+From the output, we conclude that the regression equation is 
+
+<span class="boxed">
+Shoe numbers = `r intcp` `r slope_size`&times;(shoe size) `r slope_gender`&times;(genderfemale)
+</span>
+
+**e. (5 points) Split the equation in (d) into male and female groups. Show your steps.**
+
+```{r, echo=FALSE}
+intcp_female <- as.character(as.numeric(intcp) + round(fit_noint$coefficients[3],4))
+```
+
+To obtain the equation for the males, we set gendermale=0 in the equation in (d). This gives 
+
+<span class="boxed">
+Male: Shoe numbers = `r intcp` `r slope_size`&times;(shoe size)
+</span>
+
+For the females, we set gendermale=1 in the equation in (d). This gives 
+
+Female: Shoe numbers = `r intcp` `r slope_size`&times;(shoe size) `r slope_gender`
+
+which can be simplified to give
+
+<span class="boxed">
+Female: Shoe numbers = `r intcp_female` `r slope_size`&times;(shoe size) 
+</span>
+
+**(1 point) Are the equations exactly the same as in part (c)?**
+
+Compared the equations in (e) and (c), we see that they are <span class="boxed">different</span>. 
+
+Without an interaction term, the slopes for the two groups are the same. This will be in general inconsistent with the equations obtained by fitting a linear model to each group separately.
+
+**f. (5 points) Fit a linear model predicting the number of shoes from shoe size and gender with an interaction term.**
+
+```{r}
+# Model with interaction term
+fit_int <- lm(shoeNums ~ shoeSize*gender, data=survey)
+summary(fit_int)
+```
+```{r, echo=FALSE}
+intcp <- as.character(round(fit_int$coefficients[1],4))
+slope_size <- convert_num_to_char(round(fit_int$coefficients[2],4))
+slope_gender <- convert_num_to_char(round(fit_int$coefficients[3],4))
+slope_g_size <- convert_num_to_char(round(fit_int$coefficients[4],4))
+```
+From the output, we see that the regression equation is
+
+<span class="boxed">
+Shoe numbers = `r intcp` `r slope_size`&times;(shoe size) `r slope_gender`&times;(genderfemale) `r slope_g_size`&times;(genderfemale)&times;(shoe size)
+</span>
+
+**g. (5 points) Split the equation in (f) into male and female groups. Show your steps.**
+```{r, echo=FALSE}
+intcp_female <- as.character(round(fit_int$coefficients[1],4) + round(fit_int$coefficients[3],4))
+slope_female <- convert_num_to_char(round(fit_int$coefficients[2],4) + round(fit_int$coefficients[4],4))
+```
+
+The male equation is obtained by setting genderfemale=0 in the equation in (f). The result is 
+
+<span class="boxed">
+Male: Shoe numbers = `r intcp` `r slope_size`&times;(shoe size) 
+</span>
+
+For the female equation, we set genderfemale=1 in the equation in (f). This gives 
+
+Female: Shoe numbers = `r intcp` `r slope_size`&times;(shoe size) `r slope_gender` `r slope_g_size`&times;(shoe size) 
+
+which can be simplified to give 
+
+<span class="boxed">
+Female: Shoe numbers = `r intcp_female` `r slope_female`&times;(shoe size)
+</span>
+
+**(1 point) Are these equations exactly the same as part (c)?**
+
+We see that <span class="boxed">these equations match the equations calculated in part (c), as expected</span>. The tiny difference in the slope of the female equation is caused by my rounding the regression coefficients to 4 decimal places.
+<br /><br />

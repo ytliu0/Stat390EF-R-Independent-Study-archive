@@ -1,0 +1,104 @@
+---
+title: "Week 3's Maximum Speed in Stat 100 Survey Data Problem"
+output: html_document
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+In this problem, you are going to look at Stat 100's survey 1 data in Spring 2017. The csv data file can be downloaded <a href="http://courses.atlas.illinois.edu/fall2017/STAT/STAT200/RProgramming/data/Stat100_2017spring_survey01.csv" target="_blank">here</a>. Put the file, Stat100_2017spring_survey01.csv, to your R's working directory and load it with the command
+```{r, message=FALSE}
+library(tidyverse)
+survey <- read_csv("Stat100_2017spring_survey01.csv")
+```
+The column variables are explained on this <a href="http://courses.atlas.illinois.edu/fall2017/STAT/STAT200/RProgramming/data/Stat100_2017spring_survey01.html">webpage</a>. 
+
+```{r, echo=FALSE}
+qnum = 1L
+```
+
+
+###`r letters[qnum]`. The `speed` column is the maximum speed (in mph) students claimed they had ever driven. What is the mean and sample standard deviation of `speed`?
+
+Use the `summarize()` function to get the answer:
+```{r}
+summarize(survey, mean(speed), sd(speed))
+```
+
+```{r, echo=FALSE}
+qnum = qnum+1L
+```
+
+###`r letters[qnum]`. Plot a histogram of the maximum speed. 
+
+```{r}
+ggplot(survey) + geom_histogram(aes(speed,..density..), bins=16, fill="white", color="black")
+```
+
+```{r, echo=FALSE}
+qnum = qnum+1
+```
+###`r letters[qnum]`. You should see from the histogram that there are students who said '0', meaning that they had never driven a car. Calculate the total number of students who had never driven a car. Of these students, how many of them were males and how many of them were females?
+
+Use the `filter()` function to subset the tibble:
+```{r}
+non_drivers <- filter(survey, speed==0)
+```
+The number of students who had never driven a car is...
+```{r}
+nrow(non_drivers)
+```
+To break the number down by gender, we can use `group_by()` and then `summarize()`:
+```{r}
+non_drivers %>% group_by(gender) %>% summarize(n())
+```
+OR use the `table()` function:
+```{r}
+table(non_drivers$gender)
+```
+Note that `n()` is a function in `dplyr` that counts the number of observations in a group. This function can only be used from within `summarise()`, `mutate()` and `filter()`.
+
+```{r, echo=FALSE}
+qnum = qnum+1
+```
+###`r letters[qnum]`. From the histogram, you also see that there are a number of students whose maximum driving speeds were quite low. Let's assume that only those whose maximum driving speeds exceed 30 mph were regular drivers. Create a subset of the `speed` column for regular drivers and then calculate the mean and sample standard deviation. 
+
+Use `filter()` to subset the data and then `summarize()` to calculate the statistics.
+```{r}
+regular <- filter(survey, speed > 30)
+(stats <- summarize(regular, mean=mean(speed), sd=sd(speed)))
+```
+
+```{r, echo=FALSE}
+qnum = qnum+1
+```
+###`r letters[qnum]`. Plot a histogram of the maximum speed for the regular drivers. Then superpose a normal curve with the same mean and standard deviation (calculated above). 
+
+```{r}
+ggplot(regular) + 
+  geom_histogram(aes(speed,..density..), bins=16, fill="white", color="black") + 
+  stat_function(fun=dnorm, args=list(mean=stats$mean, sd=stats$sd), color="red")
+```
+
+
+<br /><br /><br />
+

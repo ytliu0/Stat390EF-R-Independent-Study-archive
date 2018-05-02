@@ -1,0 +1,445 @@
+---
+title: "Simple Regression"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file -  Linear_Regression_Demystified.pdf
+
+## The `lm()` Function
+
+Linear regression is one of the most important class of models in Statistics. In R, the built-in function `lm()` is the workhorse with many bells and whistles that handle linear models. Here we use the Stat 100 Survey 2, Fall 2015 (combined) data we worked on <a href="../Week05/DataManipulations.html" target="_blank">previously</a> to demonstrate the use of `lm()` to perform a simple linear regression. We will further explore the `lm()` function in future lessons.
+
+Since we have saved the data previously, we can reload it using the command 
+```{r}
+load('Stat100_Survey2_Fall2015.RData')
+```
+Using the `ls()` command, we see that the data frame `survey` has been loaded to the working space. To remind us of the variables in the data, we type 
+```{r}
+names(survey)
+```
+Recall that we plotted the number of drinks per week versus party hours per week. Here, let's reverse the plot: 
+```{r}
+plot(partyHr ~ drinks, data=survey, pch=19, xlab="Drinks/week", ylab="Party hours/week")
+```
+
+It is apparent that as the number of drinks increases, the party hours tend to increase as well. To fit a linear model predicting party hours from drinks, we use the following R command 
+```{r}
+fit <- lm(partyHr ~ drinks, data=survey)
+```
+If you type the command `class(fit)`, you will see that the data type is 'lm', something we haven't see before. If we type `fit`, it auto-prints the following
+```{r}
+fit
+```
+```{r, echo=FALSE}
+b0 = round(fit$coef[1],4)
+b1 = round(fit$coef[2],4)
+```
+It first tells us what is being fit in the model. Then it gives the coefficients of the fit. In our case, the intercept is `r b0` and the slope of "drinks" is `r b1`. In other words, the linear model is 
+$$ {\rm party\ hours} = `r b0` + `r b1` \times {\rm drinks}$$
+We can also look at the coefficients by typing
+```{r}
+fit$coefficients
+```
+The variable `fit$coefficients` is a numeric vector of length two, storing the values of the intercept and slope. The `summary()` function provides more information about the fitted model:
+```{r}
+summary(fit)
+```
+In addition to the values of the intercept and slope, `summary(fit)` also displays their estimated standard errors, the $t$ values and the two-sided p-values $P(>|t|)$. The two-sided p-values are calculated by assuming that the coefficients follow the $t$ distributions with $n-2$ degrees of freedom. Beside each p-value we see several stars. The number of stars denote the significance of the coefficient being nonzero. As the 'Signif. codes' underneath the coefficients show, 3 stars ' \*\*\* ' means the p-value is between 0 and 0.001; 2 stars ' \*\* ' means the p-value is between 0.001 and 0.01; one star ' \* ' means p-vale is between 0.01 and 0.05; '.' means p-value is between 0.05 and 0.1; and space '\ ' means the p-value is between 0.1 and 1. The `summary()` function also provides information about the residuals of the fit, $R^2$ and residual standard error. 
+
+We can now use the `abline()` function to add the regression line to the plot. Here we have the intercept `a=fit$coefficients[1]` and slope `b=fit$coefficients[2]`. 
+Actually, we can simply use `abline(fit)` to add the regression line:
+```{r}
+plot(partyHr ~ drinks, data=survey, pch=19, xlab="Drinks/week", ylab="Party hours/week")
+abline(fit, col="red")
+```
+
+Before we continue, let's check that the `lm()` function gives the results we expect. You have learned from Stat 100 and Stat 200 that for a simple linear model $y=\beta_0+\beta_1 x$, the slope and intercept are given by 
+$$\beta_1 = r \frac{SD_y}{SD_x} \ \ , \ \ \beta_0 = \bar{y}-\beta_1 \bar{x} ,$$
+where $SD_x$ and $SD_y$ are the standard deviations of $x$ and $y$, $\bar{x}$ and $\bar{y}$ are the means of $x$ and $y$, and $r$ is the correlation coefficient between $x$ and $y$. Let's confirm the results of `lm()`:
+```{r}
+r <- cor(survey$drinks,survey$partyHr)
+SDy_div_SDx <- sd(survey$partyHr)/sd(survey$drinks)
+slope_drinks <- r*SDy_div_SDx
+intercept <- mean(survey$party) - slope_drinks*mean(survey$drinks)
+c(intercept,slope_drinks)
+```
+These are exactly the values returned by the `lm()` function. We know that $R^2$ in simple regression is the same as the square of the correlation coefficient. Let's check it:
+```{r}
+r^2
+```
+It again agrees with the $R^2$ returned by `summary(fit)`. You also learned that the standard error for the slope is given by 
+$$SE^+_{\rm slope}=\sqrt{\frac{1-r^2}{n-2}}\, \frac{SD_y}{SD_x}$$
+Let's check it:
+```{r}
+n <- nrow(survey)
+(SE_slope <- sqrt((1-r^2)/(n-2))*SDy_div_SDx)
+```
+We again see that it agrees with the value returned by `summary(fit)`. As we mention in last week's notes, putting the assignment statement `SE_slope <- sqrt((1-r^2)/(n-2))*SDy_div_SDx` inside a  parenthesis `()` not only assigns the value to `SE_slope` but also prints it on the screen. The $t$ value for the slope is 
+```{r}
+(t_slope <- slope_drinks/SE_slope)
+```
+and the two-sided p-value can be computed by the `pt()` function (with df=n-2): 
+```{r}
+2*pt(-t_slope,n-2)
+```
+These are all consistent with the values returned by `summary(fit)`.
+
+## Confidence Interval for Intercept and Slope
+
+Having obtained the coefficients and standard errors, we can calculate the confidence interval (CI) for these coefficients. The assumption is that these coefficients follow the $t$ distribution with $n-2$ degrees of freedom. 
+
+As an example, let's calculate the 95% CI for the slope. We first need to know the t-value, $t^*$, corresponding to the 95% CI. 
+
+```{r, echo=FALSE}
+p <- -qt(0.025,n-2)
+xmax = 4
+npoly=100
+xr <- seq(p,xmax,length.out=npoly)
+yr <- dt(xr,n-2)
+xmid <- seq(-p,p,length.out=npoly)
+ymid <- dt(xmid,n-2)
+curve(dt(x,n-2), xlim=c(-xmax,xmax), xlab="",ylab="", xaxt="n", yaxt="n")
+polygon(c(p,xr,xmax),c(0,yr,0),col="red")
+polygon(c(-p,-xr,-xmax),c(0,yr,0),col="red")
+polygon(c(-p,xmid,p),c(0,ymid,0),col="skyblue")
+text(0,0.2,"95%")
+text(2.7,0.035,"2.5%")
+text(-2.7,0.035,"2.5%")
+mtext(expression(-t^"*"), side=1, at=-p, line=1, cex=1.3)
+mtext(expression(t^"*"), side=1, at=p, line=1, cex=1.3)
+```
+
+As shown in the graph above<sup><a href="#fn1" id="ref1">1</a></sup>, if the middle area under the t-curve is 95%, the area of each tail is (100%-95%)/2 or 2.5%. The value of $t^*$ can be calculated using the `qt()` function: 
+```{r}
+(tstar <- qt(0.025,n-2,lower.tail=FALSE))
+```
+This is also equal to `-qt(0.025,n-2)` since the t-curve is symmetric. The CI of the slope is given by ${\rm slope} \pm t_\alpha SE^+_{\rm slope}$. We can use `slope_drinks` and `SE_slope` we computed above to calculate the CI: 
+```{r}
+(slope_95CI <- c(slope_drinks-tstar*SE_slope, slope_drinks+tstar*SE_slope))
+```
+In fact, we don't need to do this calculation. R already has a built-in function `confint()` that does this calculation for us. However, it is useful to go through this exercise to understand what the function does. The `confint()` function takes at least three arguments: `confint(object,para,level=0.95,...)`. For our purpose here, we will ignore the ... arguments. The `object` can be the object returned by the `lm()` function, e.g. our `fit`.  `para` specifies which parameters the CI is to be calculated, and `level`is the CI level. The default is 0.95 (95%). To find the 95% CI for the slope, we can type 
+```{r}
+confint(fit,'drinks')
+```
+We can also use `confint(fit,2)` since the slope for 'drinks' is the second coefficient. We see that these numbers are the same as those we calculated above. 
+
+If the `para` option is omitted in `confint()`, the CI for all parameters will be computed: 
+```{r}
+confint(fit)
+```
+We can change the confidence level by adjusting the `level` parameter. For example, to compute the 80% CI, we type 
+```{r}
+confint(fit,level=0.8)
+```
+
+## Predicted Values
+
+Having obtained the intercept and slope for the regression, we can use them to predict the outcome. For example, we construct the following function to take an input vector `drinks` and predict the party hours based on the regression coefficients `beta`:
+```{r}
+predict_partyHrfromDrinks <- function(drinks, beta) {
+  beta[1] + beta[2]*drinks
+}
+```
+Here the input parameter `beta` is assumed to be a numeric vector of length 2, with `beta[1]` being the intercept and `beta[2]` being the slope. As an example, we can predict the party hours for the first 10 students in the survey data by the following command:
+```{r}
+predict_partyHrfromDrinks(survey$drinks[1:10],fit$coefficients)
+```
+Actually, there is an easier way to get the answer. The predicted values have already been calculated and are stored in `fit$fitted.values`. To see the first 10 fitted values, we simply type 
+```{r}
+fit$fitted.values[1:10]
+```
+and we see that they are the same values as calculated above, with names given by  `rownames(survey)`, which are simply the row numbers. 
+
+We can use our function `predict_partyHrfromDrinks` to predict the party hours from new data. For example, 
+```{r}
+drinks <- c(8,5.5,0.2,2)
+predict_partyHrfromDrinks(drinks,fit$coefficients)
+```
+It turns out that the `predict()` function together with `fit` can also be used for new data, but the new data must be put into a data frame and this data frame must contain the independent variables `drinks`. Then we use the option `newdata=newdataframe` to get the predicted outcome. For example,
+```{r}
+new_drinks <- data.frame(drinks = c(8,5.5,0.2,2))
+rownames(new_drinks) <- c("John","Mary","Jill","Patrick")
+predict(fit, newdata=new_drinks)
+```
+Note that when we add the row names to the data frame, the vector returned by `predict()` also carries these names. The new data frame can contain columns other than `drinks` and `predict()` will ignore those other columns: 
+```{r}
+new_data <- data.frame(gender=c("male","female","female","male"),
+                       drinks = c(8,5.5,0.2,2), partyHr = c(1,2,3,4))
+rownames(new_data) <- c("John","Mary","Jill","Patrick")
+predict(fit, newdata=new_data)
+```
+
+###Problem with the `predict()` function
+
+In past semesters, students ran into problems with the `predict()` function. One common problem arises from using a clumsy formula in fitting the linear model. For example, instead of using 
+```{r, eval=FALSE}
+fit <- lm(partyHr ~ drinks, data=survey)
+```
+they used 
+```{r}
+fit_bad <- lm(survey$partyHr ~ survey$drinks)
+```
+This fitting formula works as it gives the correct regression result. However, you run into problem if you try to use the `predict()` function to predict new data. For example,
+```{r, eval=FALSE}
+predict(fit_bad, newdata=new_data)
+```
+doesn't give you the correct result. This is because `predict()` needs to know which variable in `new_data` is `survey$partyHr` and which is `survey$drinks` (the names used in `fit_bad`) and can't find any name match. There are `partHr` and `drinks` in `new_data` but no `survey$partyHr` nor `survey$drinks`. 
+
+## Residuals and Degrees of Freedom
+
+The `fit` variable generated by the `lm()` function also contains the residuals of the fitted data. The vector `fit$residuals` stores the residuals of all the data in the data frame. To see the first 10 residuals, we can type 
+```{r}
+fit$residuals[1:10]
+```
+Another way to get the residuals is to use the function `resid()`:
+```{r}
+res <- resid(fit)
+res[1:10]
+```
+Recall that a residual is defined as the difference between the actual value and the predicted value. We can compute our own residuals and compare with those returned by `fit$residuals`:
+```{r}
+my_residuals <- survey$partyHr - predict_partyHrfromDrinks(survey$drinks,fit$coefficients)
+max( abs(my_residuals - fit$residuals) )
+```
+So we see that `my_residuals` and `fit$residuals` are practically the same. The small difference is likely due to numerical roundoff error. 
+
+The residuals have two important properties: they sum to zero and the correlation coefficient between them and the independent valuable $x$ is exactly 0. These properties follow from the fact that the regression coefficients $\beta_0$ and $\beta_1$ are constructed to minimize the sum of the square of the residuals (SSE). This is called the least square prescription. The mathematical proof requires calculus. If you are interested and have the math background, you can read these <a href="../Linear_Regression_Demystified.pdf" target="_blank">pdf notes</a>.
+
+Here we skip the math and simply use R to check these assertions using our fitted model `fit`
+```{r}
+sum(fit$residuals)
+cor(fit$residuals,survey$drinks)
+```
+We see that the claims are indeed supported by our numerical calculations. Since there are $n=$ `r nrow(survey)` observations in the data frame `survey`, there are also $n$ residuals. However, these residuals are not independent: they must sum to 0 and have zero correlation with `drinks`. As a result, there are only $n-2=$ `r nrow(survey)-2` independent residuals. If you tell me any of the $n-2$ residuals, I can figure out the remaining two by the requirements that they must sum to 0 and they must have zero correlation with `drinks`. For this reason, we say that the residuals have $n-2$ degrees of freedom. The residual degrees of freedom of our fitted model is stored in `fit$df.residual`:
+```{r}
+fit$df.residual
+```
+
+Note that the sum of residuals is 0 and that they have zero correlation with $x$ are true only if the regression coefficients are given by the correct formulae $\beta_1=r SD_y/SD_x$ and $\beta_0=\bar{y}-\beta_1 \bar{x}$. Other values of $\beta_0$ and $\beta_1$ won't have these properties. To demonstrate this, we construct a function to calculate the sum of residuals and the correlation for a general set of $\beta_0$ and $\beta_1$: 
+```{r}
+sumRes_cor <- function(beta,x,y) {
+  residuals <- y - (beta[1] + beta[2]*x)
+  output <- c( sum(residuals), cor(x,residuals) )
+  names(output) <- c("sum(residuals)","cor(x,residuals)")
+  output
+}
+```
+In this function, `y` is the dependent variable, `x` is the independent variables, `beta[1]` is the intercept and `beta[2]` is the slope. Note that we assign names to the output vector to make the output easier to read. Let's first check that it gives the expected results 0 and 0 when correct values of `beta` are given:
+```{r}
+sumRes_cor(fit$coefficients, survey$drinks, survey$partyHr)
+```
+Now let's try a few other values of $\beta_0$ and $\beta_1$ to see what happens:
+```{r}
+sumRes_cor(c(0,0),survey$drinks, survey$partyHr)
+sumRes_cor(c(2,0.5),survey$drinks, survey$partyHr)
+sumRes_cor(c(0.5,1),survey$drinks, survey$partyHr)
+```
+As expected, they are not zero. You can try more values if you want.
+
+## SSE, SST, SSM and RSE
+
+Given a set of data points $(x_1,y_1), (x_2,y_2), (x_3,y_3),\cdots (x_n,y_n)$, and a linear model 
+$$\hat{y}_i = \beta_0 + \beta_1 x_i$$ 
+we define the quantities SST, SSM and SSE as 
+$$SST = \sum_{i=1}^n (y_i-\bar{y})^2$$ 
+$$SSM = \sum_{i=1}^n (\hat{y}_i-\bar{y})^2$$
+$$SSE = \sum_{i=1}^n (y_i-\hat{y}_i)^2$$
+
+Note that SST is independent of the model parameters $\beta_0$ and $\beta_1$ and is given by $SST=nSD_y^2$ from the definition of the standard deviation. The other two quantities SSM and SSE depend on the parameters. You are told that if $\beta_0$ and $\beta_1$ are given by the regression formulae, then SST=SSM+SSE, 
+$SSM=nr^2SD_y^2$ and $SSE=n(1-r^2)SD_y^2$. The mathematical proof can be found in <a href="Linear_Regression_Demystified.pdf" target="_blank">these notes</a> for mathematically inclined students. Here we will confirm these claims using R. 
+
+Below is a simple function that calculates SSE, SSM and SST-SSM-SSE.
+<p id="computeSS">
+```{r}
+computeSS <- function(beta,x,y) {
+  n <- length(x)
+  SDy2 <- var(y)*(n-1)/n
+  SST <- n*SDy2
+  yhat <- beta[1] + beta[2]*x
+  SSM <- sum((yhat-mean(y))^2)
+  SSE <- sum((y-yhat)^2)
+  output <- c(SSE,SSM,SST-SSE-SSM)
+  names(output) <- c("SSE","SSM","SST-SSE-SSM")
+  output
+}
+```
+</p>
+Let's try it on our survey data and the `fit` coefficients and see if it works:
+```{r}
+(fitSS <- computeSS(fit$coefficients, survey$drinks, survey$partyHr))
+```
+We see that the equality SST=SSM+SSE holds. Let's now confirm that the values of SSM and SSE are given by $nr^2SD_y^2$ and $n(1-r^2)SD_y^2$:
+```{r}
+SDy2 <- var(survey$partyHr)*(n-1)/n
+c(fitSS["SSM"] - n*r^2*SDy2, fitSS["SSE"] - n*(1-r^2)*SDy2)
+```
+This confirms the claims. 
+
+The residual standard error (RSE) is defined as the square root of SSE divided by the degrees of freedom: 
+$$RSE = \sqrt{SSE/(n-2)}$$
+Having calculated SSE, we can easily compute the RSE: 
+```{r}
+RSE <- sqrt( fitSS["SSE"]/(n-2))
+RSE
+```
+This is the same as the "residual standard error" returned by `summary(fit)` (see the output above). It estimates the standard deviation of the residuals. 
+
+Note that if $\beta_0$ and $\beta_1$ take values other than those given by the regression formulae, the equality SST=SSM+SSE no longer holds. We can verify that by trying a few other values:
+```{r}
+computeSS(c(1,2), survey$drinks, survey$partyHr)
+computeSS(c(-1,3), survey$drinks, survey$partyHr)
+computeSS(c(5,1), survey$drinks, survey$partyHr)
+```
+
+## Residual Plots
+
+Residual plots are useful to assess the validity of a linear model. The basic assumption of the linear model is that the data (x,y) can be approximated $y=\beta_0 +\beta_1 x + \epsilon$ with the residual $\epsilon$ independent of $x$ and is random. If the residual $\epsilon$ as a function of $x$ shows a pattern, it suggests that the linear model is not an accurate description of the data and the relationship between $x$ and $y$ may be nonlinear. As an example, consider the following simple data: 
+```{r}
+set.seed(367134)
+x <- seq(0,2,0.01)
+y <- (x-0.5)^2 + 0.05*rnorm(length(x))
+plot(x,y, pch=20)
+```
+
+The relationship between $x$ and $y$ is clearly nonlinear. If we fit a linear model and plot the residuals vs x, we see a pattern:
+```{r}
+fit1 <- lm(y~x)
+plot(x, fit1$residuals, pch=20, ylab="residuals")
+abline(h=0)
+```
+
+This shows that the residual function $\epsilon(x)$ is not completely random, indicating that the linear model is not an accurate description of the data.
+
+Finally, we should caution that the estimate of standard errors, p-values, and confidence intervals are based on the assumptions that (1) the model is linear, (2) the data points are independent, (3) the  the variance of the residuals is independent of the values of the independent variable $x$, and (4) $\epsilon$ follows a normal distribution. If these assumptions are not true, the estimated values may be used for reference but cannot be taken seriously. The last assumption can be relaxed if the sample size is sufficiently large because of the central limit theorem. The third assumption, also known as **homoscedasticity**, is essential. The absence of homoscedasticity is called **heteroscedasticity**.
+
+We can get a sense of how good the homoscedasticity assumption holds from the residual plots. For example, in the linear model predicting party hours from number of drinks, the residual plot is
+```{r}
+plot(survey$drinks, fit$residuals, pch=20, xlab="Drinks/week", ylab="Residuals", las=1)
+abline(h=0)
+```
+
+This plot shows that the homoscedasticity assumption does not hold well, although the deviation is not too big. Another useful plot is residuals versus the fitted values ($\hat{y}$): 
+<p id="residualp">
+```{r}
+plot(fit$fitted.values, fit$residuals, pch=20, xlab="Predict", ylab="residual", las=1)
+abline(h=0)
+```
+</p>
+
+This plot is essentially the same as the previous plot. This is expected because $\hat{y}=\beta_0+\beta_1 x$, so we simply change the scaling of the horizontal axis. You will see that this plot is useful when we are dealing with regression with multiple variables. Instead of making plots of the residuals versus each of the independent variable, we usually just plot the residuals versus the predicted values, which are a linear combination of the values of all independent variables. 
+
+From the plots, we conclude that the homoscedasticity assumption does not hold very well. However, the deviation from the assumption does not seem to be too large for us to completely ignore the diagnostics returned by the linear model. Therefore, for this data set the standard errors, p-values, confidence intervals can be used as reference numbers but should not be taken too seriously.
+
+## Partial Matching
+
+Finally, we want to remind you of the trick in R called "partial matching" mentioned in Section 10.6 of Peng's textbook. The idea is that when there is no ambiguity, R allows you to abbreviate the name of a variable. For example, instead of typing `fit$coefficients` to get the coefficients of the regression, we can simply type `fit$coef` or `fit$coe`:
+```{r}
+fit$coef
+fit$coe
+```
+There are no vectors named `fit$coe` or `fit$coef`. When you type `fit$coe`, for example, R tries to match an existing object whose name begins with the names you type. In this case, R finds that `fit$coe` partially matches the existing object `fit$coefficients` and so it prints the content of `fit$coefficients`. 
+
+As an another example, instead of typing `fit$residuals` to get the residuals, we can simply type `fit$res`:
+```{r}
+fit$res[1:10]
+```
+Partial matching can also be used in function arguments. For example, instead of typing `pnorm(1.65, lower.tail=FALSE)`, we can type `pnorm(1.65, low=F)`.
+
+This partial matching trick is particularly useful in interactive work, but is discouraged to use excessively in programming because having abbreviations all over the places may make the code hard to understand. 
+
+## Summary 
+
+We introduce a few commands related to the `lm()` function. We do not just tell you how to use them, but also include a number of side calculations to explain where the numbers come from. Here we summarize all the commands and ideas we have covered. 
+
+<ul>
+<li>The `lm()` function: fitting a linear model, e.g. 
+```{r, eval=FALSE}
+fit <- lm(partyHr ~ drinks, data=survey)
+```
+</li>
+<li>Object returned by the `lm()` (e.g. `fit` in the example above) is an 'lm' class. When you auto-print it, it returns the calling method and the fitted coefficients. </li>
+<li>The `summary(object)` function provides more information on the object of the 'lm' class. In addition to the calling method and coefficients, it also summarizes the residuals of the fit, standard errors, t-values and p-values of the coefficients, residual standard error (RSE), the degrees of freedom, $R^2$ and so on.</li>
+<li>The 'lm' class object is a list containing many components. Here we use `fit` as an example of an 'lm' class object. A few components of `fit` we mentioned here include  
+  <ul>
+   <li>`fit$coefficients`: a named vector of coefficients</li>
+   <li>`fit$residuals`: the residuals</li>
+   <li>`fit$fitted.values`: the fitted values</li>
+   <li>`fit$df.residual`: the residual degrees of freedom
+  </ul>
+</li>
+<li>Another method to get the residuals of the fitting data is to use the `resid()` function. For example, `resid(fit)` returns the same vector as `fit$residuals`.</li>
+<li>`confint(object,para,level=0.95)`: returns the confidence interval of the parameters in `para`. If `para` is omitted, confidence interval for all parameters in `object` will be returned. The confidence level can be changed from the default value 95% by modifying the `level` parameter.</li>
+<li>When the `abline()` function is applied to an 'lm' class object, the fitted straight line in the object will be added to an existing plot, e.g. 
+```{r, eval=FALSE}
+plot(partyHr ~ drinks, data=survey, pch=19, xlab="Drinks/week", ylab="Party hours/week")
+abline(fit, col="red")
+```
+</li>
+<li>The function `predict(object, newdata=dataframe)` returns the fitted values of the outcomes for the data in `dataframe`, e.g. 
+```{r, eval=FALSE}
+predict(fit, newdata=data.frame(drinks=c(3,4,8,2,16)))
+```
+</li>
+<li>For linear regression with one independent variable $x$, the residuals always sum to 0 and have zero correlation with the independent variable $x$. As a result, the residual degrees of freedom is $n-2$, where $n$ is the number of data points.</li>
+<li>Residual plots are useful to assess the validity of a linear model. If a residual plot shows a pattern, it suggests that the relationship may be nonlinear.</li>
+<li>The estimate of standard errors, t-values, p-values, and confidence interval are based on the assumptions that (1) the model is linear, (2) the data points are independent, (3) the  the variance of the residuals is independent of the values of the independent variable $x$, and (4) $\epsilon$ follows a normal distribution. The last assumption can be relaxed if the sample size is sufficiently large. It is always a good idea to make residual plots to get a sense on the validity of the assumptions.</li>
+<li>The trick of partial matching can be used as a shortcut for typing long variable names. It is convenient in interactive work, but is discouraged to use excessively in programming because it may make your code hard to understand.</li>
+</ul>
+
+<br />
+<hr />
+## Footnote
+<div id="fn1"><a href="#ref1">1</a>. In case you want to know how the graph is generated, here is the code:
+```{r}
+p <- -qt(0.025,n-2)
+xmax <- 4
+npoly <- 100
+xr <- seq(p,xmax,length.out=npoly)
+yr <- dt(xr,n-2)
+xmid <- seq(-p,p,length.out=npoly)
+ymid <- dt(xmid,n-2)
+curve(dt(x,n-2), xlim=c(-xmax,xmax), xlab="",ylab="", xaxt="n", yaxt="n")
+polygon(c(p,xr,xmax),c(0,yr,0),col="red")
+polygon(c(-p,-xr,-xmax),c(0,yr,0),col="red")
+polygon(c(-p,xmid,p),c(0,ymid,0),col="skyblue")
+text(0,0.2,"95%")
+text(2.7,0.035,"2.5%")
+text(-2.7,0.035,"2.5%")
+mtext(expression(-t^"*"), side=1, at=-p, line=1, cex=1.3)
+mtext(expression(t^"*"), side=1, at=p, line=1, cex=1.3)
+```
+
+The `polygon()` function is used to shade the areas under the curve; `text()` is used to add texts in the plot; `mtext()` is used to add texts in a margin of the plot; `expression()` is used to <a href="http://vis.supstat.com/2013/04/mathematical-annotation-in-r/" target="_blank">write mathematical symbols</a>.  
+
+<a href="#ref1">&ldca;</a>
+</div>
+<br />
+<br />
+<br />

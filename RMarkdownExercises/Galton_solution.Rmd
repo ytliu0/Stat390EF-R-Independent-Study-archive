@@ -1,0 +1,440 @@
+---
+title: "Galton's Height Data"
+output: 
+   html_document:
+     toc: yes
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+<div style="color:brown;">
+**Note**: There are several additional analyses and calculations in this write-up (begin with **Aside**:...). You are not required to do these calculations, but are strongly encouraged to look over them.
+</div>
+
+Sir Francis Galton (1822&ndash;1911) was an English statistician. He founded many concepts in statistics, such as correlation, quartile, percentile and regression, that are still being used today.
+
+In this R markdown exercise, you are going to analyze the famous Galton data on the heights of parents and their children. The data were collected in the late 19th century in England. He coined the term <a href="http://galton.org/essays/1880-1889/galton-1886-jaigi-regression-stature.pdf" target="_blank">regression towards mediocrity</a> to describe the result of his linear model. (Note that the paper was written in 1886. The "computer" mentioned in the paper was actually a person whose job was to do number crunching.) Surprisingly, Galton's analysis is still useful today (see e.g. <a href="https://www.wired.com/2009/03/predicting-height-the-victorian-approach-beats-modern-genomics/" target="_blank">Predicting height: the Victorian approach beats modern genomics</a>, <a href="http://www.nature.com/ejhg/journal/v17/n8/full/ejhg20095a.html?foxtrotcallback=true" target="_blank">Predicting human height by Victorian and genomic methods</a>).
+
+Galton's height data can be download 
+<a href="Galton.txt" target="_blank">here</a> (right click and choose Save Link As...). The description of the data can be found on <a href="GaltonData.html" target="_blank">this webpage</a>. Note that this is not a csv file. You need to use the `read.table()` function with appropriate parameters to load the data correctly to R.
+
+
+###a. (1 point)
+
+**Calculate the correlation matrix between `Height`, `Father` and `Mother`.**
+
+```{r}
+# Load data
+galton <- read.table("Galton.txt", header=TRUE)
+
+# correlation matrix
+cor(galton[,c("Height","Father","Mother")])
+```
+
+###b. (2 points) 
+
+**Use the `pairs()` function to create a matrix of scatterplots of the columns `Height`, `Father` and `Mother`. This is a graphical representation of the correlation matrix calculated above. (Hint: You need to subset the data frame to pull the 3 columns and then pass them to the `pairs()` function.)**
+
+```{r}
+# Matrix of scatterplots
+pairs(galton[,c("Height","Father","Mother")], pch=16, las=1)
+```
+
+
+###c. (5 points) 
+
+**Fit a multiple regression model predicting children's height (`Height`) from father's height (`Father`), mother's height (`Mother`), and gender (`Gender`). In other words, the model should contain the following terms:**
+
+$$\hat{H}_{children} = \beta_0 + \beta_1  f_{gender} + \beta_2 H_{father} + \beta_3 H_{mother} ,$$
+**where $\hat{H}_{children}$ is the predicted height (in inches) of the adult children, H<sub>father</sub> and H<sub>mother</sub> are the height (in inches) of the father and mother, respectively. f<sub>gender</sub> is a binary variable: f<sub>gender</sub>=0 for males and f<sub>gender</sub>=1 for females. (4 pts)**
+
+`galton$Gender` is a factor variable with the reference level set to "F" (you can type `levels(galton$Gender)` to confirm it). We want to set the reference level to "M" to be consistent with the $f_{gender}$ variable.
+
+```{r}
+# Reset "M" to the reference level for the 'Gender' factor:
+galton$Gender <- relevel(galton$Gender, ref="M")
+
+# Fit model
+fit_mult <- lm(Height ~ Gender+Father+Mother, data=galton)
+
+summary(fit_mult)
+```
+```{r, echo=FALSE}
+# Convert number to character
+convert_num_to_char <- function(num) {
+  if (num < 0) {
+    return(paste("-",-num))
+  } else {
+    return(paste("+",num))
+  }
+}
+
+b0 <- signif(fit_mult$coe[1],4)
+b1 <- signif(fit_mult$coe["GenderF"],4)
+b2 <- convert_num_to_char(signif(fit_mult$coe["Father"],4))
+b3 <- convert_num_to_char(signif(fit_mult$coe["Mother"],4))
+```
+Hence, the regression equation is 
+
+<div class="boxed">
+$\hat{H}_{children}$ = `r b0` `r b1`f<sub>gender</sub> `r b2`H<sub>father</sub> `r b3`H<sub>mother</sub>
+</div>
+
+**Which slopes are significant (at the 5% level)? (1 pt)**
+
+From the summary, we see that all slopes have p-values less than 2&times;10<sup>-16</sup>. So all slopes are highly significant.
+
+###d. (2 points)
+
+**Plot the residuals versus the fitted values for the multiple regression model above.**
+
+```{r}
+plot(fit_mult$residuals ~ fit_mult$fitted.values,xlab="Predicted", ylab="Residuals", 
+     pch=16, las=1)
+abline(h=0)
+```
+
+<hr />
+**Aside**: We can clearly see two clusters of points here.  The cluster of points with smaller predicted heights belong to the female children and the other cluster of points belong to the male children. To see this, we can color-code the residuals by gender:
+```{r}
+plot(fit_mult$residuals ~ fit_mult$fitted.values, col=galton$Gender, 
+     xlab="Predicted", ylab="Residuals", pch=16, las=1)
+abline(h=0)
+legend("topleft",c("Male","Female"),pch=16,col=1:2)
+```
+
+<hr />
+
+<br />
+**Instead of fitting a multiple regression model, Galton constructed a simple model predicting children's height from parents' heights. However, he first had to deal with the gender difference between male and female heights.**
+<br />
+
+###e. (4 points) 
+
+**Calculate the means of Father's and Mother's heights in the data set. Then show that Father's mean height is about 8% higher than Mother's mean height. (2 pts)**
+
+We can use the `colMeans()` function (see Section 18.8 of Peng's textook):
+```{r}
+(parents_avg <- colMeans(galton[,c("Father","Mother")]))
+```
+We see that <span class="boxed">Father's mean height is `r round(parents_avg["Father"],1)` inches</span> and <span class="boxed">Mother's mean height is `r round(parents_avg["Mother"],1)` inches</span>.
+
+Ratio of Father's mean height and Mother's mean height:
+```{r}
+parents_avg["Father"]/parents_avg["Mother"]
+```
+This shows that Father's mean height is about 8% higher than Mother's mean height. 
+
+**Calculate the mean heights of the adult male and female children in the data set. Then show that male children's mean height is also about 8% higher than female children's mean height. (2 pts)**
+
+We can use the `tapply()` function to compute the group means:
+```{r}
+(children_avg <- tapply(galton$Height, galton$Gender,mean))
+```
+We see that <span class="boxed">male children's mean height is `r round(children_avg["M"],1)` inches</span> and <span class="boxed">female children's mean height is `r round(children_avg["F"],1)` inches</span>.
+
+Ratio of male children's mean height and female children's mean height:
+```{r}
+children_avg["M"]/children_avg["F"]
+```
+This shows that male children's mean height is about 8% higher than female children's mean height.
+
+<hr />
+**Aside**: I use `colMeans()` and `tapply()` to compute the means because I find them convenient. You can of course calculate the means one by one: `mean(galton$Father)`, `mean(galton$Mother)`, `mean(galton$Height[galton$Gender=="M"])`, `mean(galton$Height[galton$Gender=="F"])`.
+<hr />
+
+###e. (4 points)
+
+**Calculate the medians of Father's and Mother's heights in the data set. Then show that Father's median height is about 8% higher than Mother's median height. (2 pts)**
+
+There is no `colMedians()` function, so we use `apply()` on the columns (margin=2):
+```{r}
+(parents_med <- apply(galton[,c("Father","Mother")], 2, median))
+```
+We see that <span class="boxed">Father's median height is `r parents_med["Father"]` inches</span> and <span class="boxed">Mother's median height is `r parents_med["Mother"]` inches</span>.
+
+Ratio of Father's median height and Mother's median height:
+```{r}
+parents_med["Father"]/parents_med["Mother"]
+```
+This shows that Father's median height is about 8% higher than Mother's median height. 
+
+
+**Calculate the median heights of the adult male and female children in the data set. Then show that male children's median height is also about 8% higher than female children's median height. (2 pts)**
+
+We can use the `tapply()` function to compute the group medians:
+```{r}
+(children_med <- tapply(galton$Height, galton$Gender,median))
+```
+We see that <span class="boxed">male children's median height is `r children_med["M"]` inches</span> and <span class="boxed">female children's median height is `r children_med["F"]` inches</span>.
+
+Ratio of male children's median height and female children's median height:
+```{r}
+children_med["M"]/children_med["F"]
+```
+This shows that male children's median height is about 8% higher than female children's median height.
+
+Another way to get the means and medians is to use the `summary()` function:
+```{r}
+summary(galton[,c("Father","Mother")])
+tapply(galton$Height, galton$Gender, summary)
+```
+You also see the other quartiles.
+
+<hr />
+**Aside**: In addition to looking at the averages of the male and female heights in the data, another good way to look at the gender difference is to look at some plots.
+
+First, we look at the density plots of Father's and Mother's heights:
+```{r}
+plot(density(galton$Mother, bw=1), xlab="Height (inches)", main="Density Plot", las=1,
+     xlim=c(min(galton$Mother),max(galton$Father)),lty=2,lwd=2, col="red")
+lines(density(galton$Father, bw=1))
+legend("topright", c("Father","Mother"), col=c("black","red"), lty=1:2, lwd=1:2)
+```
+
+Note that I set the smoothing parameter `bw=1` to smooth the density curve on the scale of an inch since the height data are accurate to only about an inch. The command `lines()` is used to add a line on an existing plot.
+
+The difference between Father's and Mother's heights is apparent in the plot above. Now let's see what happens if we multiply Mother's height by 1.08.
+```{r}
+plot(density(galton$Mother*1.08, bw=1), xlab="Height (inches)", main="Density Plot", las=1,
+     xlim=c(min(galton$Mother),max(galton$Father)),lty=2,lwd=2, col="red")
+lines(density(galton$Father, bw=1))
+legend("topright", c("Father","Mother(x1.08)"), col=c("black","red"), lty=1:2, lwd=1:2)
+```
+
+Now, the gender difference is much reduced.
+
+Next, we look at the male and female heights of the children. 
+```{r}
+plot(density(galton$Height[galton$Gender=="F"], bw=1), xlab="Children's Height (inches)", 
+     main="Density Plot", las=1, xlim=c(min(galton$Height),max(galton$Height)),
+     lty=2,lwd=2, col="red")
+lines(density(galton$Height[galton$Gender=="M"], bw=1))
+legend("topright", c("Male","Female"), col=c("black","red"), lty=1:2, lwd=1:2)
+```
+
+The gender difference is clearly shown. Now multiply the female heights by 1.08:
+```{r}
+plot(density(galton$Height[galton$Gender=="F"]*1.08, bw=1), 
+     xlab="Children's Height (inches)", main="Density Plot", 
+     las=1, xlim=c(min(galton$Height),max(galton$Height)),
+     lty=2,lwd=2, col="red")
+lines(density(galton$Height[galton$Gender=="M"], bw=1))
+legend("topright", c("Male","Female(x1.08)"), col=c("black","red"), lty=1:2, lwd=1:2)
+```
+
+Again, the gender difference is much reduced.
+
+Galton chose to multiply all the female heights by 1.08, but we can see from the calculations that we can also reduce the gender difference by adding 5.1 inches to all the female heights.
+```{r}
+plot(density(galton$Mother+5.1, bw=1), xlab="Height (inches)", main="Density Plot", las=1,
+     xlim=c(min(galton$Mother),max(galton$Father)),lty=2,lwd=2, col="red")
+lines(density(galton$Father, bw=1))
+legend("topright", c("Father",'Mother(+5.1")'), col=c("black","red"), lty=1:2, lwd=1:2)
+
+plot(density(galton$Height[galton$Gender=="F"]+5.1, bw=1), 
+     xlab="Children's Height (inches)", main="Density Plot", 
+     las=1,xlim=c(min(galton$Height),max(galton$Height)),
+     lty=2,lwd=2, col="red")
+lines(density(galton$Height[galton$Gender=="M"], bw=1))
+legend("topright", c("Male",'Female(+5.1")'), col=c("black","red"), lty=1:2, lwd=1:2)
+```
+<hr />
+
+<br />
+**Galton defined the mid-parental height as the average of the Father's and Mother's height:**
+$$H_{midparental} = \frac{1}{2} (H_{father} + 1.08 H_{mother}) ,$$
+**where the factor 1.08 was introduced to account for the gender difference. He also "transmuted" the heights of all female children to the male equivalents by multiplying the female heights by 1.08. He then fitted a model predicting children's adjusted height from the mid-parental height.**
+<br />
+
+###g. (4 points)
+
+**Add a column to the data frame that stores the mid-parental heights. (1 pt)**
+
+Name the new column as `MP`.
+```{r}
+galton$MP <- (galton$Father + 1.08*galton$Mother)/2
+```
+
+**Add another column to the data frame that stores the adjusted heights of the children: the adjusted heights of the male children are the same as their heights; the adjusted heights of the female children are equal to their heights times 1.08. (2 pts)**
+
+Name the new column as `AH`.
+```{r}
+galton$AH <- galton$Height
+galton$AH[galton$Gender=="F"] <- galton$Height[galton$Gender=="F"]*1.08
+```
+
+**Calculate the correlation coefficient between the children's adjusted height and the mid-parental height (1 pt)**
+
+```{r}
+cor(galton$AH,galton$MP)
+```
+The correlation is <span class="boxed">`r round(cor(galton$AH,galton$MP),2)`</span>.
+
+###h. (4 points)
+
+**Fit a simple regression model predicting children's adjusted height from the mid-parental height. (2 pts)**
+
+```{r}
+fit <- lm(AH ~ MP, data=galton)
+summary(fit)
+```
+```{r, echo=FALSE}
+beta0 <- signif(fit$coe[1],4)
+beta1 <- signif(fit$coe[2],4)
+```
+The regression equation is 
+<div class="boxed">
+$\hat{AH}$ = `r beta0` + `r beta1`H<sub>midparental</sub>
+</div>
+
+**Make a scatter plot of children's adjusted height vs the mid-parental height and then add the regression line on the plot. (2 pts)**
+
+```{r}
+plot(AH ~ MP, data=galton, pch=16, las=1, xlab="Mid-parental height (inches)", 
+     ylab="Children's adjusted height (inches)")
+abline(fit, col="red")
+```
+
+###i. (2 points)
+
+**Plot the residuals versus the fitted values for the simple regression model above.**
+
+```{r}
+plot(fit$residuals ~ fit$fitted.values,xlab="Predicted", ylab="Residuals", 
+     pch=16, las=1)
+abline(h=0)
+```
+
+<hr />
+**Aside**: After "transmuted" the female heights, we no longer see the two clusters of points. When we color-code the gender in the residual plot, male and female points are mixed together:
+```{r}
+plot(fit$residuals ~ fit$fitted.values, col=galton$Gender,
+     xlab="Predicted", ylab="Residuals", pch=16, las=1)
+abline(h=0)
+legend("topleft",c("Male","Female"),pch=16,col=1:2)
+```
+<hr />
+
+<br />
+**How does the simple regression model in (h) compare with the multiple regression model in (c) One measure of the "goodness of fit" is R<sup>2</sup>. However, comparing R<sup>2</sup> returned by the model in (c) and R<sup>2</sup> of the model in (h) is midleading because their predicted variables are different. In (c), the predicted variable is children's height, whereas in (h) the predicted variable is children's adjusted height. To have a fair comparison, we want to calculate the R<sup>2</sup> of the model in (c) for the adjusted height and then compare it with the R<sup>2</sup> in (h).**
+
+<br />
+
+###j. (8 points)
+
+**1. (2 points) Calculate the predicted values of children's adjusted height from the multiple regression model by multiplying the predicted heights by 1.08 for female children and keeping the predicted heights of the male children unchanged. Store the result in a new variable.**
+
+Below we store the predicted value of AH to the variable `predicted_AH`.
+```{r}
+predicted_AH <- fit_mult$fitted.values
+predicted_AH[galton$Gender=="F"] <- 1.08*predicted_AH[galton$Gender=="F"]
+```
+
+**2. (5 points) Calculate R<sup>2</sup> for the adjusted heights of the model in (c) by $R^2_{AH} = 1 - SSE_{AH}/SST_{AH}$, where $SSE_{AH}=\sum (AH-\hat{AH})^2$ and $SST_{AH}=\sum (AH-\overline{AH})^2 = (n-1) s^2_{AH}$. Here $AH$ is the actual adjusted heights of the Galton children calculated in (h) above, $\hat{AH}$ is the predicted adjusted heights calculated in (j1) above, $\overline{AH}$ is the mean of the adjusted height, $s^2_{AH}$ is the sample variance of the adjusted height, and $n$ is the total number of observations in the dataset.**
+
+```{r}
+SSE_AH <- sum( (galton$AH - predicted_AH)^2 )
+SST_AH <- (nrow(galton)-1)*var(galton$AH)
+(Rsq_AH <- 1-SSE_AH/SST_AH)
+```
+Hence, $R^2_{AH}$ of the model in (c) is about <span class="boxed">`r round(Rsq_AH,2)`</span>.
+
+**3. (1 point) Based on the values of the R<sup>2</sup> for the adjusted height, is the multiple regression model in (c) much better than the simple regression model in (h)?**
+
+The $R^2_{AH}$ of the multiple regression model is `r round(Rsq_AH,2)` as computed above. This is only slightly larger than `r round(summary(fit)$r.squared,2)`, the $R^2_{AH}$ of the simple regression model. Based on this result the multiple regression model is not much better than the simple regression model.
+
+<hr />
+**Aside**: You might wonder why the R<sup>2</sup> for the adjusted height ($R^2_{AH}=1-SSE_{AH}/SST_{AH}$) of the multiple regression model is so much smaller than the R<sup>2</sup> for the height ($R^2_H=1-SSE_H/SST_H$). The main reason is that $SST_H$ is 1.9 times $SST_{AH}$. 
+
+Let's compare all the terms. First, compare $SSE_{AH}$ with $SSE_H$:
+```{r}
+SSE_H <- sum( (galton$Height-fit_mult$fitted.values)^2 )
+(SSE_AH/SSE_H)
+```
+So $SSE_{AH}$ is only about 7% larger than $SSE_H$. On the other hand, $SST_H/SST_{AH}=s^2_{AH}/s^2_H$ = 
+```{r}
+var(galton$Height)/var(galton$AH)
+```
+As a result, $SSE_{AH}/SST_{AH}= (1.068\times 1.905) SSE_H/SST_H= 2.035 SSE_H/SST_H$. Even though the prediction errors are about the same, $SSE_{AH}$ is divided by a smaller denominator, making $1-R^2_{AH}= 2.035 (1-R^2_H)$. That is, the fractional error associated with the predicted adjusted height is about twice of that associated with the predicted height. With $R^2_H=0.64$ (see the summary of the multiple regression model in question (c) above), $R^2_{AH}=1-2.035\times(1-0.64)=0.27$, the value we calculated above. This explains why $R^2_{AH}$ is so much larger than $R^2_H$.
+
+The reason that $SST_{AH}$ is smaller than $SST_H$ is easy to explain: one measures the variance of the adjusted height and the other measures the variance of the height. The variance of the height is larger because of the gender difference in height. When the gender difference is taken into account in the adjust height, its variance is reduced. 
+
+<hr />
+
+<br />
+**Alan is a boy born in Guatemala. Carly is a girl born in India. They are both two years old. The heights of Alan's father and mother are 62 inches and 58 inches, respectively. The heights of Carly's father and mother are 68 inches and 65 inches, respectively.**
+<br />
+
+###k. (4 points)
+
+**Use the multiple regression model above to predict the height of Alan and Carly when they become adults.**
+
+First, create a data frame to store the information of Alan and Carly.
+```{r}
+data_new <- data.frame(Gender=c("M","F"), Father=c(62,68), Mother=c(58,65))
+rownames(data_new) <- c("Alan","Carly")
+```
+Compute the mid-parental height (for the next question):
+```{r}
+data_new$MP <- (data_new$Father + 1.08*data_new$Mother)/2
+
+# Look at the new data frame
+data_new
+
+# predict the adult heights
+(pred_mult <- predict(fit_mult, newdata=data_new))
+```
+<div class="boxed">
+The predicted adult heights for Alan and Carly are `r round(pred_mult["Alan"],1)` inches and `r round(pred_mult["Carly"],1)` inches, respectively.
+</div>
+
+###l. (4 points)
+
+**Use the simple regression model above to predict the height of Alan and Carly when they become adults.**<br />
+**Note: You'll need to convert the predicted adjusted height back to height for Carly.**
+
+```{r}
+pred_simple <- predict(fit, newdata=data_new)
+pred_simple["Carly"] <- pred_simple["Carly"]/1.08
+pred_simple
+```
+**OR**
+```{r}
+pred_simple <- predict(fit, newdata=data_new)
+pred_simple[data_new$Gender=="F"] <- pred_simple[data_new$Gender=="F"]/1.08
+pred_simple
+```
+The second method is more convenient if `data_new` contains many female data points.
+
+<div class="boxed">
+The predicted adult heights for Alan and Carly are `r round(pred_simple["Alan"],1)` inches and `r round(pred_simple["Carly"],1)` inches, respectively.
+</div>
+
+###m. (2 points) 
+
+**Explain why the multiple and simple regression models above may not be suitable for predicting the adult heights for Alan and Carly.**<br />
+**Hint: Watch <a href="https://youtu.be/C_NTLtM-f2I#t=6m54s" target="_blank">this video</a> for a similar question, or read Example 1e in <a href="http://www.stat.illinois.edu/courses/stat100/Notes/Chap17.pdf" target="_blank">this Stat 100 notes</a>, or the bottom of P.35 in the Fall 2017 Stat 200 notebook for two other similar questions.**
+
+As stated at the beginning, Galton's height data were collected in late 19th century in England. The regression models based on the data apply to people in that area around that time. We can't assume the models could apply to a wider population without further study. Alan was born in Guatemala in the 21th century, and Carly was born in India in the 21st century. Hence the regression models constructed from the Galton height data may not apply to them. A study indicates that the average adult height <a href="https://elifesciences.org/articles/13410" target="_blank">not only differs in regions but also changes in the past 100 years</a>.
+<br /><br /><br />

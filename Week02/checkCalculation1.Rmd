@@ -1,0 +1,88 @@
+---
+title: "Checking Your Calculations: Part 1"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+fontsize: 18pt
+---
+<!-- Written by Yuk Tung Liu -->
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: 
+
+#Introduction
+
+Data analysis projects in these days typically involve complicated calculations. Depending on the nature of the project, mistakes in calculations can sometimes lead to severe consequences, from the <a href="https://raygun.com/blog/2014/05/10-costly-software-errors-history/" target="_blank">loss of millions of dollars</a> to affecting lives of millions of people. How do we prevent mistakes in calculations? How do we make sure our results are correct? 
+
+In this course, you are going to face the same problem. In your Lon Capa HWs, you can check your answers easily because the computer tells you whether or not your submitted answers are correct, and in general you have several tries so the stakes are low. As a result, most of you don't even think about checking your calculations before submitting your answers. But in the Lon Capa quizzes, you don't know the correct answers until after the due date. This is closer to the real-world situations: when you work on a project, the correct answers are not known and you have to check your calculations.
+
+While there is no strategy that can completely eliminate errors, several methods exist that can be used to reduce errors. The following is a list of methods to check your calculations. 
+
+- sanity check 
+- consistency check
+- comparison with independently written codes
+- scaling down the problems
+- comparison to problems with known answers
+- comparison with different methods
+- checking invariants / inequalities
+
+The list is not exclusive. These are methods we have been using frequently to check our calculations in the past 20+ years. Note that the obvious strategy of "looking over your calculations carefully and correcting mistakes you find" is not on the list, since it's assumed that you've done it. 
+
+In this note, we focus on the first three methods. We will go over the rest in a few weeks since it's much easier to describe each of them with concrete examples, but the examples associated with the last 4 methods are more complicated and require you to know more about R.
+
+#Sanity Check
+
+This is a simple check to determine if your result makes sense. 
+
+Example 1: Suppose you are calculating a probability, your answer should be between 0 and 1. If you get a negative number or a number exceeding 1, your calculation must be wrong. You might think that we are just stating the obvious. This is the nature of the sanity check: it's obvious when it's pointed out to you. We are shocked when we see students making obvious mistakes in exams and HWs. Last semester, we saw several students in Stat 200 submitting a number like 38.856 for a question that asked for a probability.
+
+Example 2: The number of objects in a subset must be no more than the total number of objects in the entire set. For example, suppose you are given a data set consisting of male and female students and you find that the number of males is 1000 but the total number of students is 300, you know there is a mistake.
+
+Example 3: Suppose you are given a data set containing the heights and weights of people. Heights are measured in inches and weights in pounds in the data. You are asked to find the maximum value of height in the data. Suppose you get a number 300. Do you think it's correct? Well, you know height must be positive and 300 is a positive number, so it seems ok. But think about it more carefully. You are told that height is measured in inches. How tall is 300 inches? It's 25 feet or 7.62 meters if you are more familiar with the metric system. Have you heard of a person 300 inches tall? Does it sound ridiculous to you? When you get an insane number like that, you should be alerted and check your calculation again. Then you will probably find the mistake: you had typed the command `max(weight)` when you meant to type `max(height)`. The maximum weight is 300 pounds, which is ok. Similarly, if you get a maximum height of 50 inches, you should be suspicious too unless the people in the data are dwarfs or young children.
+
+#Consistency Check
+
+As the name suggested, it checks consistency among your results. 
+
+Example 1: Suppose you are asked to find the number of female and male persons in your data. You know there are 500 people in your data, so the numbers of males and females should add up to 500. If the sum exceeds 500, you know something is wrong. If the sum is smaller than 500, something is not quite right either. Perhaps there are missing values in the gender data. Then the sum of the number of males, females and missing values should add up to 500. If the sum is still smaller than 500 after accounting for the missing values, a further investigation is required. It may be that there are other categories in gender. In Stat 100 surveys, we sometimes have "male", "female", and "other" in the gender categories as requested by the transgender students. 
+
+Example 2: This is in the first Lon Capa quiz. You are asked to find the height and weight of the student with the maximum body mass index (BMI) in a data set. You find the maximum BMI to be 45.21 kg/m<sup>2</sup>, and the corresponding weight and height are 80 pounds and 76 inches. Are these numbers consistent? You are told that BMI in kg/m<sup>2</sup> = 703&times;(weight in pounds)/(height in inches)<sup>2</sup>, but 703&times;80/76<sup>2</sup> = `r 703*80/76^2` &ne; 45.21. So the results are not consistent. After checking your calculation, you realized that those weight and height were for the student with the minimum BMI and you got the maximum and minimum mixed up.
+
+#Comparison with independently written codes
+
+This is particularly useful if you are collaborating with other people/groups on the same project. It is useful to have two or more people/groups to do the same calculations independently and then check each other's answers. If there are disagreements, at least one answer is wrong. If there is an agreement, there is a high chance that they are all correct. "Independence" is very important here. The rationale is that there are many ways to make mistakes, leading to different answers. If two/more people work independently, they are unlikely to make the same mistakes leading to the same wrong answers. If no mistakes are made, the answers will agree. So if there is an agreement, the answers are probably all correct. 
+
+The argument presented here seems vague, but it can be made more precise using the language of Bayesian statistics. We will not go into detail here.
+<hr />
+
+The 3 methods introduced here are not very robust. Even if your calculations pass all these tests, there could still be non-negligible chance that the results are wrong. Next time, we will talk about the other more powerful techniques that can make sure that your code gives correct results at least in some special cases.
+
+<br />
+<br />
+<br />
+
+
+
+

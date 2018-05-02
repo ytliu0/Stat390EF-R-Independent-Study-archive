@@ -1,0 +1,166 @@
+body{
+   font:16px/20px verdana, arial, helvetica, sans-serif;
+	color:#333;
+	background:white;
+	margin: 20px;
+	padding:0px;
+	line-height: 16px;
+}
+
+div#wrapper {
+margin-left:auto;
+margin-right:auto;
+max-width:1000px;
+}
+
+
+table {
+    font:16px/20px verdana, arial, helvetica, sans-serif;
+	margin:2px;
+	padding:2px;
+}
+	
+code {
+    font-size:16px;
+    font-weight:bold;
+	color:#080;
+	background:white;
+	margin:2px;
+	padding:0px;
+}
+	
+h1 {
+    font-size:28px;
+    font-weight:bold;
+	margin-left: 0px;
+	margin-top: 8px;
+	line-height: 30px;
+}
+	
+h2 {
+	font-size: 24px;
+	margin-left: 0px;
+	margin-top:5px;
+	line-height: 24px;
+}
+
+h3 {
+	font-size: 20px;
+	margin-left: 0px;
+	margin-top:10px;
+}
+	
+h4 {
+	font-size: 18px;
+	margin-left: 0px;
+	margin-top:10px;
+}
+	
+p {
+	font:16px/20px verdana, arial, helvetica, sans-serif;
+	margin:0px 0px 16px 0px;
+}
+
+ul {
+	font:16px/20px verdana, arial, helvetica, sans-serif;
+	margin: 10px 
+    list-style-type:disc;
+}
+	
+li {
+  margin-bottom: 8px;
+  }
+
+a {
+	color:#CCC;
+	font-family:verdana, arial, helvetica, sans-serif;
+	font-weight:800;
+	text-decoration:none;
+}
+
+a.h2 {
+        color:#CCC;
+        font-size:24px;
+}
+	
+a:link {color:#45A;}
+a:visited {color:#0AD;}
+a:hover {background-color:#FDA;}
+a:active {background-color:#CCC;}
+
+#navigation ul {
+  font:16px/20px verdana, arial, helvetica, sans-serif;
+  list-style: none; 
+  margin: 2px; 
+  padding: 2px;
+}
+	
+#navigation li {
+   background: #45A;
+   font:16px/20px verdana, arial, helvetica, sans-serif;
+	border-left: 2px solid #FFF;
+	float: left;
+	margin: 0px;
+	padding: 1.5px 5px;
+}
+	
+#navigation a {
+	color: #DDD;
+	font-weight: bold;
+	padding: 2px;
+	text-decoration: none;
+    display:block;
+}
+	
+#navigation a:hover {
+	color: blue;
+	background: yellow;
+}
+
+#navigation a:active {
+	color: blue;
+	background: #CCC;
+}
+	
+#navigation #currenttab a {
+  color: #333;
+	background: cyan;
+}
+
+button.accordion {
+    background-color: #F5F5F5;
+    color: #444;
+    cursor: pointer;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+button.accordion.active, button.accordion:hover {
+    background-color: #E0E0E0;
+}
+
+button.accordion:before {
+    content: '\2795';
+    font-size: 20px;
+    color: #777;
+    font-weight: bold;
+    margin-left: 0.5em;
+    float: right;
+}
+
+button.accordion.active:before {
+    content: '\2796';
+}
+
+div.panel, div.panelopen {
+    padding: 0px 18px;
+    background-color: white;
+    max-height: 0;
+    overflow: hidden;
+    outline: 1px solid #E0E0E0;
+}

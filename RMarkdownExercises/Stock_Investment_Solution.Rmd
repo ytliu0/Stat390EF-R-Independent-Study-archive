@@ -1,0 +1,248 @@
+---
+title: "Investment in Two Stocks"
+output: html_document
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+</style>
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+
+In this R markdown exercise, you are going to generalize the Monte Carlo simulation in this week's notes to analyze the investment of two stocks. 
+
+Conventional wisdom says that it's unwise to put all of your investment money into one stock. Instead, it's better to split the money into two or more different financial investments. In this problem, we consider investment of two stocks. The following shows the the annual returns of two hypothetical stocks, as well as the inflation rates, in the 35 years from 1981 to 2015. The first stock is the same as the one used in the notes.
+
+```{r}
+historical_stock1_return <- c(-0.0470239, 0.2041906, 0.2233716, 0.06146142, 0.3123515, 0.1849458, 0.05812722, 0.1653719, 0.3147518, -0.03064452, 0.3023484, 0.07493728, 0.09967052, 0.01325921, 0.371952, 0.2268097, 0.3310365, 0.2833795, 0.2088535, -0.09031819, -0.1184976, -0.2196605, 0.283558, 0.1074278, 0.04834477, 0.1561256, 0.05484735, -0.3655234, 0.2593523, 0.1482109, 0.02098375, 0.1589059, 0.3214509, 0.1352442, 0.01359949)
+
+historical_stock2_return <- c(-0.3516, 0.3503, -0.1841, 0.1949, -0.2446, 0.8409, 1.0741, -0.0417, -0.1242, 0.2199, 0.311, 0.0599, -0.5105, 0.3333, -0.1827, -0.3451, -0.3713, 2.119, 1.5115, -0.7106, 0.4723, -0.3457, 0.4913, 2.0136, 1.2326, 0.1801, 1.3347, -0.5691, 1.469, 0.5307, 0.2556, 0.314, 0.0542, 0.3772, -0.0464)
+
+historical_inflation <- c(0.1031553, 0.06160616, 0.03212435, 0.04317269, 0.03561116, 0.01858736, 0.03740876, 0.04009088, 0.04827003, 0.05397956, 0.04234964, 0.0302882, 0.02951657, 0.02607442, 0.0280542, 0.02931204, 0.0233769, 0.01552279, 0.02188027, 0.03376857, 0.02826171, 0.01586032, 0.02270095, 0.02677237, 0.03392747, 0.03225944, 0.02852672, 0.038391, -0.003555463, 0.01640043, 0.03156842, 0.02069337, 0.01464833, 0.01622223, 0.001186271)
+```
+
+##a. (2 points) 
+
+**Convert the historical returns of the two stocks to the inflation adjusted returns using the same formula as in the notes. Save the adjusted returns of the two stocks to two numeric vectors of length 35.** 
+
+Here is the code
+```{r}
+historical_stock1_rstar <- (historical_stock1_return - historical_inflation)/
+                             (1+historical_inflation)
+historical_stock2_rstar <- (historical_stock2_return - historical_inflation)/
+                             (1+historical_inflation)
+```
+
+##b. (3 points) 
+
+**Calculate the mean and sample standard deviation of the inflation adjusted annual returns of the two stocks. (1 point)**
+
+```{r}
+# mean and sd
+c(mean(historical_stock1_rstar), sd(historical_stock1_rstar))
+c(mean(historical_stock2_rstar), sd(historical_stock2_rstar))
+```
+For stock 1, the mean and standard deviation are `r mean(historical_stock1_rstar)` and `r sd(historical_stock1_rstar)`, respectively.
+
+For stock 2, the mean and standard deviation are `r mean(historical_stock2_rstar)` and `r sd(historical_stock2_rstar)`, respectively.
+
+**Make a histogram or density plot for each stock's adjusted returns. (1 point)**
+
+Here are the density plots for the two stocks.
+```{r}
+plot(density(historical_stock1_rstar), main="", 
+     xlab="Inflation Adjusted Historical Stock Returns",
+     xlim=c(-1.5,2.8),ylim=c(0,2.2), las=1)
+lines(density(historical_stock2_rstar), col="blue", lty=2)
+legend(1,2,c("Stock 1","Stock 2"), col=c("black","blue"), lty=1:2)
+```
+
+**Which stock, on average, has a higher adjusted annual return rate? Which stock will be expected to have larger fluctuations from year to year? (In the classical portfolio theory the risk of a stock is quantified by the standard deviation.) (1 point)**
+
+It is clear from the means and standard deviations that on average, stock 2 has a higher adjusted annual return rate. On the other hand, the adjusted annual returns of stock 2 also show larger fluctuations from year to year. This can also be seen from the follow plot, where the adjusted annual returns for stock 1 are shown in black and those for stock 2 are shown in blue.
+```{r}
+plot(1981:2015,historical_stock2_rstar, col="blue", xlab="Year",
+     ylab="Inflation Adjusted Historical Stock Return",las=1)
+lines(1981:2015,historical_stock2_rstar, col="blue")
+points(1981:2015, historical_stock1_rstar)
+lines(1981:2015,historical_stock1_rstar)
+legend(1981,2,c("stock 1","stock2"), col=c("black","blue"),pch=1,lty=1)
+```
+
+###c. (5 points)
+
+**Write a function that takes three arguments `P1`, `P2` and `n`. Here `P1` is the initial amount of money invested in stock 1, `P2` is the initial amount of money invested in stock 2, and `n` is the number of years. Your function should return the inflation-adjusted total amount of money, A\*, after `n` years.  The formula for A\* is given by**
+
+$$A^* = P1 (1+r1^*_1)(1+r1^*_2)\cdots (1+r1^*_n) + P2 (1+r2^*_1)(1+r2^*_2)\cdots (1+r2^*_n)$$
+**Here r1\*<sub>1</sub>, r1\*<sub>2</sub>, ..., r1\*<sub>n</sub> are the inflation-adjusted annual returns for stock 1; r2\*<sub>1</sub>, r2\*<sub>2</sub>, ..., r2\*<sub>n</sub> are the inflation-adjusted annual returns for stock 2.**
+
+**In this part, you will assume that the inflation-adjusted annual returns of the two stocks are independent of each other. So in your function, assign r1\*<sub>1</sub>, r1\*<sub>2</sub>, ..., r1\*<sub>n</sub> by taking `n` random samples of the historical r1\* you calculated in (a) with replacement; assign r2\*<sub>1</sub>, r2\*<sub>2</sub>, ..., r2\*<sub>n</sub> by taking `n` random samples of the historical r2\* you calculated in (a) with replacement. Your function will be a generalization of the `stock4()` function in the notes.**
+
+I call this function `stocks1()`.
+```{r}
+# Function that does Monte Carlo simulation of stock investment
+# P1: initial amount of money invested in stock 1
+# P2: initial amount of money invested in stock 2
+# n: number of years 
+# return: inflation-adjusted total amount of money after n years
+stocks1 <- function(P1, P2, n) {
+  r1star <- sample(historical_stock1_rstar, n, replace=TRUE)
+  r2star <- sample(historical_stock2_rstar, n, replace=TRUE)
+  P1*prod(1+r1star) + P2*prod(1+r2star)
+}
+```
+This function is a straightforward generalization to the `stock4()` function in the notes.
+
+###d. (4 points)
+
+**Suppose you invest P1 = $20,000 in stock 1 and P2 = $10,000 in stock 2. Perform a Monte Carlo simulation by calling the function 100,000 times to obtain a distribution for the inflation-adjusted amount A\* after 10 years (`n` = 10). Use `summary()` to look at the summary statistics of A\*.**
+
+**Note: Your calculation must be *reproducible*, meaning that every time you hit `knit` you should see the same numbers. Since the calculations involve random numbers, you must set a seed number in order for your result to be reproducible. Use `set.seed(your UIN)` to set the seed before running any code that involves random number generation. Any positive integer can be used in the `set.seed()` function. Putting your UIN is just a convenient way to make sure that each student will use a different seed number.**
+
+Just like in the notes, use the `replicate()` function to perform the simulation. We need to set a seed number in order for the result to be reproducible.
+```{r}
+set.seed(62153821)
+A1star <- replicate(1e5, stocks1(2e4, 1e4, 10))
+```
+The variable `A1star` is a numeric vector of length 100,000 storing the 100,000 realizations of A\*. 
+
+Use `summary()` to calculate the summary statistics of A\*:
+```{r}
+summary(A1star)
+```
+```{r, echo=FALSE}
+A1star_avg <- mean(A1star)
+A1fac_avg <- round(A1star_avg/3e4,1)
+A1star_avg <- as.character(signif(A1star_avg,4))
+A1star_med <- median(A1star)
+facs_med <- round(A1star_med/3e4,1)
+A1star_med <- as.character(signif(A1star_med,4))
+```
+
+###e. (3 points)
+
+**Are the mean and median of A\* close to each other? If not, which one (mean or median) is a better number representing the typical amount of money you'd get from the investment? Explain your answer.**
+
+The mean is much larger than the median. In fact, it's even larger than Q3, meaning that there is less than 25% chance that you'll get a A\* higher than the mean.
+
+The output of the `summary()` function shows the ridiculously large maximum amount of money for A\*. The amount is far from the 3rd quarter (Q3) of the data, indicating that it is an extreme outlier.
+
+The fact that the mean is much larger than the median means that the distribution is right-skewed and there are extreme outliers. Therefore, the medians provide a more reasonable expectation of the return of the investment. From the summary statistics, the median of A\* is \$`r A1star_med` or about `r facs_med` times the original \$30,000.
+
+###f. (3 points)
+
+**Make a histogram or density plot for A\*. You will need to tweak the plot to make them look reasonably good. Set the `xlim` parameter to plot the range between 0 and 500,000. Adjust the `breaks` parameter (if you plot histograms) or the `n` parameter (if you make density plots) so that the sampling points in the plotting range are sufficiently large to make a smooth plot.**
+
+Suppose I want to make density plots. The easiest method is to just use the standard command.
+```{r}
+plot(density(A1star))
+```
+
+It doesn't look nice since the most interesting part of the curve occurs in the range smaller than 10<sup>6</sup>. So we can use `xlim` to set the plotting range:
+```{r}
+plot(density(A1star), xlim=c(0,1e6))
+```
+
+It looks better but the curve is ragged. This is because the sampling points are uniformly spaced between the maximum and minimum. When we limit the plotting range, we are just zooming in and the sampling points in the plotting range are not large enough to display a smooth curve. The simplest way to correct it to use a larger sampling size by changing the `n` parameter in `density()`. See `?density` for more information. The default value of `n` is 512. We can change it to 10000 to get a smoother curve
+```{r}
+plot(density(A1star, n=10000), xlim=c(0,1e6))
+```
+
+The region beyond 500,000 is kind of boring. So we will set the plotting range from 0 to 500,000. We can also add a vertical red line at 30,000 to indicate the total initial amount of money. In your assignment, you don't need to show the steps to make the plots. You can just show the final plots.
+```{r}
+plot(density(A1star, n=10000), xlim=c(0,5e5), ylim=c(0,9e-6), main="", xlab="")
+abline(v=3e4, col="red", lwd=2)
+```
+
+If you are interested in plotting a histogram instead, you will have to adjust the `breaks` parameters. Here is possible histogram of A\*. 
+```{r}
+hist(A1star, breaks=seq(0,4.1e7,1e4), xlim=c(0,5e5), freq=FALSE, 
+     main="Histogram of A",xlab="")
+abline(v=3e4, col="red", lwd=2)
+```
+
+We see that although the maximum value of A\* exceed 2&times;10<sup>7</sup> (20 million), most of the times the values are below 500,000. We can calculate the fraction of points with values exceed 5 million by the `mean()` function:
+```{r}
+mean(A1star > 5e6)
+```
+```{r,echo=FALSE}
+p <- mean(A1star > 5e6)*100
+```
+This shows that the fraction of A\* greater than 5 million is `r p`%.
+
+###g. (4 points)
+
+**What is the probability of getting A\* > $300,000 (more than 10 times the purchasing power of the initial $30,000)? What is the probability of getting A\* < $30,000 (the investment fails to keep up with inflation)?**
+
+The probabilities can be calculated using the `mean()` function.
+```{r}
+# P(A* > $300,000)
+mean(A1star > 3e5)
+# P(A* < $30,000)
+mean(A1star < 3e4)
+```
+
+###g. (5 points)
+
+**Write a new version of the function in (c), where you change the way r1\* and r2\* are assigned. Instead of taking random samples independently of each other, you first choose `n` random integers with replacement between 1 and 35 and store them to an integer vector `i` of length `n`. Then set `r1star` and `r2star` to the `i`th element of the inflation-adjusted returns you computed in part (a). This new model takes into account any possible correlation between the inflation-adjusted annual returns of the two stocks. Rerun the Monte Carlo simulation with this new function. Don't forget to use `set.seed(your UIN)` for reproducibility. Compare the median of A\* for both models. Also compare the probabilities P(A\* < $30,000) and P(A\* > $300,000) for both models.**
+
+I call the new function `stocks2()`.
+```{r}
+stocks2 <- function(P1, P2, n) {
+  # generate inflation-adjusted stock returns in the next n years
+  # by randomly drawing from historical data
+  i <- sample.int(35, n, replace=TRUE) # Pick n random integers between 1 and 35
+  r1star <- historical_stock1_rstar[i]
+  r2star <- historical_stock2_rstar[i]
+  
+  # amount of money after n years adjusted for inflation
+  P1*prod(1+r1star) + P2*prod(1+r2star)
+}
+```
+
+Rerun the Monte Carlo simulation.
+```{r}
+set.seed(62153821)
+A2star <- replicate(1e5, stocks2(2e4, 1e4, 10))
+```
+Plots, summary statistics and probabilities.
+```{r}
+plot(density(A1star,n=10000),main="Density Plot for A*",
+     xlab="",xlim=c(0,5e5))
+lines(density(A2star,n=10000), col="blue", lty=2)
+abline(v=3e4, col="red", lwd=2)
+legend(3e5,6e-6,c("Result for stocks1()","Result for stocks2()"), 
+       col=c("black","blue"), lty=1:2)
+# summaru statistics for A*
+summary(A2star)
+# P(A* < 30,000)
+mean(A2star < 3e4)
+# P(A* > 300,000)
+mean(A2star > 3e5)
+```
+```{r, echo=FALSE}
+A2star_med <- signif(median(A2star),4)
+small_med <- round((1-A2star_med/as.numeric(A1star_med))*100,1)
+A2star_med <- as.character(A2star_med)
+Ploss2 <- mean(A2star < 3e4)*100
+Ploss1 <- mean(A1star < 3e4)*100
+Prat <- round(Ploss2/Ploss1,2)
+```
+
+**Compare the median of A\* for both models. Also compare the probabilities P(A* < $30,000) and P(A* > $300,000) for both models.**
+
+We see that there are differences between the two models, but the differences are not big for amounts larger than ~$100,000 but can be substantial for smaller amounts. The median of A\* for the new model is $`r A2star_med`, which is only about `r small_med`% smaller than the previous model ($`r A1star_med`). The probability of getting A\* > $300,000 is about 12% for both models. The probability of getting A\* < $30,000 is `r Ploss2`% for the new model, which is `r Prat` times the previous result (`r Ploss1`%).
+<br /><br />

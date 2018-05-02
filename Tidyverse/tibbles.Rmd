@@ -1,0 +1,87 @@
+---
+title: "Tibbles and readr"
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+A tibble is a modern version of R's traditional data frame. It works very similarly to a data frame with a few exceptions. Here we give a brief introduction to tibbles. To get started, we first need to load the `tibble` package.
+```{r}
+# load the tibble package
+library(tibble)
+```
+We will also need the `readr` package later.
+```{r}
+library(readr)
+```
+
+
+Like a data frame, there are several ways to create a tibble. The easiest way is to use the `tibble()` function, which has a similar syntax to the base R's `data.frame()` function. For example,
+```{r}
+tibble(x=1:5, y=x^2)
+```
+When a tibble is printed, it gives you the tibble's dimension (5x2) and the type of column variables under the column names (`x` is an integer vector; `y` is a double-precision (i.e. real number) vector). These pieces of information are not provided when a traditional data frame is printed. Note that in the example above, we can create the `y` column using the `x` column. This is not possible with `data.frame()`:
+```{r, error=TRUE}
+data.frame(x=1:5, y=x^2)
+```
+
+A tibble can also be created using `tribble()` (transposed tibble):
+```{r}
+tribble(
+  ~name,     ~gender,  ~height,
+  "Collier",   "male",    63,   
+  "Fireman",   "female",  68,   
+  "Flanagan",  "male",    73
+)
+```
+
+The function `as_tibble()` is used to convert lists and data frames to tibbles. For example, `airquality` is a data frame that comes with base R. You encountered it in two Lon Capa problems in Weeks 2 and 3. We can convert it to a tibble using the command
+```{r}
+as_tibble(airquality)
+```
+By default, no more than the first 10 rows of a tibble is printed. There are several ways to change this behavior. One method is to use `print()` and specifying the parameter `n` = an integer indicating number of lines: 
+```{r}
+print(as_tibble(airquality), n=20)
+```
+
+Finally, a tibble can be created by importing a data file. In base R, we use `read.table()` and its related functions to import data. The result is a data frame. The `readr` package is part of the tidyverse. It provides similar functions to import files. For example, `read_table()` and `read_csv()` are the analogous functions of `read.table()` and `read.csv()`. They work in essentially the way as the base R functions. For example, 
+```{r}
+df <- read_csv("Stat100_Survey2_Fall2015.csv")
+```
+The function prints out the first few column names and the data type. When we print the tibble, we see
+```{r}
+df
+```
+When a tibble has too many columns to be printed on the screen, only a few columns that can be fit on the screen are printed. We can change this behavior using `print()` and setting the `width` parameter. For example, to print all columns, we set `width` to infinity
+```{r}
+print(df, width=Inf)
+```
+
+You will explore tibbles and `readr` in an optional Lon Capa problem. Read this <a href="https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html" target="_blank">vignette</a> provided by the `tibble` package first before doing the Lon Capa problem.
+<br />
+<br />
+<br />

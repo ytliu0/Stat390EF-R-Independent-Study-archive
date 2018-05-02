@@ -1,0 +1,277 @@
+---
+title: "Multivariable Regression"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file -  Linear_Regression_Demystified.pdf
+
+## The Linear Model 
+
+It is often the case that a variable $y$ depends on more than one variable. For example, the price of a house may depend on its size, its location, its age and so on. The general linear model extends simple linear model by assuming that $y$ depends on a number of variables $x_1$, $x_2$, ..., $x_k$ via a linear relationship:
+$$y=\beta_0 + \beta_1 x_1 + \beta_2 x_2 + \cdots + \beta_p x_k + \epsilon$$ 
+where $\epsilon$ is the residual, representing the error of the model. 
+
+Given $n$ data points $\{ y_i, x_{1i}, x_{2i}, ..., x_{ki} \}$ ($i=1,2,...,n$), the least square prescription is to find the parameters $\beta_0$, $\beta_1$, ..., $\beta_k$ by minimizing the sum of the square of the residuals (SSE):
+$$SSE=\sum_{i=1}^n (y_i - \hat{y}_i)^2 = 
+\sum_{i=1}^n (y_i-\beta_0 -\beta_1 x_{1i}-\beta_2 x_{2i}-\cdots - \beta_k x_{ki})^2$$
+Like simple regression, analytic solution for this minimization problem exists, but it is in general more complicated than the simple regression (see <a href="../Linear_Regression_Demystified.pdf" target="_blank">these notes</a> if you are interested in the math). The analytic solution generally involves a matrix inversion. It is possible to reduce the multivariable regression into several simple regressions, but this is not the most efficient method. For this reason, we will just use R to perform the calculation. 
+
+Last time, we talked about regression with two variables, but one of them was a binary variable. That was a special case of multivariable regression, in which one variable only takes two values 0 and 1. However, the general mathematical procedure in computing the regression coefficients involving more than one variable is the same. 
+
+To demonstrate multivariable regression in R, we use the same data set as in Stat 200's lecture notes: exam, HW and final scores of 107 Stat 100 students from a previous semester. The csv file of the data have been uploaded <a href="grades.csv" target="_blank">here</a>. You can download the file to your R's work space and then load the data to R using the command 
+```{r}
+grades <- read.csv("grades.csv")
+```
+The data frame `grades` has `r nrow(grades)` observations and `r ncol(grades)` columns. Here we will focus on the variables 'HW' (average homework score), 'Exams' (average exam score), and 'Final' (final score). We would like to predict a student's final score based on the student's average homework score and average exam score. First, let's fit two simple linear models. One predicting 'Final' from 'HW' and the other predicting 'Final' from 'Exams': 
+```{r}
+fit1 <- lm(Final ~ HW, data=grades)
+fit2 <- lm(Final ~ Exams, data=grades)
+summary(fit1)
+summary(fit2)
+```
+It appears that `fit2` is a better model than `fit1`, judging from the residual standard error and R<sup>2</sup>. Now let's fit a linear model predicting 'Final' from both 'HW' and 'Exams':
+```{r}
+fit3 <- lm(Final ~ HW + Exams, data=grades)
+summary(fit3)
+```
+For this new model, the residual standard error decreases a little bit and R<sup>2</sup> increases somewhat compared to `fit2`. This seems to be a slightly better model than both `fit1` and `fit2`, although the improvement is small.
+
+Many of the functions of simple regression carries over to multivariable regression. For example, we can use `confint()` to calculate the confidence intervals for the intercept and slopes: 
+```{r}
+confint(fit3)
+```
+By default, the 95% confidence intervals are calculated. To calcualte the 99% confidence intervals, we specify the `level` parameter: 
+```{r}
+confint(fit3,level=0.99)
+```
+The fitted values and residuals of the data in `grades` are stored in `fit3$fitted.values` and `fit3$residuals`. We can also use `resid(fit3)` in place of `fit3$residuals`.
+
+We use `predict()` to predict the outcome of new data. For example, to predict the final score of a student with average HW score of 85.7 and average exam score of 83.2, we type 
+```{r}
+predict(fit3, newdata=data.frame(HW=85.7, Exams=83.2))
+```
+
+## Residual Degrees of Freedom
+
+In simple regression, the residuals of a linear model are not independent because the residuals sum to 0 and have zero correlation with the independent variable. In multivariable regression, the residuals of a fit also sum to 0 and have zero correlation with all the independent variables used in the model. This is a result of the least square prescription. 
+This means that in our model `fit3`, the residuals sum to 0 and have zero correlation with both 'HW' and 'Exams'. Let's confirm this:
+```{r}
+c(mean(fit3$residuals), cor(fit3$residuals,grades$HW), cor(fit3$residuals,grades$Exams))
+```
+As expected, these numbers are 0 to numerical round-off error. Because of these constraints, the residuals are said to have $n-3$ degrees of freedom, where $n=107$ is the number of observations. This means that if we are given any $n-3$ residuals, we will be able to figure out what the remaining three residuals are. 
+
+In general, if there are $p$ parameters in the linear model, the residual degrees of freedom is $n-p$ because the residuals have zero correlation with all the independent variables (corresponding to parameters $\beta_1$, $\beta_2$, ..., $\beta_k$, where $k=p-1$) and have to sum to 0 (corresponding to $\beta_0$, the intercept). In simple regression, we have $\beta_0$ and $\beta_1$ as fitting parameters (intercept and slope), so $df=n-2$. In the model `fit3`, we have one intercept and two slopes, so $df=n-3$. The residual degrees of freedom in `fit3` is stored in the variable `fit3$df.residual`.
+
+## SST, SSM, SSE, RSE
+
+For the linear model 
+$$\hat{y}_i = \beta_0 +\beta_1 x_{1i} + \beta_2 x_{2i} + \cdots +\beta_k x_{ki}$$ 
+we define SST, SSM, and SSE the same way as in the simple regression: 
+$$SST = \sum_{i=1}^n (y_i-\bar{y})^2 = n SD_y^2$$ 
+$$SSM = \sum_{i=1}^n (\hat{y}_i-\bar{y})^2$$
+$$SSE = \sum_{i=1}^n (y_i-\hat{y}_i)^2$$
+The residual standard error $RSE$ is defined as 
+$$RSE=\sqrt{SSE/(n-p)}$$
+It is the estimated root-mean square error of the residuals. Note that the sum is divided by $n-p$, the residual degrees of freedom, instead of $n$. The value of RSE for a linear model can be seen using the `summary()` function. It is listed near the end of the output.
+
+As in the simple regression, the equality $SST=SSM+SSE$ holds. To demonstrate this, we modify the `computeSS()` we wrote for <a href="../Week07/SimpleRegression.html#computeSS" target="_blank">simple regression</a> to include two independent variables:
+```{r}
+# beta: numeric vector of length 3 - beta[1] = intercept, beta[2] and beta[3]: slopes
+# x1, x2: numeric vectors of length n (number of observations) storing x_{1i} and x_{2i} (i=1,2,...,n)
+# y: numeric vector of length n storing y_i (i=1,2,...,n)
+computeSS <- function(beta,x1,x2,y) {
+  n <- length(y)
+  SDy2 <- var(y)*(n-1)/n
+  SST <- n*SDy2
+  yhat <- beta[1] + beta[2]*x1 + beta[3]*x2
+  SSM <- sum((yhat-mean(y))^2)
+  SSE <- sum((y-yhat)^2)
+  output <- c(SSE,SSM,SST-SSE-SSM)
+  names(output) <- c("SSE","SSM","SST-SSE-SSM")
+  output
+}
+```
+If we pass the data and regression coefficients in `fit3`, we get 
+```{r}
+SSfit3 <- computeSS(fit3$coefficients, grades$HW, grades$Exams, grades$Final)
+SSfit3
+```
+As expected, $SST=SSM+SSE$ holds to numerical round-off error. The equality holds only for the coefficients determined by the least square prescription. If we had passed coefficients other than `fit3$coefficients`, we would not have obtained SST-SSM-SSE nearly equal 0 (try it!).
+
+## $R^2$ and F Statistic
+
+In simple regression, the quantity $R^2$ is the same as $r^2$, where $r$ is the correlation coefficient between $x$ and $y$. In multivariable regression, there are more than two variables involved. As a result, the correlation is a matrix which we can compute using the `cor()` function we described in <a href="../Week02/MeanMedianSdCorrelation.html#corMatrix" target="_blank">Week 2</a>: 
+```{r}
+cor(cbind(grades$HW, grades$Exams, grades$Final))
+```
+A simpler method to calculate the matrix is to apply the `cor()` function on the three columns:
+```{r}
+cor(grades[,c("HW","Exams","Final")])
+```
+This correlation matrix shows that the correlation coefficient between 'HW' and 'Exams' is 0.3933091. The correlation between 'HW' and 'Final' is 0.392571. The correlation between 'Exams' and 'Final' is 0.5953213. None of these, however, is related to the $R^2$ given near the end of `summary(fit3)`. Instead, $R$ is defined as the correlation between $y$ and the fitted value $\hat{y}$: 
+```{r}
+R <- cor(grades$Final, fit3$fitted.values)
+R^2
+```
+which is consistent with the number given by `summary(fit3)`.
+
+It can be shown that $SSM/SST=R^2$ (The math is explained in <a href="../Linear_Regression_Demystified.pdf" target="_blank">here</a> if you are interested). In other words, 
+$$R^2 = \frac{SSM}{SST}=\frac{\sum\limits_{i=1}^n (\hat{y}_i - \bar{y})^2}{\sum\limits_{i=1}^n (y_i - \bar{y})^2}$$ 
+is the fraction of variance in $y$ "explained" by the model. We can verify the identity using R for our model `fit3`:
+```{r}
+SSM <- unname(SSfit3["SSM"])
+SSE <- unname(SSfit3["SSE"])
+SST <- SSM + SSE
+SSM/SST-R^2
+```
+This confirms that $R^2=SSM/SST$ holds in our model. In the above code chunk, we use the function `unname()` to strip off the names in a variable.  
+
+The F statistic listed at the very end of `summary(fit3)` provides information on whether at least one slope in the model is statistically significant. The F statistic is constructed by 
+$$F = \frac{SSM/(p-1)}{SSE/(n-p)}$$
+where $p-1$ is the number of slopes in the model. In our model `fit3`, we have $n=107$ and $p=3$. The F statistic is 
+```{r}
+F <- (SSM/2)/(SSE/104)
+F
+```
+which is consistent with the number given by `summary(fit3)`. 
+
+The F statistic is constructed under the null hypothesis that all of the slopes = 0. It can be shown that the number $F$ follows the F distribution with $(p-1,n-p)$ degrees of freedom. The p-value corresponding to $P(>F)$ under the null hypothesis is the area under the F-curve to the right of $F$, and can be computed using the `pf()` function:
+```{r}
+pf(F,2,104,lower.tail=FALSE)
+```
+This number is consistent with the p-value given in `summary(fit3)`. As this p-value is very small, the null hypothesis is rejected and we conclude that at least one slope is statistically significant. 
+
+We also see the F statistic in the simple regression model, e.g. in `summary(fit1)`. However, there is only one slope in simple regression, and the t statistic of the slope already provides the information. In fact, in simple regression, the F statistic is equal to the square of the t statistic of the slope. As a result, it does not provide additional information. 
+
+## Three-Dimensional Scatter Plots
+
+In our linear model `fit3`, there are two variables 'HW' and 'Exams' predicting 'Final'. The scatter plot of 'Final' vs 'HW' and 'Exam' is three-dimensional. To make a 3D scatter plot, we can use the package 'scatterplot3d', which needs to be installed using the command 
+```{r, eval=FALSE}
+install.packages('scatterplot3d')
+```
+After the package is installed, it can be loaded using the `library()` function:
+```{r}
+library(scatterplot3d)
+```
+To make a 3D scatter plot, we use the command 
+```{r, fig.height=6}
+with(grades, scatterplot3d(HW,Exams,Final, pch=16) )
+```
+
+This is the same plot as the first plot on page 93 of the Stat 200 notebook (Fall 2017 edition). 
+
+<hr />
+As a side issue, here we use `with(data, expression)` syntax to evaluate `expression` in the `data` environment. It is convenient as we don't need to type `grades$HW`, `grades$Exams` and `grades$Final` to access the variables 'HW', 'Exams' and 'Final' in the data frame `grades`. Here is another demonstration: in the following we use the `with()` syntax to calculate the correlation matrix of 'HW', 'Exams', and 'Final' in the `grades` data frame: 
+```{r}
+with(grades, cor(cbind(HW,Exams,Final)) )
+```
+We get the same result as above using `cor(cbind(grades$HW`,`grades$Exams`,`grades$Final)`.
+<hr />
+
+Back to the topic of 3D plots, to show the vertical distance of the points from the HW-Exam plane, we add the option `type='h'`: 
+```{r, fig.height=6}
+with(grades, scatterplot3d(HW,Exams,Final, pch=16, type='h') )
+```
+
+This is the same as the second plot on page 93 of the Stat 200 notebook (Fall 2017 edition). The regression equation in `fit3` defines a plane in the 3D space of HW-Exam-Final. To plot this regression plane together with the data points, we use the command 
+```{r, fig.height=6}
+with(grades, {
+  s3d <- scatterplot3d(HW,Exams,Final, pch=16, type='h')
+  s3d$plane3d(fit3,col="red")
+  })
+```
+
+This is the plot on page 94 of the Stat 200 notebook (Fall 2017 edition).
+
+The <a href="http://www.statmethods.net/" target="_blank">Quick R</a> website has some more information on 3D scatter plots at the bottom of <a href="http://www.statmethods.net/graphs/scatterplot.html" target="_blank">this page</a> if you are interested in playing with more 3D plots in R.
+
+## Residual Plots
+
+As mentioned before, residual plots are useful to visualize the quality of the fit and examine if the assumptions used to calculate the p-values are valid. We should make residual plots for multivariable regression as well. 
+
+We want to see if the residual variance is uniform. There are two independent variables. We could make two plots:
+```{r}
+plot(grades$HW, fit3$residuals, pch=19, xlab="HW", ylab="Residuals", las=1)
+abline(h=0)
+```
+```{r}
+plot(grades$Exams, fit3$residuals, pch=19, xlab="Exams", ylab="Residuals", las=1)
+abline(h=0)
+```
+
+It is also convenient to plot the residuals versus the fitted values, which are linear combination of the two independent variables. 
+```{r}
+plot(fit3$fitted.values, fit3$residuals, pch=19, xlab="Predicted", 
+     ylab="Residuals", las=1)
+abline(h=0)
+```
+
+These plots show that the residuals are well-scattered for higher HW and Exam scores. There are much fewer students with lower HW and Exam scores. Overall, the residuals appear to be well-scattered and do not show a noticeable pattern. 
+
+## Residual (Sur)Realism
+
+Finally, we end with a fun example in the paper <a href="http://amstat.tandfonline.com/doi/abs/10.1198/000313007X190079" target="_blank">Residual (Sur)Realism</a> (a pdf version of the paper is freely avaiable online on the <a href="http://www4.stat.ncsu.edu/~stefanski/" target="_blank">author's website</a>). In the paper, the author deliberately constructs data sets that contain hidden image or message in the residual plots. These data sets can be <a href="http://www4.stat.ncsu.edu/~stefanski/NSF_Supported/Hidden_Images/stat_res_plots.html" target="_blank">downloaded</a> on the author's website. Here we show one example. First let's read in the data from his website:
+```{r, echo=FALSE}
+data <- read.table('pumpkin_1_data_yx1x6.txt')
+```
+```{r, eval=FALSE}
+url <- 'http://www4.stat.ncsu.edu/~stefanski/NSF_Supported/Hidden_Images/UNCG_Helen_Barton_Lecture_Nov_2013/pumpkin_1_data_yx1x6.txt'
+data <- read.table(url)
+```
+```{r}
+dim(data)
+names(data)
+```
+The data file has no header and therefore the column names are set to R's default values "V1", "V2" and so on. There are 7 columns in the data frame. We can make some plots to see what the data look like. A convenient method to make plots of all pairs of variable is to use the `pairs()` function:
+```{r, fig.height=7}
+pairs(data)
+```
+
+We see a matrix of plots. It looks like a mess. These plots can be regarded as a graphical representation of the correction matrix:
+```{r}
+round(cor(data),4)
+```
+The numbers are rounded to 4 decimal places to diaplay each row in a single line.
+
+Let's fit a linear model predicting the first column from the other 6 columns:
+```{r}
+fit <- lm(V1 ~ ., data=data)
+summary(fit)
+```
+We have used a shorthand notation above. Instead of using `lm(V1 ~ V2+V3+V4+V5+V6+V7, data=data)`, R allows us to use the shorthand notation `lm(V1 ~ . , data=data)` to represent "fit all columns other than V1". It looks like all slopes are statistically significant. Let's look at a residual plot.
+```{r, fig.height=7}
+plot(fit$fitted.values, fit$residuals, pch='*', xlab="Predicted", ylab="Residuals")
+```
+
+There is a pattern! This shows that residual plots can sometimes reveal systematic patterns in the data that are not apparent in other plots.
+
+<br />
+<br />
+<br />

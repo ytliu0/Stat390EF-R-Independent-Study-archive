@@ -1,0 +1,399 @@
+---
+title: "Transformation of Variables"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+
+.greek {
+  font-family: serif;
+  font-size: 130%;
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file - cmi_aveTemperature.csv
+
+## Introduction
+
+Suppose we have a set of data points (<var>y<sub>i</sub>, x<sub>1i</sub>, x<sub>2i</sub>, ..., x<sub>pi<sub></var>) with <var>i=1,2,..., n</var>. A linear model attempts to find a set of <var>p+1</var> parameters &beta;<sub>0</sub>, &beta;<sub>1</sub>, &beta;<sub>2</sub>, ..., &beta;<sub>p</sub> that best fits <var>Y</var> for the given set of <var>p</var> independent variables <var>X<sub>1</sub>, X<sub>2</sub>, ..., X<sub>p<sub></var> via the equation 
+$$y_i = \hat{y}_i + \epsilon_i = \beta_0 + \beta_1 x_{1i}+\beta_2 x_{2i} + \cdots + \beta_p x_{pi} + \epsilon_i$$
+In this standard notation, $\hat{y}_i=\beta_0 + \beta_1 x_{1i}+\beta_2 x_{2i} + \cdots + \beta_p x_{pi}$ denotes the fitted value and $\epsilon_i$ denotes the residual for the <var>i</var>'th observation.
+
+A linear model is widely used in Statistics because of its simplicity and its well-known properties. It should be pointed out that the term "linear" in linear model refers to a model being linear in the fitting parameters &beta;<sub>0</sub>, &beta;<sub>1</sub>, &beta;<sub>2</sub>, ..., &beta;<sub>p</sub> but not on the independent variables <var>X<sub>1</sub>, X<sub>2</sub>, ..., X<sub>p<sub></var>. For example, we can fit $y_i$ with the model
+$$\hat{y}_i = \beta_0 + \beta_1 x_i + \beta_2 \sqrt{x_i} + \beta_3 x_i^2 + \beta_4 \log x_i
++ \beta_5 \frac{x_i^3}{1+2^{x_i}}$$
+using the technique of multiple linear regression since the model is
+linear in $\beta_0,\beta_1,\cdots,\beta_5$. We simply label
+$$
+  x_{1i} = x_i \ \ , \ \ x_{2i}=\sqrt{x_i} \ \ , \ \ x_{3i}=x_i^2 \ \ , \ \
+  x_{4i}=\log x_i \ \ , \ \ x_{5i}= \frac{x_i^3}{1+2^{x_i}}
+$$
+and the fitting equation becomes
+$$
+  \hat{y}_i =\beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \beta_3 x_{3i}
++ \beta_4 x_{4i} + \beta_5 x_{5i} 
+$$
+which is the equation for a multiple linear model with <var>p</var>=5.<a href="#fn01" id="fnref01"><sup>1</sup></a>
+
+In other cases, a nonlinear model can be turned into a linear model by transformation of variables. For example, suppose a model has the form 
+$$\hat{y}_i = \sqrt{\beta_0 + \beta_1 x_i}$$
+This is clearly a nonlinear model. However, if we introduce a new variable $\hat{z}_i=\hat{y}_i^2$, the equation becomes 
+$$\hat{z}_i = \beta_0 + \beta_1 x_i$$
+which is a linear model. The coefficients $\beta_0$ and $\beta_1$ can be computed using the technique of linear regression. 
+
+Here we will use three examples to demonstrate the technique of transformation of variables. 
+
+## Example 1: Monthly Average Temperatures at Champaign, Illinois
+
+This <a href="cmi_aveTemperature.csv" target="_blank">csv file</a> has three columns containing the information of the monthly average temperatures at Champaign from the year 1990 to 2015. The first two columns are the year and month. The third column is the monthly average temperature (in &deg;F) at the specified year and month. The data file was created by taking monthly average of the temperature data downloaded from the <a href="http://www.sws.uiuc.edu/warm/datatype.asp" target="_blank">Illinois Climate Network</a>. The csv file can be loaded to R using the command 
+```{r}
+cmi <- read.csv("cmi_aveTemperature.csv")
+```
+To see how the data look, We make a plot of the monthly average temperature versus month:
+```{r}
+plot(T_ave ~ month, data=cmi, las=1, pch=20, 
+     ylab=expression(paste("Monthly average temperature (  ",degree,"F)")))
+```
+
+From the plot, the monthly average temperature $T$ varies between about 80&deg;F and 20&deg;F. The hottest month is around July.
+
+The simplest model for fitting the data is to use a sinusoidal function. Since we know the temperature variation is periodic with a period of 12 months, we can construct the following simple model.
+$$\hat{T} = T_0 + A \cos \left[ \frac{\pi}{6} (M - M_h)\right]$$
+Here $\hat{T}$ is the predicted monthly average temperature, $M$ is the month. The fitting parameters are $T_0$, $A$ and $M_h$. The average of the cosine function is 0, so $T_0$ represents the average temperature over a year. The cosine function $\cos(x)$ has a maximum value of 1 at $x=0$. This means that the maximum average temperature occurs at $M=M_h$. Thus $M_h$ represents the hottest month of the year, although it is a parameter that doesn't have to be an integer. The factor <span class="greek">&pi;/6</span> in the cosine function is determined to make the period of temperature variation to be 12 months, since the cosine function is periodic with a period of <span class="greek">2&pi;</span>. Finally, the maximum and minimum of the cosine function is &pm;1, so the maximum and minimum average temperature in the model is $T_0 \pm A$. Therefore, $A$ represents the amplitude of seasonal temperature variation from $T_0$.
+
+### Simplified Model
+
+Before we tackle the full model, it is useful to consider a slightly simplified model. Instead of treating $M_h$ as a fitting parameter, we fix it to be 7 since we see from the plot that the hottest month of the year is July. In this case, the model simplifies to 
+$$\hat{T} = T_0 + A \cos \left[ \frac{\pi}{6} (M - 7)\right]$$
+This simplified model is a simple linear model in disguise since it is linear in the fitting parameters $T_0$ and $A$. We can express the model in the standard form by introducing a new variable   
+$$X = \cos \left[ \frac{\pi}{6} (M - 7)\right]$$ 
+In terms of $X$, the model becomes 
+$$\hat{T} = T_0 + AX$$
+which is a linear model written in the standard form. To see how good the model may be, we make a plot of monthly average temperature versus $X$:
+```{r}
+plot(T_ave ~ cos(pi/6*(month-7)), data=cmi, ylab="T",las=1,pch=20, 
+     xlab="X = cos[pi(month-7)/6]")
+```
+
+From this plot, it looks promising that the data can be fit by a straight line fairly well. We now determine the parameters $T_0$ and $A$ by simple linear regression:
+```{r}
+fit1 <- lm(T_ave ~ cos(pi/6*(month-7)), data=cmi)
+summary(fit1)
+```
+With R<sup>2</sup> = 0.95, the fit appears to be quite good. The parameter T<sub>0</sub> = 52.54&deg;F is the value of the intercept, and <var>A</var> = 23.96&deg;F is the slope. This means that the average temperature over the year is about 52.54&deg;F. This value is exactly the same as the mean of `T_ave`: 
+```{r}
+mean(cmi$T_ave)
+```
+The seasonal temperature variation from this yearly average temperature is <var>A</var> &approx; 24&deg;F.
+
+We can visualize the fit from the following plot
+```{r}
+plot(T_ave ~ cos(pi/6*(month-7)), data=cmi, ylab="T",las=1,pch=20, 
+     xlab="X = cos[pi(month-7)/6]")
+# Recall: abline(fit1) can be used to add the regression line to the plot
+abline(fit1, col="red")
+```
+
+In terms of the variable `month`, the fit is a cosine curve. We can use the `curve()` function to plot the fitted curve together with the data points:
+```{r}
+# Recall: the fitted coefficients are stored in the vector fit1$coefficients
+T0 <- fit1$coefficients[1]
+A <- fit1$coefficients[2]
+plot(T_ave ~ month, data=cmi, ylab="T",las=1,pch=20, xlab="month")
+curve(T0+A*cos(pi/6*(x-7)), col="red", add=TRUE)
+```
+
+Another way to make the same plot is to use the `predict()` function to calculate $\hat{T}$ for a number of points with different values of `month` and then use the `lines()` function to add the curve for $\hat{T}$. Here is the code:
+```{r}
+# Create 100 points equally spaced between 1 and 12
+mon_pts <- seq(1,12,length.out=100)
+
+# Calculate predicted T for the 100 points 
+fitted.T <- predict(fit1, newdata=data.frame(month=mon_pts))
+
+plot(T_ave ~ month, data=cmi, ylab="T",las=1,pch=20, xlab="month")
+# add the predicted curve
+lines(mon_pts,fitted.T,col="red")
+```
+
+We see that the model fits the data fairly well. We can also plot the monthly average temperature as a function of time. To do that, we create a new column named 'Month1990', which is the month counted from the year 1990: 
+```{r}
+cmi$Month1990 <- cmi$month + (cmi$year-1990)*12
+```
+The value of 'Month1990' is the same as 'month' in the year 1990, but it is cumulative rather than  periodic: Month1990 = 13 for January 1991; Month1990 = 14 for February 1991 and so on. We can use this new column to plot T as a function of time:
+```{r}
+plot(T_ave ~ Month1990, data=cmi, type='l',las=1, 
+     ylab=expression(paste("Monthly average temperature (  ",degree,"F)")))
+# Recall: the fitted values are stored in the vector fit1$fitted.values
+lines(fit1$fitted.values ~ cmi$Month1990, col="red")
+```
+
+Here the black line is the data (since we set `type='l'`). We use the `lines()` function to add the fitted line (red) to the plot. The fit is quite good considering the simplicity of the model.
+
+### Full Model
+
+We now return to the full model, where $M_h$ is a free parameter
+$$\hat{T} = T_0 + A \cos \left[ \frac{\pi}{6} (M - M_h)\right]$$
+Using the trigonometric identity $\cos(a-b)=\cos a \cos b + \sin a \sin b$, we can write 
+$$\cos \left[ \frac{\pi}{6} (M - M_h)\right] = \cos \frac{\pi}{6}M \cos \frac{\pi}{6}M_h 
++ \sin \frac{\pi}{6}M \sin \frac{\pi}{6}M_h$$ 
+and the full model can be written as 
+$$\hat{T} = T_0 + A \cos \frac{\pi}{6}M_h \cos \frac{\pi}{6}M + A \sin \frac{\pi}{6}M_h \sin \frac{\pi}{6}M$$ 
+Define two parameters 
+$$\beta_1 = A \cos \frac{\pi}{6}M_h \ \ \ , \ \ \ \beta_2 = A \sin \frac{\pi}{6}M_h$$ 
+and the model becomes 
+$$\hat{T} = T_0 + \beta_1 \cos \frac{\pi}{6}M + \beta_2 \sin \frac{\pi}{6}M$$ 
+This is again a linear model because $T$ is linear in the fitting parameters $T_0$, $\beta_1$ and $\beta_2$. If we define $X_1=\cos \frac{\pi}{6}M$ and $X_2 = \sin \frac{\pi}{6}M$, the model becomes 
+$$\hat{T}=T_0 + \beta_1 X_1 + \beta_2 X_2$$
+This is a linear model written in the standard form. What we have just done is to trade <var>A</var> and M<sub>h</sub> for &beta;<sub>1</sub> and &beta;<sub>2</sub>. There are still 3 fitting parameters (T<sub>0</sub>, &beta;<sub>1</sub> and &beta;<sub>2</sub>) in this model.
+
+We use `lm()` to find $T_0$, $\beta_1$ and $\beta_2$: 
+```{r}
+fit2 <- lm(T_ave ~ cos(pi/6*month) + sin(pi/6*month), data=cmi)
+summary(fit2)
+```
+We see that T<sub>0</sub> = `r round(fit2$coefficients[1],2)`&deg;F remains unchanged, &beta;<sub>1</sub> = `r round(fit2$coefficients[2],2)`&deg;F and &beta;<sub>2</sub> = `r round(fit2$coefficients[3],2)`&deg;F. These values of &beta;<sub>1</sub> and &beta;<sub>2</sub> correspond to <var>A</var> = 23.98&deg;F and M<sub>h</sub> = 7.086. <a href="#fn02" id="fnref02"><sup>2</sup></a>
+
+We can still use the `predict()` function to predict for a new data set. For example, to calculate the predicted monthly average in April, we use the command 
+```{r}
+predict(fit2, newdata=data.frame(month = 4))
+```
+and we get 51.5&deg;F. We can also substitute month = 4 to the equation of the model: 
+```{r}
+fit2$coef[1] + fit2$coef[2]*cos(pi/6*4) + fit2$coef[3]*sin(pi/6*4)
+```
+We see that we get the same answer. Note that we use the abbreviation `fit2$coef` instead of `fit2$coefficients` to take advantage of R's partial matching of names. As pointed out in Peng's textbook, this is very useful during interactive work, but you shouldn't use partial matching if you are writing longer scripts, functions, or programs to avoid confusion. 
+
+How does the full model compared to the simplified model? We see from the summary of model fit that the full model has almost the same residual standard error as the simplified model. The following is a plot comparing the two models.
+```{r}
+plot(T_ave ~ month, data=cmi, ylab="T",las=1,pch=20, xlab="month")
+curve(T0+A*cos(pi/6*(x-7)), col="red", add=TRUE)
+curve(fit2$coef[1] + fit2$coef[2]*cos(pi/6*x) + fit2$coef[3]*sin(pi/6*x), 
+      col="blue", lty=2, add=TRUE)
+legend(6,50,c("data","simplified","full"), pch=c(20,-1,-1),
+       col=c("black","red","blue"), lty=0:2)
+```
+
+The plot tells the same story. The full model is similar to the simplified model and it does not fit the data much better. We conclude that including the extra parameter $M_h$ in the model does not significantly improve the accuracy. It is not very surprising that the simplified model is almost as good as the full model because our guess M<sub>h</sub> = 7 is close to the optimal value M<sub>h</sub> = 7.086. 
+
+## Example 2: Measuring the Acceleration due to Gravity
+
+When a ball bearing is dropped from rest, it falls freely due to Earth's gravity. You may remember from an introductory physics course that the distance traveled $s$ as a function of time $t$ is given by the formula 
+$$s=\frac{1}{2} gt^2$$
+Here $g$ is a constant known as the acceleration due to gravity. It measures the strength of gravity near Earth's surface. By carefully measuring the time taken for a ball bearing to fall a certain distance, we can use the formula to determine $g$. In fact, this is a lab experiment many students have done in an introductory physics course. 
+
+Consider the following data from a physics lab experiment.
+```{r}
+t <- seq(0,0.5,0.1)
+s <- c(0,0.053,0.196,0.443,0.773, 1.257)
+```
+Here $s$ is distance traveled in meters and $t$ is time in seconds. According to the formula, the plot of $s$ versus $t^2/2$ should be a straight line with a slope equal to $g$ passing through the origin. We take a look at the plot:
+```{r}
+plot(s ~ I(t^2/2), pch=19, xlab=expression(t^2/2), ylab="s",las=1)
+```
+
+Note that we need to put the expression `t^2/2` inside the `I()` function to tell R that the quantity `t^2/2` should be treated as one variable (see, e.g., <a href="http://ww2.coastal.edu/kingw/statistics/R-tutorials/formulae.html" target="_blank">this tutorial</a> for detail).
+
+By making the transformation $x=t^2/2$, the model $s=gt^2/2$ becomes $s = g x$, which is a simple linear model written in the standard form. We use the `lm()` function to find the slope:
+```{r}
+fit <- lm(s ~ I(t^2/2))
+summary(fit)
+```
+With R<sup>2</sup> = 0.9994, the fit is very good. There is a small value of intercept, but the p-value is 0.7, indicating that the intercept is not significant. The slope is 9.97. The 95% confidence interval of the slope is 
+```{r}
+confint(fit, "I(t^2/2)")
+```
+This means that the 95% confidence interval for the measured value of $g$ is (9.6, 10.3) m/s<sup>2</sup>. The accepted value of $g$ is 9.8m/s<sup>2</sup>.
+
+## Example 3: Growth of Bacteria
+
+Under a controlled environment in a test tube, the bacterial growth can be approximately divided into <a href="https://en.wikipedia.org/wiki/Bacterial_growth" target="_blank">four phases</a>:
+<ol>
+<li><b>Lag phase</b>: Bacteria are adapting themselves to the environment. The bacteria population does not grow.</li>
+<li><b>Log phase</b>: The number of bacteria increases exponentially with time.</li>
+<li><b>Stationary phase</b>: The number of bacteria reaches the peak. There is not enough nutrient in the environment to sustain the exponential growth, and/or the growth is suppressed by the formation of an inhibitory product such as an organic acid. The number of bacteria stays constant during this phase because the growth rate and death rate are equal.</li>
+<li><b>Death phase</b>: The nutrient in the environment is exhausted. Bacteria die. The bacteria population drops exponentially.</li> 
+</ol>
+
+Here we only consider the log phase and stationary phase. The logistic model gives a function that starts out looking like the log phase and flattens out like the stationary phase, so we'll use that function. In this model, the bacterial population density $P$ as a function of time is given by the equation 
+$$\frac{P_{i+1}-P_i}{P_i} = r \left( 1 - \frac{P_i}{P_{\rm max}} \right)$$
+Here $P_i$ is the bacterial population density at time $t=t_i$, and it is assumed that $t_{i+1}-t_i=\Delta t$ is a constant. That is, the population density $P$ is measured at a constant time interval in the experiment. The parameter $r$ is the growth rate, measuring how fast the fractional increase in $P$ in the log phase when the population density $P \ll P_{\rm max}$. As $P$ increases, the term $P/P_{\rm max}$ increases, and the growth rate is suppressed by a factor $(1-P/P_{\rm max})$. The parameter $P_{\rm max}$ is called the *carrying capacity*. When $P_i$ reaches $P_{\rm max}$, the equation becomes $(P_{i+1}-P_i)/P_i=0$ or $P_{i+1}=P_i=P_{\rm max}$ and so the population stops growing thereafter. Thus, $P_{\rm max}$ measures the maximum population density the bacteria can reach and is the population density in the stationary phase.
+
+Consider the following data from an experiment. 
+```{r}
+t <- seq(0,200,10)
+P <- c(1, 1.67, 2.64, 4.45, 7.27, 10.56, 15.18, 23.45, 30.14, 36.83, 42.93, 
+       44.09, 44.98, 45.37, 45.08, 45.25, 45.35, 45.58, 44.84, 45.39, 45.01)
+```
+The time $t$ is in minutes and the bacterial population density $P$ is normalized to 1 at the beginning of the experiment ($t=0$). In this experiment, the time interval between successive measurements is $\Delta t = 10$ minutes. We first look at the plot of $P(t)$:
+```{r}
+plot(P ~ t, pch=19, las=1, xlab="t (minutes)", ylab="Population density")
+```
+
+The log phase and stationary phase can be seen clearly. The logistic model is a nonlinear model, but we can turn it into a linear model by writing $x_i=P_i$ and defining a new variable $y_i$ as 
+$$y_i = \frac{P_{i+1}-P_i}{P_i}$$
+With these new variables, the logistic model becomes 
+$$ y_i = r - \frac{r}{P_{\rm max}} x_i$$ 
+which is a linear model in the standard form. The intercept is the growth rate $r$ and the slope is $-r/P_{\rm max}$. 
+
+To fit the model, we need to create the x and y variables. Since $y_i$ involves both $P_i$ and $P_{i+1}$, the number of the $\{ y_i \}$ data is one less than the $\{ P_i \}$ data. We want the $\{ x_i \}$ data to have the same number as the $\{ y_i \}$ data to fit the model. Here is a code that generates x and y:
+```{r}
+n <- length(P) # number of data points in P
+x <- P[-n] # remove the last element from P; x has one less element than P
+y <- rep(NA, n-1) # initial y to a vector of NAs of length n-1
+# Calculate y
+for (i in 1:(n-1)) {
+  y[i] <- (P[i+1]-P[i])/P[i]
+}
+```
+<hr />
+In this code, the calculation of `y` is done via a for-loop. If you abhor for-loops, you will be pleased to learn that the calculation of `y` can also be accomplished by the following one-line code:
+```{r}
+y <- (P[-1]-P[-n])/P[-n]
+```
+The logic goes like this: `P[-1]` returns a vector of length `n-1` with the first element removed. So `P[-1]` stores `P[2], P[3], P[4], ..., P[n]`. Similarly, `P[-n]` returns a vector of length `n-1` storing `P[1], P[2], P[3], ..., P[n-1]`. Therefore, `(P[-1] - P[-n])/P[-n]` returns a vector of length `n-1` storing `(P[2]-P[1])/P[1], (P[3]-P[2])/P[2], ..., (P[n]-P[n-1])/P[n-1]`, which is `y`. This index shifting trick was introduced in one of Week 4's Lon Capa Homework problems.
+<hr />
+We now take a look at the plot of y versus x:
+```{r}
+plot(y ~ x, pch=19, las=1)
+```
+
+We use the `lm()` function to fit a linear model:
+```{r}
+fit <- lm(y ~ x)
+summary(fit)
+```
+From the intercept, we conclude that the growth rate is r = `r round(fit$coefficients[1],2)`. Since slope = <var>r/P<sub>max</sub></var>, we have <var>P<sub>max</sub> = -r</var>/slope, which is equal to `r round(-fit$coefficients[1]/fit$coefficients[2],2)`. The 95% confidence intervals for the intercept and slope are 
+```{r}
+confint(fit)
+```
+This means that the 95% CI for $r$ is (0.62, 0.70). Computing the 95% CI for P<sub>max</sub> is complicated because $P_{\rm max}$ involves the division of intercept and slope and the two parameters are correlated. We will not do the calculation here.<a href="#fn03" id="fnref03"><sup>3</sup></a> From the plot of $P$ versus $t$, we see that $P$ is saturated around 45-46, so it seems that P<sub>max</sub> &approx; 45 or 46 is a good estimate. 
+
+We plot the data and fitted line together to visualize the quality of the fit:
+```{r}
+plot(y ~ x, pch=19, las=1)
+abline(fit, col="red")
+```
+
+We are, however, more interested in comparing the fitted values of $P$ with the data. They can be calculated from the definition of $y_i$: 
+$$y_i = \frac{P_{i+1}-P_i}{P_i} \ \ \ \Rightarrow \ \ \ P_{i+1} = P_i (1 + y_i)$$
+Therefore, the fitted value of the (i+1)th population density $\hat{P}_{i+1}$ is related to the fitted value $\hat{y}_i$, by 
+$$\hat{P}_{i+1} = \hat{P}_i (1+ \hat{y}_i)$$
+To proceed, we need to know the first value of $\hat{P}$. Since $P$ is normalized to 1 at $t=0$, we also set $\hat{P}_1=P_1=1$. The rest of $\hat{P}_i$ can be computed using the above equation. Here is a code that computes the fitted values of $P_i$:
+```{r}
+P.fitted <- rep(NA,n) # Initialize P.fitted
+P.fitted[1] <- 1
+for (i in 1:(n-1)) {
+  P.fitted[i+1] = P.fitted[i]*(1+fit$fitted.values[i])
+}
+```
+<hr />
+For those of you who abhor for-loops, here is a one-line code to compute $\hat{P}$:
+```{r}
+P.fitted <- cumprod( c(1, 1+fit$fitted.values) )
+```
+The trick is to use the `cumprod()` function you learned in Week 10's Lon Capa Homework problem on the mortgage calculation.
+<hr />
+Now we can plot the fitted line together with the data:
+```{r}
+plot(P ~ t, pch=20, las=1, xlab="t (minutes)",ylab="Population density")
+lines(P.fitted ~ t, col="blue")
+legend(120,30,c("data","fitted line"),col=c("black","blue"), pch=c(20,-1), lty=0:1)
+```
+
+We see that the logistic model provides a good fitting curve to the data points.
+
+<br /> <hr /> <br />
+
+### Footnotes
+
+<ol>
+<li id="fn01"><p>The reason why this is the case is that in the linear model we find parameters &beta;<sub>0</sub>, &beta;<sub>1</sub>, &beta;<sub>2</sub>, ..., &beta;<sub>p</sub> that minimize the sum of square error (SSE). So SSE is considered as a function of the &beta; parameters in the minimization procedure. The independent variables <var>X<sub>1</sub></var>, <var>X<sub>2</sub></var>, ..., <var>X<sub>p</sub></var>, as well as <var>Y</var> are treated as constants in the minimization procedure.<a href="#fnref01">&#8617;</a></p></li>
+
+<li id="fn02"><p>The conversion can be carried out from the definition $\beta_1 = A \cos \frac{\pi}{6}M_h$ and $\beta_2 = A \sin \frac{\pi}{6}M_h$. The equations can be combined to give  $A=\sqrt{\beta_1^2+\beta_2^2}$ = `r round(sqrt(fit2$coefficients[2]^2+fit2$coefficients[3]^2),2)`&deg;F, very close to the simplified model. It follows from the definition of &beta;<sub>1</sub> and &beta;<sub>2</sub> that 
+$$\cos \frac{\pi}{6}M_h = \frac{\beta_1}{A} \ \ \ , \ \ \ \sin \frac{\pi}{6}M_h = \frac{\beta_2}{A}$$
+The simplest way to calculate M<sub>h</sub> is to use the `atan2()` function:
+```{r}
+# Mh = 6/pi*atan2(beta2, beta1); beta2 is stored in fit2$coefficients[3] and 
+# beta1 is stored in fit2$coefficients[2]
+Mh <- 6/pi*atan2(fit2$coefficients[3],fit2$coefficients[2])
+Mh
+```
+Since sine and cosine functions are periodic with a period of <span class="greek">2&pi;</span>, adding M<sub>h</sub> a multiple of 12 resulting in the same &beta;<sub>1</sub> and &beta;<sub>2</sub>. So there are infinite number of solutions for M<sub>h</sub>. If we add 12 to the above number, we get `r round(Mh+12,3)`, which is the solution closest to 7.
+<a href="#fnref02">&#8617;</a></p></li>
+
+<li id="fn03"><p>We can, however, perform a simulation to find the 95% CI approximately (feel free to skip the following if you don't understand it). The idea is to add random noise to the variable y. The noise is distributed normally with mean 0 and standard deviation equal to the residual standard error. We then use the new data to fit the two parameters $r$ and $P_{\rm max}$. Repeat this experiment many times and then find the 2.5th and 97.5th percentiles of these parameters. These are the estimated 95% CI for $r$ and $P$. Here is a code that performs the simulation:</p>
+```{r, cache=TRUE}
+## Calculate parameters that need only be computed once 
+ny <- length(y)
+# residual standard error of the linear model
+res <- summary(lm(y ~ x))$sigma 
+
+# mean, standard deviation and Z-score of x
+mean_x <- mean(x)
+stdx <- sd(x)*sqrt((ny-1)/ny)  
+Zx <- (x-mean_x)/stdx 
+
+# Define a function that adds random normal noise to y, fit a linear model 
+# and extract the parameters r and Pmax
+find_paras <- function(y, ny, Zx, res, mean_x, stdx) {
+  # Add a normal random noise of mean 0 and sd=res to y
+  yn <- y + rnorm(ny, sd=res)
+  
+  # Fit a linear model. Instead of using lm(), we do it using the 
+  # formula slope = cor(x,y) * stdy/stdx since many parameters 
+  # in the formula are fixed and only need to be computed once
+  mean_yn <- sum(yn)/ny
+  stdy <- sqrt(sum((yn - mean_yn)^2)/ny)
+  Zy <- (yn - mean_yn)/stdy # Z score of y
+  cor_xy <- sum(Zx*Zy)/ny # cor(x,y)
+  slope <- cor_xy * stdy/stdx
+  
+  # Extract r and Pmax: r = intercept, Pmax = -r/slope
+  r <- mean_yn - slope*mean_x 
+  Pmax <- -r/slope
+  output <- c(r, Pmax)
+  names(output) <- c("r","Pmax")
+  output
+}
+
+# Perform simulation with 100,000 experiments
+set.seed(3472651)
+paras <- replicate(1e5, find_paras(y, ny, Zx, res, mean_x, stdx))
+```
+Now that we have computed 100,000 values of $r$ and $P_{\rm max}$, we use the `quantile()` function to find the 2.5th and 97.5th percentiles for $r$ and $P_{\rm max}$ (see `?quantile` for the syntax). These are the estimated 95% CIs for the two parameters. 
+```{r}
+CI_r <- quantile(paras["r",], probs=c(0.025, 0.975))
+CI_Pmax <- quantile(paras["Pmax",], probs=c(0.025, 0.975))
+CI_r
+CI_Pmax
+```
+<p>We see that the estimated 95% CI for r is close to that calculated by the `confint()` function. This gives us confidence for the CI result for $P_{\rm max}$. According to the calculation, the 95% CI for $P_{\rm max}$ is about (43.6, 47.4). <a href="#fnref03">&#8617;</a></p></li>
+
+<br />
+<br />
+<br />

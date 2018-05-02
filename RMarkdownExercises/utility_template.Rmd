@@ -1,0 +1,67 @@
+---
+title: "Utility"
+author: Write your name here
+output: 
+   html_document: 
+     toc: yes
+---
+
+Utility companies, which must plan the operation and expansion of electricity generation, are vitally interested in predicting customer demand over both short and long periods of time. A short-term study was conducted to investigate the effect of each month's mean daily temperature (MDT) and of cost per kilowatt-hour, PKWH, on the mean daily consumption (in kWh), MDC, per household. The company officials expected the consumption of electricity to rise in cold weather (due to heating), fall when the weather was moderate, and rise again when the temperature rose and there was a need for air conditioning. They expected consumption to decrease as the cost per kilowatt-hour increased, reflecting greater attention to conservation. Data were collected for 2 years, a period during which the cost per kilowatt-hour PKWH increased due to the increasing costs of fuel. 
+
+The data set has only 24 observations. Instead of asking you to download it and then load it to R, it is easier to just enter the data using the following code:
+```{r}
+column1 <- rep(c(8,10), each=12)
+column2 <- c(31, 34, 39, 42, 47, 56, 62, 66, 68, 71, 75, 78, 32, 36, 39, 42, 48, 56, 62, 66, 68, 72, 75, 79)
+column3 <- c(55, 50, 46, 45, 40, 43, 41, 46, 44, 51, 62, 73, 50, 44, 42, 42, 38, 40, 39, 42, 42, 44, 50, 55)
+utility <- data.frame(PKWH=column1, MDT=column2, MDC=column3)
+rm(list=paste0('column',1:3))
+```
+
+This is again a very small data set and you can view the whole data by typing name of the data frame `utility`. The first column, PKWH, is the cost per kilowatt-hour in cents. The second column is MDT, the mean daily temperature in &deg;F. The third column is MDC, the mean daily consumption in kilowatt-hour. In the two-year period, PKWH took only two values: 8 cents in the first year and 10 cents in the second year. 
+
+###a. (3 points) 
+
+**Make a scatter plot of MDC versus MDT. Plot the data in different colors for the two different values of PKWH. Explain your color code (i.e. which color represents PKWH = 8 cents and which represents PKWH = 10 cents) in either a figure legend (preferred) or a figure caption.**
+
+<span style="color:green;">Show your code and plot here...</span>
+
+
+###b. (3 points) 
+
+**Fit a model predicting MDC from MDT with a quadratic function MDC = &beta;<sub>0</sub> + &beta;<sub>1</sub>MDT + &beta;<sub>2</sub>MDT<sup>2</sup>.**
+
+<span style="color:green;">Show your calculation here...</span>
+
+###c. (6 points) 
+
+**The model in (b) ignores the cost per kilowatt-hour PKWH. If you look at your plot of MDC versus MDT with color-coded PKWH in (a), you will notice that the values of MDC are smaller for PKWH = 10 cents at similar MDT. This suggests that the fitting formula should include PKWH. Even though PKWH has only two values in the data set, we will treat it as a continuous variable in the regression. Fit a multiple regression model predicting MDC from MDT and PKWH with a quadratic function in MDT and with interaction terms:**
+
+**MDC = &beta;<sub>0</sub> + &beta;<sub>1</sub>MDT + &beta;<sub>2</sub>MDT<sup>2</sup> + PKWH (&beta;<sub>3</sub> + &beta;<sub>4</sub>MDT + &beta;<sub>5</sub>MDT<sup>2</sup>)**
+
+<span style="color:green;">Show your calculation here...</span>
+
+
+###d. (4 points) 
+
+**Split the equation in (c) into two equations, one for PKWH = 8 cents and one for PKWH = 10 cents. Your equations should look like the following:**
+
+**PKWH = 8 cents: MDC = (some number) + (some number) MDT + (some number) MDT<sup>2</sup>**
+
+**PKWH = 10 cents: MDC = (some number) + (some number) MDT + (some number) MDT<sup>2</sup>**
+
+**Note: Use the method you learned in Stat 200 to split the multiple regression equation (see, e.g., Example 1 of Ch. 17 in the Stat 200 nootbook). You don't need to use any R command.**
+
+<span style="color:green;">Show your calculation here...</span>
+
+
+###e. (6 points) 
+
+**Plot the fitted curves in (d) together with the data for the two values of PKWH. Make sure to color code the data and curves for each of the two PKWH values. Explain your colors and curves clearly, either in a figure legend (preferred) or in a figure caption.**
+
+<span style="color:green;">Show your code and plot here...</span>
+
+###f. (3 points) 
+
+**Suppose the weather forecast says the mean daily temperature on a particular day is 75&deg;F. What is the expected consumption of electricity according to the model in (c) if the cost per kilowatt-hour is 9 cents? Give your answer to the nearest integer. Don't forget to include units.**
+
+<span style="color:green;">Show your calculation here...</span>

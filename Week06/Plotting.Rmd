@@ -1,0 +1,488 @@
+---
+title: "Introduction to Plotting in R"
+author: Yuk Tung Liu
+output: 
+  html_document:
+     theme: readable
+     toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file -  facebook_map.png
+
+There are several packages in R that handle plotting. Plotting in R can be very sophisticated and can be a very useful tool to visualize data. One example to showcase the plotting capability of R is <a href="http://fbmap.bitaesthetics.com/" target="_blank">this graph</a>, which was created with about 150 lines of R code by Paul Butler, showing the <a href="https://www.facebook.com/notes/facebook-engineering/visualizing-friendships/469716398919" target="_blank">facebook friendship connections around the world</a>.
+
+<br />
+
+Here we will introduce bar plots, box plots and scatter plots in the base graphics system. Then we will briefly mention the lattice graphics. Because of the complexity of R's plotting system, we can only scratch the surface on this topic here. You can learn more about plotting in R from resources listed at the end of this page. While we will mostly focus on the base graphics system in this course, you are strongly recommended to look into the ggplot2 system. These days, more and more people are using ggplot2 instead of the base graphics system. 
+
+## Barplots 
+
+We have already introduced two plotting functions: `hist()` (histogram) and `curve()`. `barplot()` is very similar to histogram. The only difference is that it is used to plot categorical data. 
+
+To illustrate the use of `barplot()`, we reload the .RData file of the Stat 100 Survey 2, Fall 2015 (combined) data we worked on <a href="../Week05/DataManipulations.html" target="_blank">previously</a> and <a href="../Week05/DataManipulations.html#saverda" target="_blank">saved</a>: 
+```{r}
+load('Stat100_Survey2_Fall2015.RData')
+
+ls()
+```
+We see that the data frame `survey` is now on the work space. To remind us of what is in the data, we type 
+```{r}
+names(survey)
+```
+to see the column names. The detail description of each column can be found on the survey data page on the <a href="http://dataprogram.stat.illinois.edu/" target="_blank">data program website</a>. 
+
+Recall that the `table()` command gives a summary statistics for categorical variables. For example,
+```{r}
+table(survey$gender)
+```
+shows that there are `r sum(survey$gender=="female")` females and `r sum(survey$gender=="male")` males. We can convert these numbers to percentages:
+```{r}
+n <- nrow(survey)  # Number of students
+(percent_gender <- table(survey$gender)/n * 100)
+```
+Note that we have used a trick above. By putting the command `percent_gender <- table(survey$gender)/n * 100` inside a parenthesis, we not only assign a vector to the variable `percent_gender` but also print out its content. 
+We can create a barplot of `percent_gender` using the command 
+```{r}
+barplot(percent_gender,ylim=c(0,70), ylab="percent",main="Barplot of Gender")
+```
+
+Here we have used the `ylim` parameter to set the plot range of the vertical axis, and the `main="Barplot of Gender"` option is used to display the title of the barplot. Note that the characters "female" and "male" are displayed on the horizontal axis instead of numbers. The characters are taken from the names of `percent_gender`:
+```{r}
+names(percent_gender)
+```
+The names are created by the `table()` function. 
+
+We can create bar plots for other categorical variables. As another example, let's create a barplot for 'religion': 
+```{r}
+percent_religion <- table(survey$religion)/n * 100
+barplot(percent_religion,ylim=c(0,60), ylab="percent",main="Barplot of Religion")
+```
+
+Unfortunately, not all names show up. There are two methods to fix it. The first is to decrease the font size of the names using the `cex.names` parameter:
+```{r}
+barplot(percent_religion,ylim=c(0,60), ylab="percent",main="Barplot of Religion",
+        cex.names=0.6)
+```
+
+By changing the font size to 60% of the original, all names can show up. Another method is to use the `las` parameter to change the orientation of labels. The default is `las=0`, meaning all labels are parallel to the axes. If we set `las=1`, the labels in the x-axis remains parallel to the x-axis, but the labels in the y-axis is perpendicular to the y-axis. If we set `las=2`, all labels are perpendicular to the axes:
+```{r}
+barplot(percent_religion,ylim=c(0,60), ylab="percent",main="Barplot of Religion",
+        las=2, cex.names=0.7)
+```
+
+We can also make a horizontal barplot using the option `horiz=TRUE`:
+```{r}
+barplot(percent_religion, horiz=TRUE, xlim=c(0,60), las=1,
+        xlab="percent",main="Barplot of Religion")
+```
+
+The label cutoff can be fixed by resetting the margins of the plot using the `par()` command:
+```{r}
+par(mar=c(5.1,7.1,4.1,1.1))
+barplot(percent_religion, horiz=TRUE, xlim=c(0,60), las=1,
+        xlab="percent",main="Barplot of Religion")
+```
+
+Here `mar` is a vector of length 4, specifying the margin sizes in the following order: bottom, left, top, and right. The default is c(5.1, 4.1, 4.1, 2.1). The code above changes the left and right margins to 7.1 and 1.1. After plotting the graph, it's better to change the setting back to the default values:
+```{r}
+par(mar=c(5.1, 4.1, 4.1, 2.1))
+```
+You can see the current margin setting using the command `par("mar")`.
+
+## Boxplots
+
+The `boxplot()` function can be used to create box plots. If you don't know/forget what a box plot is, <a href="http://courses.atlas.illinois.edu/spring2016/STAT/STAT200/RProgramming/BOXPLOTS.pdf" target="_blank">here</a> is a pdf file of the box plot note from Stat 100. You can also watch a <a href="https://mediaspace.illinois.edu/media/BoxPlot+Tutorial/1_6wtsn2xb" target="_blank">Stat 100 video lecture on box plots</a>. 
+
+The following command generates a box plot for the number of drinks per week in our survey data: 
+```{r}
+boxplot(survey$drinks, xlab="drinks/week")
+```
+
+We can also split the box plots by groups. For example, the command 
+```{r}
+boxplot(drinks ~ gender, data=survey, ylab="drinks/week")
+```
+
+generates box plots for male and female. The command 
+```{r}
+boxplot(drinks ~ ethnicity, data=survey, ylab="drinks/week")
+```
+
+generates box plots for all ethnic groups.
+
+## Scatter Plots
+
+Another commonly-used plot is a scatter plot. It is a plot of data points of one variable versus another. To plot the number of drinks per week versus party hours per week, we use the command 
+```{r}
+plot(survey$partyHr, survey$drinks)
+```
+
+Another, probably easier, way to create the same plot is 
+```{r}
+plot(drinks ~ partyHr, data=survey)
+```
+
+### Point-Type Parameter `pch`
+
+By default, each point is represented by an open circle. This can be changed by setting the `pch` parameter. We can also change the axis labels using the `xlab` and `ylab` commands:
+```{r}
+plot(drinks ~ partyHr, data=survey, pch=19, ylab="Drinks/week", 
+     xlab="Party hours/week", las=1)
+```
+
+We see that the `pch=19` option sets the points to be filled circles, and the `las=1` option makes the y-axis numeric labels perpendicular to the y-axis. Other `pch` values correspond to other point types, and you can look them up by searching the internet (e.g. <a href="http://www.ling.upenn.edu/~joseff/rstudy/week4.html#pch" target="_blank">this page</a>). Actually, there is an easy way to look it up. Just type the command 
+```{r}
+plot(1:25,rep(1,25),pch=1:25)
+```
+
+It plots the points (1,1), (2,1), (3,1), ..., (25,1), with the first point having pch=1, second point with pch=2 and so on. The pch parameter can be an integer vector, as the above example shows. If the length of the pch vector is smaller than the number of points, R will "recycle" the pch values. 
+
+We can also assign a character vector to the `pch` parameter. See the following example. 
+```{r}
+plot(1:10, rep(1,10), pch=c(".", "*", "a", "4", "+"))
+```
+
+Note that we set the pch parameter to a character vector of length 5, but we are plotting 10 points in the above example. As a result, R "recycles" the pch values. So the 6th to the 10th points are plotted with . * a 4 and + again.
+
+### Color, Transparency and Jitter
+
+We can also change the color of points. For example, 
+```{r}
+plot(drinks ~ partyHr, data=survey, pch=19, col="blue", ylab="Drinks/week", 
+     xlab="Party hours/week", las=1)
+```
+
+R provides 657 named colors like "blue", "red", "yellow",... etc. You can type `colors()` to see the names of all the 657 named colors.
+
+Instead of using "blue", "green" etc to specify colors, we can also use integers to specify colors. Just like `pch`, `col` can also be an integer vector. To see what color a number represents, we can use the same trick as we do with the pch: 
+```{r}
+plot(1:25,rep(1,25),pch=19, col=1:25)
+```
+
+Thus, we see that 1 is black, 2 is red, 3 is green and so on. There are only 8 different colors for the default color palette in R. We can use the `rgb(r,g,b)` function to set colors according to the RGB (red, green, blue) values, where each of the <var>r</var>, <var>g</var> and <var>b</var> takes a value between 0 and 1. Conventional RGB usually takes values between 0 and 255 instead of 0 and 1. The `rgb()` function can be set to behave this way by setting the parameter max=255: `rgb(r,g,b,max=255)`. For example, "red" has an RGB value of <var>r=255</var>, <var>g=b=0</var>. So `col=rgb(255,0,0,max=255)` is the same as `col=rgb(1,0,0)`. It is also the same as `col="red"`. RGB values of different colors can be looked up from many websites. 
+
+The ability of using numbers to represent different colors is useful for us to plot different colors for different groups of people. For example, in the survey 'gender' is a categorical variable with only two values "male" and "female". It is currently a character variable. It is convenient to convert it to a factor variable: 
+```{r}
+survey$gender <- factor(survey$gender, levels=c("male","female"))
+```
+The advantage of using a factor variable is that it can be converted to an integer, with male being 1 and female being 2: 
+```{r}
+survey$gender[1:10]
+as.integer(survey$gender[1:10])
+```
+In the drinks versus party hours plot, we can plot the male and female data using different colors: 
+```{r}
+plot(drinks ~ partyHr, data=survey, pch=19, col=as.integer(gender), 
+     ylab="Drinks/week", xlab="Party hours/week", las=1)
+```
+
+Since "male" is 1 and col=1 is black, black points represent male data. Similarly, red points represent female data. In fact, `as.integer(gender)` is not necessary. We can simply use `col=gender` and R automatically interprets "male" as 1 and "female" as 2 based on their factor levels:
+```{r}
+plot(drinks ~ partyHr, data=survey, pch=19, col=gender, 
+     ylab="Drinks/week", xlab="Party hours/week", las=1)
+```
+
+There are 1137 observations in the survey data, but the number of points seem to be much less than that. The reason is that there are many points having the same x-y values. To separate the points, one technique is to add jitters to the data points. That is, we add a little random noise to the x and y values of each data point. This can be done using R's random number generators. Previously, you learn the `rnorm()`, `rchisq()`, `rt()` functions. Now we introduce another random number generator `runif(k, min, max)`, which generates <var>k</var> random numbers distributed uniformly between `min` and `max`. The `min` and `max` are optional parameters. If they are omitted, they take the default values min=0 and max=1. 
+
+To add jitters to the data, we can add `runif(n, -0.5, 0.5)` to each x and y: 
+```{r}
+set.seed(183491)
+plot(survey$partyHr+runif(n,-0.5,0.5), survey$drinks+runif(n,-0.5,0.5), pch=19, 
+     col=survey$gender, ylab="Drinks/week", xlab="Party hours/week", 
+     las=1)
+```
+
+An easier way to add jitters is to use the R function `jitter()`, which automatically adds noise to the data using the `runif()` function. See `?jitter` to find out the detail of the function. The following is an example of using the function to add jitters to the plot:
+```{r}
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), pch=19, col=gender, 
+     data=survey, ylab="Drinks/week", xlab="Party hours/week", las=1)
+```
+
+We see that more data points show up after adding the random noise. We can also add transparency to each point. The `rgb()` function has an optional 4th argument: `rgb(r,g,b,alpha)`. The value of `alpha` is between 0 and 1, with 0 being totally transparent and 1 being totally opaque. To add the transparency argument to males and females, we set: 
+```{r}
+cols <- rep(rgb(0,0,0,0.5),n) # initialize cols to black
+cols[survey$gender=="female"] <- rgb(1,0,0,0.5) # change females to red
+# The above two lines can also be combined into one line: 
+# cols <- rgb( as.integer(survey$gender)-1, 0, 0, 0.5)
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), data=survey, pch=19, col=cols, 
+     ylab="Drinks/week", xlab="Party hours/week", las=1)
+legend(40,40,c("male","female"),col=c(rgb(0,0,0,0.5),rgb(1,0,0,0.5)),pch=19)
+```
+
+In this plot, males are semi-transparent (alpha=0.5) black points and females are semi-transparent red points. Note that we also use the `legend()` function to add legend to the plot. We can also make the points smaller by setting the `cex` parameter:
+```{r}
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), data=survey, pch=19, col=cols, 
+     cex=0.5, ylab="Drinks/week", xlab="Party hours/week", las=1)
+legend(40,40,c("male","female"),col=c(rgb(0,0,0,0.5),rgb(1,0,0,0.5)),pch=19)
+```
+
+The `cex=0.5` parameter in the above example reduces the size of each point by half. 
+
+### Add Straight Lines
+
+The function `abline()` can be used to add straight lines to a plot. There are several parameters in the function. The `h` and `v` parameters can be used to add horizontal and vertical lines. In the following, we add a horizontal line at the mean of 'drinks' and a vertical line at the mean of 'partyHr' to the above plot:
+```{r}
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), data=survey, pch=19, col=cols, 
+     cex=0.5, ylab="Drinks/week", xlab="Party hours/week", las=1)
+legend(40,40,c("male","female"),col=c(rgb(0,0,0,0.5),rgb(1,0,0,0.5)),pch=19)
+abline(h=mean(survey$drinks),v=mean(survey$partyHr))
+```
+
+The `a` and `b` parameters in `abline()` are used to add a straight line $y=a+bx$, where $a$ is intercept and $b$ is slope. The values of $a$ and $b$ are specified by the first two arguments of `abline()`. For example, to add a line $y=0.5+x$, we type `abline(0.5,1)` or `abline(a=0.5,b=1)`. 
+
+Recall that the SD line is defined as the straight line with slope $SD_y/SD_x$ passing through the mean $(\bar{x},\bar{y})$, where $SD_x$ and $SD_y$ are the standard deviations of $x$ and $y$. Thus we have $b=SD_y/SD_x$. To find $a$, we set $\bar{y}=a+b\bar{x}$ and solve for $a$. The result is $a=\bar{y}-b\bar{x}$. Hence we can add the SD line to the plot by the commands
+```{r}
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), data=survey, pch=19, col=cols, 
+     cex=0.5, ylab="Drinks/week", xlab="Party hours/week", las=1)
+legend(40,40,c("male","female"),col=c(rgb(0,0,0,0.5),rgb(1,0,0,0.5)),pch=19)
+b <- sd(survey$drinks)/sd(survey$partyHr)
+a <- mean(survey$drinks) - b*mean(survey$partyHr)
+abline(a,b,col="blue",lwd=2)
+```
+
+The `lwd=2` option is to make the line twice as thick. Note that we do not need to correct the standard deviations by the factor $\sqrt{(n-1)/n}$ since it cancels after the division:
+$$ SD_x = sd(x) \sqrt{\frac{n-1}{n}} \ \ \ , \ \ \ SD_y = sd(y)\sqrt{\frac{n-1}{n}}$$
+$$\Rightarrow \ \ \ \frac{SD_y}{SD_x}=\frac{sd(y)}{sd(x)}$$
+We can also plot the regression line easily. Recall that the only difference between the SD line and regression line is the slope. The slope is multiplied by the factor $r$, the correlation between $x$ and $y$. Both the SD and regression lines pass through the mean point $(\bar{x},\bar{y})$. So for the regression line, $b=r SD_y/SD_x$ and $a=\bar{y}-b\bar{x}$. In the following plot we add SD and regression lines to the plot:
+```{r}
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), data=survey, pch=19, col=cols, 
+     cex=0.5, ylab="Drinks/week", xlab="Party hours/week", las=1)
+# Add SD line
+b <- sd(survey$drinks)/sd(survey$partyHr)
+a <- mean(survey$drinks) - b*mean(survey$partyHr)
+abline(a,b,col="blue",lwd=2)
+# Add regression line
+b <- cor(survey$drinks,survey$partyHr)*sd(survey$drinks)/sd(survey$partyHr)
+a <- mean(survey$drinks) - b*mean(survey$partyHr)
+abline(a,b,col="green",lwd=2)
+# Add legends
+legend(37,37,c("male","female"),col=c(rgb(0,0,0,0.5),rgb(1,0,0,0.5)),pch=19)
+legend(37,25,c("SD line","Regression \nline"),col=c("blue","green"),lwd=2)
+```
+
+Note that we have also add a legend for the lines. In next week's lesson, you will learn how to use R's built-in function `lm()` to perform linear regression and plot the regression line more easily. In the above code chunk, "\\n" denotes a "new line" character. Thus, in "Regression \\nline", "Regression line" is split into two lines.
+
+### Split Plots
+
+Instead of plotting males and females in different colors, it may be better to have two separate plots for the two groups and put them side by side. To do this, we first split the data frame `survey` into two data frames containing the male and female data:
+```{r}
+survey_male <- survey[survey$gender=="male",]
+survey_female <- survey[survey$gender=="female",]
+```
+Then we use the `par()` function with the option `mfrow=c(1,2)` to arrange two plots in two columns:
+```{r}
+par(mfrow=c(1,2))
+plot(drinks ~ partyHr, data=survey_male, pch=19, ylab="Drinks/week", 
+     xlab="Party hours/week", main="Male", las=1)
+plot(drinks ~ partyHr, data=survey_female, pch=19, ylab="Drinks/week", 
+     xlab="Party hours/week", main="Female", las=1)
+```
+
+We can also plot histograms for groups and put them together. For example, the commands 
+```{r, fig.height=7}
+par(mfrow=c(2,1))
+hist(survey_male$drinks, freq=FALSE, breaks=50, ylim=c(0,0.4), main="Male", 
+     xlab="", las=1)
+hist(survey_female$drinks, freq=FALSE, breaks=50, main="Female", 
+     xlab="drinks/week", las=1)
+```
+
+plot histograms of drinks per week for males and females. The command `par(mfrow=c(2,1))` means the plots are arranged into two rows and one column. 
+
+## Lattice Graphics
+
+So far, we have been using the *base graphics* system in R, which is the default graphics system in R. There are other packages in R that handle graphics. Two other commonly used systems are the *lattics graphics* and *ggplot2*. Here we briefly introduce the lattice graphics system. You can learn more about these three graphics systems by watching videos linked below. 
+
+To use the lattice graphics system, we first need to load the package using the command
+```{r}
+library(lattice)
+```
+The lattice package should have been installed when you downloaded R. If, however, you get an error message saying that the package is not found, type `install.packages('lattice')` to install the package. 
+
+The lattice graphics is most useful for conditioning types of plots. In the example above, we see that it requires some work to make two separate plots for males and females in the base graphics system. In the lattice graphics, the scatter plots can be accomplished by the following simple command: 
+```{r}
+xyplot(drinks ~ partyHr | gender, data=survey, ylab="Drinks/week", 
+       xlab="Party hours/week")
+```
+
+The lattice graphics is particularly convenient if we want to make separate plots for each group and the group number is more than 2. For example, we can make the drinks ~ partyHr plots for each religion group. There are 8 groups in 'religion' and it is quite tedious to do this in base graphics. In lattice graphics, we just need to type 
+```{r}
+xyplot(drinks ~ partyHr | religion, data=survey, ylab="Drinks/week", 
+       xlab="Party hours/week")
+```
+
+To make split plots with religion and gender, we use the expression `religion*gender`:
+```{r, fig.width=10}
+xyplot(drinks ~ partyHr | religion*gender, data=survey, ylab="Drinks/week", 
+       xlab="Party hours/week", pch=19, cex=0.3)
+```
+
+We see that the `xyplot()` function in the lattice graphics is analogous to as the `plot()` function in the base graphics. The `histogram()` function is a lattice graphics function that is analogous to the `hist()` function in the base graphics. The syntax is `histogram(~ x)`, where <var>x</var> is the variable you want to plot. For example, 
+```{r}
+histogram(~ drinks, data=survey, breaks=-0.5:50.5, xlab="Drinks/week")
+```
+
+plots the histogram of drinks/week, with break points set to -0.5, 0.5, 1.5, ..., 50.5. We can also easily make a histogram of drinks per week for each religion group and plot them together: 
+```{r}
+histogram(~ drinks | religion, data=survey, breaks=-0.5:50.5, xlab="Drinks/week")
+```
+
+## `density()` and `smoothScatter()`
+
+These two functions are useful for plots with many data points. As an example, let's generate a vector 'x' of length 10,000:
+```{r}
+set.seed(7824632)
+x <- rnorm(1e5)
+```
+Previously, we use the function `hist()` to plot a histogram of 'x'. Another useful way to show the distribution of 'x' is to use the `density()` function together with `plot()` to display the density of 'x': 
+```{r}
+plot(density(x))
+```
+
+Note that a density plot is just a smoothed histogram. There are many optional parameters in the `density()` function. As shown in the graph, the density of 'x' is calculated and smoothed using a bandwidth of 0.09011. This bandwidth can be changed by setting the `bw` parameter. For example, when we type 
+```{r}
+plot(density(x,bw=0.02))
+```
+
+the raggedness of the data on small scale is shown up in the plot. 
+
+Suppose now we create another vector 'y':
+```{r}
+y = 2*x + 1 + 2*rnorm(1e5)
+```
+The scatter plot of x and y is a mess: 
+```{r}
+plot(x,y,pch='.')
+```
+
+The 10,000 points form a blob and the information of the distribution of points is lost. One way to overcome this problem is to use the `smoothScatter()` function:
+```{r}
+smoothScatter(x,y)
+```
+
+In this plot, the darker region is of higher density. It shows that the majority of the points are concentrated in the central, dark 'core'.
+
+Let's now use the `smoothScatter()` on our survey data:
+```{r}
+smoothScatter(survey$partyHr, survey$drinks, ylab="Drinks/week", 
+              xlab="Party hours/week", las=1)
+```
+
+This shows that many students only party a few hours/week and have a few drinks/week. This is consistent with the summary statistics provided by `summary(survey$drinks)` and `summary(survey$partyHr)`. 
+
+## Export Plots to Files
+
+R provides several options for exporting graphics to files. The commonly used output devices are pdf, png and jpg. 
+
+To export plots to a pdf file, first type `pdf("filename", width=w, height=h)`, where "filename" is the file name of the pdf file you want to create, <var>w</var> and <var>h</var> are the width and height of the pdf file in inches. `width` and `height` are optional parameters. If they are not specified, the default values `width=7` and `height=7` will be used. After the `pdf()` command, we can type the plot functions to create plots. However, these plots will not show up on screen. They will instead be written to the pdf file. After the plotting is done, use the `dev.off()` function to close the device. You can then view the pdf file. The following example export two plots to a pdf file named "plots.pdf": 
+```{r, eval=FALSE}
+pdf("plots.pdf")
+
+# reset mfrow=c(1,1) to create a single plot in base graphics
+par(mfrow=c(1,1))
+cols <- rgb( as.integer(survey$gender)-1, 0, 0, 0.5)
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), data=survey, pch=19, col=cols, 
+     cex=0.5, ylab="Drinks/week", xlab="Party hours/week", las=1)
+b <- sd(survey$drinks)/sd(survey$partyHr)
+a <- mean(survey$drinks) - b*mean(survey$partyHr)
+abline(a,b,col="blue",lwd=2)
+b <- cor(survey$drinks,survey$partyHr)*sd(survey$drinks)/sd(survey$partyHr)
+a <- mean(survey$drinks) - b*mean(survey$partyHr)
+abline(a,b,col="green",lwd=2)
+legend(37,37,c("male","female"),col=c(rgb(0,0,0,0.5),rgb(1,0,0,0.5)),pch=19)
+legend(37,25,c("SD line","Regression \nline"),col=c("blue","green"),lwd=2)
+
+# create a plot in lattice graphics
+xyplot(drinks ~ partyHr | religion*gender, data=survey, ylab="Drinks/week", 
+       xlab="Party hours/week")
+
+# close the pdf file
+dev.off()
+```
+Notice that the appearance of plots in the pdf file may be slightly different from the plots on screen. 
+
+We can use similar commands to export plots to png files or jpeg files: 
+```{r, eval=FALSE}
+# export plot to png file
+png("PartyDrinks.png",width=800, height=600)
+set.seed(183491)
+plot(jitter(drinks) ~ jitter(partyHr), data=survey, pch=19, col=cols, 
+     cex=0.5, ylab="Drinks/week", xlab="Party hours/week", las=1)
+b <- sd(survey$drinks)/sd(survey$partyHr)
+a <- mean(survey$drinks) - b*mean(survey$partyHr)
+abline(a,b,col="blue",lwd=2)
+b <- cor(survey$drinks,survey$partyHr)*sd(survey$drinks)/sd(survey$partyHr)
+a <- mean(survey$drinks) - b*mean(survey$partyHr)
+abline(a,b,col="green",lwd=2)
+legend(37,37,c("male","female"),col=c(rgb(0,0,0,0.5),rgb(1,0,0,0.5)),pch=19)
+legend(37,25,c("SD line","Regression \nline"),col=c("blue","green"),lwd=2)
+dev.off()
+
+# export plot to jpg file
+jpeg("PartyDrinks_Religion.jpg", width=800, height=600)
+xyplot(drinks ~ partyHr | religion*gender, data=survey, ylab="Drinks/week", 
+       xlab="Party hours/week")
+dev.off()
+```
+In the case of `png()` and `jpeg()`, the `width` and `height` parameters are in pixels. 
+
+R supports other forms of output devices in addition to pdf, png and jpeg. Type `?device` to see a list of available devices.
+
+## Further Resources
+
+<a href="http://www.ling.upenn.edu/~joseff/rstudy/week4.html" target="_blank">This webpage</a> gives a useful overview of the base graphics.
+
+The <a href="http://www.statmethods.net/" target="_blank">Quick R website</a> has a nice introduction on <a href="http://www.statmethods.net/graphs/index.html" target="_blank">basic graphs</a> and <a href="http://www.statmethods.net/advgraphs/index.html" target="_blank">advanced graphs</a>.
+
+Here are a few free `ggplot2` resources:
+
+- <a href="http://r4ds.had.co.nz/data-visualisation.html" target="_blank">Chapter 3 of <i>R for Data Science</i></a> by Wickham &amp; Grolemund
+
+- <a href="http://vita.had.co.nz/papers/layered-grammar.pdf" target="_blank">A Layered Grammar of Graphics</a>
+
+- <a href="http://www.cookbook-r.com/Graphs/" target="_blank">Cookbook for R: Graphics</a>
+
+In addition, Roger Peng has a number of videos on youtube on R graphics for a Coursera course: 
+
+<a href="https://www.youtube.com/watch?v=R2Zh_kPxrmg" target="_blank">Plotting with Base Graphics (23:22)</a>  
+<a href="https://www.youtube.com/watch?v=SkE4qBc5Z4E" target="_blank">Plotting system in R - Base Plotting Demonstration (16:56)</a>  
+<a href="https://www.youtube.com/watch?v=AhTjV9nAJv0" target="_blank">Plotting with Lattice Graphics (7:18)</a>  
+<a href="https://www.youtube.com/watch?v=6VP5JBq1g7g" target="_blank">Plotting with Lattice Graphics Demo (21:33)</a>  
+<a href="https://www.youtube.com/watch?v=HeqHMM4ziXA" target="_blank">Plotting with ggplot2: Part 1 (24:18)</a>  
+<a href="https://www.youtube.com/watch?v=n8kYa9vu1l8" target="_blank">Plotting with ggplot2: Part 2 (28:35)</a>  
+<a href="https://www.youtube.com/watch?v=gNT33XIgw6E" target="_blank">Plotting with Mathematical Annotation (6:02)</a>  
+<a href="https://www.youtube.com/watch?v=HPSrjKt-e8c" target="_blank">Plotting and Colors in R (22:05)</a>  
+
+<br />
+<br />
+<br />

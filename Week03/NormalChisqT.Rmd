@@ -1,0 +1,396 @@
+---
+title: "Normal, Chi Square, and t Distributions"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+R provides a number of functions associated with commonly used probability distributions. For each probability distribution there are four functions associated with it. They carry the prefixes `d`, `p`, `q` and `r`. The prefix `d` stands for "density", returning the probability density function; `p`  means "probability", returning the cumulative distribution function; `q` means  "quantile", returning the inverse of the cumulative distribution function; `r` means  "random", returning random numbers following the specified probability distribution.
+
+## Normal Distribution 
+
+In this section we introduce the R functions associated with the most commonly used probability distribution in Statistics: the normal distribution. The associated R functions are `dnorm()`, `pnorm()`, `qnorm()` and `rnorm()`. Type `?dnorm` in the R console for the detail of their usage.
+
+### `dnorm()`
+
+The `dnorm(x)` function returns the density of the standard normal distribution (mean=0, standard deviation=1) at x. The mathematical function for the distribution is 
+$$ f(x) = \frac{1}{\sqrt{2\pi}}e^{-x^2/2}$$
+For example, 
+```{r}
+dnorm(-3:3)
+```
+returns the density $f(x)$ at $x$ = -3, -2, -1, 0, 1, 2 and 3. We see that the distribution is symmetric about $x = 0$. You get the same numbers by plugging the numbers `-3:3` to the formula of the normal curve:
+```{r}
+1/sqrt(2*pi)*exp(-(-3:3)^2/2)
+```
+
+The standard normal curve can be plotted using the command 
+```{r}
+curve(dnorm(x), xlim=c(-3,3))
+```  
+
+The `xlim=c(-3,3)` tells R to plot the function in the range $-3 \leq x \leq 3$. Type `?curve` to see other available options for the `curve()` function. 
+
+The `dnorm()` function has other options that allow you to choose normal distributions with another mean and standard deviation (again type `?dnorm` to see the usage). The mathematical equation for the distribution is 
+$$ f(x;\mu,\sigma)=\frac{1}{\sqrt{2\pi \sigma^2}}e^{-(x-\mu)^2/(2\sigma^2)}$$ 
+Here $\mu$ is the mean and $\sigma$ is the standard deviation. For example, the following commands plot the standard normal curve, $f(x)$ (black) and a normal curve with mean = 1 and standard deviation = 2, $f(x;1,2)$ (red): 
+```{r}
+curve(dnorm(x), xlim=c(-6,6))
+curve(dnorm(x, mean=1, sd=2), col="red", add=TRUE)
+```
+
+The first line in the code chunk plots the standard normal curve in the range $-6 \leq x \leq 6$. In the second line, `col="red"` plots the function with a red line. The `add=TRUE` means that the plot should be added to the first plot instead of generating a new plot. We see that the second curve is symmetric about $x=1$ and is more spread out compared to the standard normal curve. 
+
+### `pnorm()` and `qnorm()`
+
+The `pnorm(z)` function returns the cumulative probability of the standard normal distribution at Z score $z$. That is, it's the area under the standard normal curve to the left of $z$ (the area of the shaded blue region in the plot below).
+
+```{r, echo=FALSE}
+p=1.5
+xmin=-4
+xmax=4
+npoly=200
+cord.x <- c(xmin,seq(xmin,p,length.out=npoly),p) 
+cord.y <- c(0,dnorm(seq(xmin,p,length.out=npoly)),0) 
+curve(dnorm(x),xlim=c(xmin,xmax),xlab="Z",ylab="dnorm(Z)") 
+polygon(cord.x,cord.y,col='skyblue')
+mtext("z",font=3,family="serif",side=1,line=0.2,at=p,cex=1.5)
+```
+
+For example, 
+```{r}
+pnorm(1.65)
+```
+This means that the probability of getting a Z score smaller than 1.65 is 0.95 or 95%. Sometimes, we want to find the area of the right-side tail (area of the shaded region below). 
+```{r, echo=FALSE}
+p=1.5
+xmin=-4
+xmax=4
+npoly=200
+cord.x <- c(p,seq(p,xmax,length.out=npoly),xmax) 
+cord.y <- c(0,dnorm(seq(p,xmax,length.out=npoly)),0) 
+curve(dnorm(x),xlim=c(xmin,xmax),xlab="Z",ylab="dnorm(Z)") 
+polygon(cord.x,cord.y,col='skyblue')
+mtext("z",font=3,family="serif",side=1,line=0.2,at=p,cex=1.5)
+```
+
+This is especially the case when we want to find the (one-sided) p-value corresponding to a Z score. There are many ways to do this. The first method is to use the fact that the normal curve is symmetric, so $P(Z>z)=P(Z<-z)$. For example, $P(Z>1.65)=P(Z<-1.65)$ and $P(Z>1.65)$ can be computed by
+```{r}
+pnorm(-1.65)
+```
+The second method is to use $P(Z>1.65)=1-P(Z<1.65)$ and $P(Z>1.65)$ can be computed by 
+```{r}
+1-pnorm(1.65)
+```
+The third method is to the option `lower.tail=FALSE` in `pnorm()`: 
+```{r}
+pnorm(1.65,lower.tail=FALSE)
+```
+We see that the three methods produce the same result, as expected. I prefer the first method as it involves the least typing.
+
+The `qnorm()` function is the inverse of the `pnorm()` function: `qnorm(y)` returns the value $x$ so that `pnorm(x)=y`. For example, the Z score corresponding to the 95th percentile is 
+```{r}
+qnorm(0.95)
+```
+We can check that the result is correct:
+```{r}
+pnorm( qnorm(0.95) )
+```
+Like the `pnorm()` function, the option `lower.tail=FALSE` refers to the area of the right tail. For example, 
+```{r}
+qnorm(0.05,lower.tail=FALSE)
+```
+This means that the Z score corresponding to the area of the right tail equaling 0.05 is 1.645. It can also be obtained by the following expression because of the symmetry of the normal curve (the Z score is the negative of the Z score corresponding to the area of the left tail being 0.05): 
+```{r}
+-qnorm(0.05)
+```
+
+### `rnorm()`
+
+```{r, echo=FALSE}
+# set seed for reproducibility, but don't 
+# display this code chunk since I want to 
+# explain set.seed() later
+set.seed(1163781)
+```
+The `rnorm()` function is a random number generator (type `?rnorm` to see its usage). For example, 
+```{r}
+rnorm(10)
+```
+generates 10 random numbers following the standard normal distribution. It returns different numbers the next time you run it:
+```{r}
+rnorm(10)
+```
+The command 
+```{r}
+rnorm(20,mean=1,sd=3)
+```
+generates 20 random numbers following the normal distribution with mean = 1 and standard deviation = 3. All random numbers generated by computers are not truly random, in the sense that these numbers are generated based on some rules. They appear to be random and have many of the statistical properties of true random numbers. For this reason they are often called the pseudo random numbers. Pseudo random numbers are adequate in most statistical applications.
+
+In many applications, we want to be able to reproduce the results of our data analysis. It is then important to use the `set.seed(n)` function to generate the same set of random numbers. Here $n$ is an integer. For example, the commands 
+```{r}
+set.seed(107281)
+rnorm(10)
+```
+sets a seed (107281) and then generates 10 standard normal random numbers. When we run `rnorm(10)` again, we get different numebrs: 
+```{r}
+rnorm(10)
+``` 
+However, when we reset the seed to 107281 and generate 20 standard normal random numbers, 
+```{r}
+set.seed(107281)
+rnorm(20)
+```
+we get the exact same 20 numbers as before. You will see that I always use `set.seed()` before generating a new set of random numbers. This is mainly for the purpose of reproducibility. In general, it is a good idea to use `set.seed()` if you are working on a project that requires the use of random numbers, at least at the beginning. This is especially useful if the project involves complicated coding as the reproducibility makes the code debugging easier. 
+
+Random numbers are essential in statistical simulations and we will talk more about them later in the course. 
+
+Now let's study some properties of the random number generated by the `rnorm()` function. The following code chunk generates 5 sets of standard normal random numbers. 
+```{r}
+set.seed(17289143)
+# Generate 5 sets of standard normal random nums with length=1000
+x1 <- rnorm(1000)
+x2 <- rnorm(1000)
+x3 <- rnorm(1000)
+x4 <- rnorm(1000)
+x5 <- rnorm(1000)
+```
+The # symbol is a comment character. R ignores everything following # in the rest of a line. One important property of random numbers is that they are independent, and so are uncorrelated. Let's check to see if the 5 sets of random numbers are uncorrelated by computing the correlation matrix: 
+```{r}
+cor(cbind(x1,x2,x3,x4,x5))
+```
+We see that the off-diagonal elements of the matrix are small, indicating that they are  uncorrelated. 
+
+Now let's generate $10^5$ standard normal random numbers to analyze their statistical properties. 
+```{r}
+set.seed(2819237)
+x <- rnorm(1e5)
+```
+We can look at the mean and (sample) standard deviation:
+```{r}
+mean(x)
+```
+```{r}
+sd(x)
+```
+We see that the mean and sd are very close to 0 and 1, respectively, as expected. To verify that the data is normally distributed, we generate a histogram using the `hist()` function:
+```{r}
+hist(x)
+```
+
+The histogram looks like a normal curve, but we should be able to do a better job by breaking the histogram into smaller intervals. Like many other R functions, there are parameters in the `hist()` function that allow us to customize our histogram. As you are diving into the R world, you will encounter many R functions having many optional parameters. It is important to note that you don't need to memorize all the parameters as you can easily find them by pulling up a help page using `?`. If you don't understand the help page, do an internet search and you will be amazed to find that many webpages have the information you are looking for. 
+
+Here is a better histogram for our data:
+```{r}
+hist(x, freq=FALSE, breaks=100)
+```  
+
+The `freq=FALSE` option is to show the *density* (fraction of points in each interval) on the y-axis instead of frequency (number of points in each interval). With this option, the total area of the histogram is normalized to 1. The `breaks=100` option is to draw the histogram with 100 equally spaced intervals. This histogram looks more like the standard normal curve. In fact, we can plot the standard normal curve on top of the histogram to have a better comparison: 
+```{r}
+hist(x, freq=FALSE, breaks=100)
+curve(dnorm(x),col="red",add=TRUE)
+```
+
+We thus verify that the `rnorm()` function generates random numbers following the normal distribution. Let's try something new. 
+
+<blockquote>
+Exercise 1: Make a histogram of $x^2$. Does it resemble anything you are familiar with?
+</blockquote>
+
+## $\chi^2$ Distribution
+
+The four functions associated with the $\chi^2$ distribution are `dchisq()`, `pchisq()`, `qchisq()`, `rchisq()`. The usage is essentially the same as the four functions associated with the normal distribution. Again, use `?dchisq` to find out more information. 
+
+Before we demonstrate the use of these four functions, let's first talk about what $\chi^2$ distribution is. A $\chi^2$ distribution with $k$ degrees of freedom is constructed by the sum of the square of $k$ independent, standard normal random variables. Specifically, if $X_1$, $X_2$, $\cdots$, $X_k$ are independent random variables and they all follow the standard normal distribution, then the random variable 
+$$ Q = X_1^2+ X_2^2 + \cdots + X_k^2 $$
+follows the $\chi^2$ distribution with $k$ degrees of freedom. If you find the concept hard to follow, read <a href="RandomNumbers.html" target="_blank">this page</a>.
+
+### `dchisq()` and `rchisq()`
+
+The mathematical functions for the $\chi^2$ density distribution can be found in many standard textbooks and from the internet (e.g., <a href="https://en.wikipedia.org/wiki/Chi-squared_distribution#Probability_density_function" target="_blank">Wikipedia</a>). To see what the $\chi^2$ distributions look like, we use the `dchisq()` function to plot the density functions:
+```{r}
+curve(dchisq(x,1),xlim=c(0,15),ylim=c(0,0.6),ylab="Chi Square Density")
+curve(dchisq(x,2),col="red",lty=2,add=TRUE)
+curve(dchisq(x,3),col="blue",lty=3,add=TRUE)
+curve(dchisq(x,5),col="dark green",lty=4,add=TRUE)
+curve(dchisq(x,10),col="brown",lty=5,add=TRUE)
+legend(12,0.55,c("k=1","k=2","k=3","k=5","k=10"),
+       col=c("black","red","blue","dark green","brown"),lty=1:5)
+```
+
+Unlike `dnorm()`, we need to pass at least two arguments to `dchisq()`. The first argument is the value of $x$ we want to compute the density and the second one is the degree of freedom. In the plot above, $\chi^2$ density functions with degrees of freedom $k=1$, 2, 3, 5 and 10 are plotted together. There are a few new things in the above code chunk: `ylim` is used to set the y-range of the plot; `ylab` is used to change the y-axis label; `lty` is used to change the line type (1=solid, 2=dashed, 3=dotted, 4=dash-dotted, 5=long-dashed); `legend()` is used to display the legend. You can type `?legend` to see the usage, or alternatively google "r add lenged to plot" to find  webpages with the information (this was actually what I did since I forgot how to add legend to a plot).
+
+Now you know enough to answer the question at the end of last section. From the definition of the $\chi^2$ distribution, we know that the histogram of $x^2$ in Exercise 1 in the last section should follow the $\chi^2$ distribution with one degree of freedom. We can check that by plotting the histogram and the $\chi^2$ density curve together: 
+```{r}
+# Regenerate the random numbers x from the previous section
+# You can skip this step if you haven't closed the R console
+set.seed(2819237)
+x <- rnorm(1e5)
+# Plot the x^2 histogram and the 1-df chi-square curve together
+hist(x^2, freq=FALSE, breaks=200,xlim=c(0,5))
+curve(dchisq(x,1),col="red",add=TRUE)
+```
+
+Let's now generate random numbers following the $\chi^2$ distribution with df=3 from 3 independent standard normal random variables: 
+```{r}
+set.seed(2712819)
+X1 <- rnorm(1e5)
+X2 <- rnorm(1e5)
+X3 <- rnorm(1e5)
+Q <- X1^2 + X2^2 + X3^2
+```
+Let's check that `Q` follows the $\chi^2$ distribution with df=3. 
+```{r}
+hist(Q, freq=FALSE, breaks=100)
+curve(dchisq(x,3),col="red",add=TRUE)
+```
+
+In practical applications, we don't generate random numbers following $\chi^2$ distribution from the `rnorm()` function. The `rchisq()` function is more convenient to use. For example, 
+```{r}
+set.seed(90546723)
+Q <- rchisq(1e5,10)
+```
+generates $10^5$ random numbers following the $\chi^2$ distribution with 10 degrees of freedom: 
+```{r}
+hist(Q, freq=FALSE, breaks=100)
+curve(dchisq(x,10),col="red",add=TRUE)
+```
+
+### `pchisq() and qchisq()` 
+
+The `pchisq(x,df)` function returns the cumulative probability $P(\chi^2<x)$ for the $\chi^2$ distribution with df degrees of freedom, i.e. the area of the shaded region in the plot of the $\chi^2$ density curve below. 
+
+```{r, echo=FALSE}
+p=7
+xmin=0
+xmax=10
+npoly=200
+cord.x <- c(xmin,seq(xmin,p,length.out=npoly),p) 
+cord.y <- c(0,dchisq(seq(xmin,p,length.out=npoly),3),0) 
+curve(dchisq(x,3),xlim=c(xmin,xmax),xlab=expression(chi^2),ylab="Chi Square Density") 
+polygon(cord.x,cord.y,col='skyblue')
+mtext("x",font=3,family="serif",side=1,line=0.2,at=p,cex=1.5)
+```
+
+For the p-value calculation, we usually want the area of the tail, i.e. $P(\chi^2>x)$, the shaded region below. 
+```{r, echo=FALSE}
+p=7
+xmin=0
+xmax=10
+npoly=200
+cord.x <- c(p,seq(p,xmax,length.out=npoly),xmax) 
+cord.y <- c(0,dchisq(seq(p,xmax,length.out=npoly),3),0) 
+curve(dchisq(x,3),xlim=c(xmin,xmax),xlab=expression(chi^2),ylab="Chi Square Density") 
+polygon(cord.x,cord.y,col='skyblue')
+mtext("x",font=3,family="serif",side=1,line=0.2,at=p,cex=1.5)
+```
+
+In this case, we use `pchisq(x,df,lower.tail=FALSE)` or `1-pchisq(x,df)`. For example, the p-value corresponding to $\chi^2=21.78$ and df=10 is 
+```{r}
+pchisq(21.78,10,lower.tail=FALSE)
+```
+
+The `qchisq()` is the inverse of `pchisq()`: if `pchisq(x)=y`, then `qchisq(y)=x`. For example, the $\chi^2$ value corresponding to a 5% p-value and df=10 is 
+```{r}
+qchisq(0.05,10,lower.tail=FALSE)
+```
+
+## Student's t Distribution 
+
+Another distribution mentioned in Stat 100 is Student's $t$ distribution. The four functions associated with the $t$ distributions are `dt()`, `pt()`, `qt()` and `rt()`. 
+
+The $t$ distribution is constructed from the normal and $\chi^2$ distributions. Let $Z$ and $W$ be two independent random variables. If $Z$ follows the standard normal distribution and $W$ follows the $\chi^2$ distribution with $k$ degrees of freedom, then the random variable 
+$$T = \frac{Z}{\sqrt{W/k}}$$ 
+is said to follow the $t$ distribution with $k$ degrees of freedom. The mathematical functions for the distribution can again be found in many textbooks and from the internet (e.g., <a href="https://en.wikipedia.org/wiki/Student's_t-distribution#Probability_density_function" target="_blank">Wikipedia</a>). 
+
+### `dt()` and `rt()`
+
+Let's generate $10^5$ random numbers following the $t$ distribution with 5 df from the definition of the $t$ distribution: 
+```{r}
+Z <- rnorm(1e5)
+W <- rchisq(1e5,5)
+T <- Z/sqrt(W/5)
+```
+As before, we plot a histogram for the data: 
+```{r}
+hist(T,breaks=100,freq=FALSE)
+```
+
+This doesn't look very nice. We see that most of the data are concentrated between -5 and 5. So instead of using equally spaced interval, we want more intervals between -5 and 5 and less intervals outside the range. As stated in the help page of `?hist`, this can be done by providing the `breaks` parameter a numeric vector containing the break points. In the following, I set 100 break points between -5 and 5 using the `seq()` function, one break point at the minimum of `x` and one break point at the maximum of `x`:
+```{r}
+hist(T, breaks=c(min(T), seq(-5,5,length.out=100), max(T)), freq=FALSE)
+```
+
+Since the region outside (-5,5) is pretty boring, we can exclude it from the plot by setting the `xlim` parameter. We also want to plot the `dt()` function on the same graph. So we type the following commands:
+```{r}
+hist(T, breaks=c(min(T), seq(-5,5,length.out=100), max(T)), freq=FALSE, 
+     xlim=c(-5,5))
+curve(dt(x,5),col="red",add=TRUE)
+```
+
+As you can see, the $t$ distribution is symmetric about $x=0$ and resembles the normal curve. You may recall from Stat 100 that the $t$ distribution approaches the normal distribution when the degree of freedom $k\rightarrow \infty$. In general, the $t$ curve falls more slowly than the normal curve at large $|x|$.
+
+The following code chunk plots the $t$ curves with various degrees of freedom. 
+```{r}
+curve(dt(x,1),xlim=c(-5,5),ylim=c(0,0.4),ylab="Student's t Density")
+curve(dt(x,2),col="red",lty=2,add=TRUE)
+curve(dt(x,5),col="blue",lty=3,add=TRUE)
+curve(dt(x,20),col="dark green",lty=4,add=TRUE)
+curve(dnorm(x),col="brown",lty=5,add=TRUE)
+legend(2,0.38,c("k=1","k=2","k=5","k=20","normal curve"),
+       col=c("black","red","blue","dark green","brown"),lty=1:5)
+```
+
+As you can see, the $t$ curve is already quite close to the standard normal curve for $k=20$. 
+
+The `rt(n,df)` function generates $n$ random numbers following the $t$ distribution with df degrees of freedom. 
+
+<blockquote>
+Exercise 2: Generate random numbers following the t distribution and then make a histogram. Superpose the density curve of the t distribution on the histogram and check that the histogram matches the density curve.
+</blockquote>
+
+### `pt()` and `qt()`
+
+The usage of the `pt()` and `qt()` functions are exactly the same as that of the `pchisq()` and `qchisq()` functions. For example, the p-value corresponding to $t$=1.5 and df=4 is 
+```{r}
+pt(1.5,4,lower.tail=FALSE)
+```
+This is also equal to `pt(-1.5,4)` since the $t$ curve is symmetric. 
+
+The value of $t$ corresponding to a p-value of 5% and df=4 is 
+```{r}
+qt(0.05,4,lower.tail=FALSE)
+```
+This is also equal to `-qt(0.05,4)`.
+
+## Other Probability Distributions
+
+In addition to the three probability distributions mentioned here, R has built-in functions for many other probability distributions. An incomplete list of the available distributions can be found on <a href="http://www.stat.umn.edu/geyer/old/5101/rlook.html#dist" target="_blank">this page</a>. This is mostly for your reference. 
+
+In Stat 200, you will encounter a few more probability distributions we haven't mentioned in this note. The most important of them is the F distribution, which are constructed from two independent $\chi^2$ random variables. You will explore this distribution through a Lon Capa exercise later in the course. 
+<br /><br />

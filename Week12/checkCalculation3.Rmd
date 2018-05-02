@@ -1,0 +1,288 @@
+---
+title: "Checking Your Calculations: Part 3"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: yes
+fontsize: 18pt
+---
+<!-- Written by Yuk Tung Liu -->
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    text-align: center;
+    padding: 5px;
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: 
+
+This is the last set of the notes on techniques of checking your calculations. Recall that in the <a href="../Week02/checkCalculation1.html" target="_blank">first set of notes</a>, we mention 7 methods that can be used to check your calculations:
+
+- sanity check 
+- consistency check
+- comparison with independently written codes
+- scaling down the problems
+- comparison to problems with known answers
+- comparison with different methods
+- checking invariants / inequalities
+
+We have gone through the first 5 techniques in the previous two sets of notes. Here we will finish up introducing the last two techniques. 
+
+#Comparison With Different Methods
+
+The idea is similar to the "comparison with independently written codes" technique. As you have seen in this course, there are usually more than one method to do the same calculations. Some are faster than others; some are shorter and cleaner; some are computationally more efficient. The different methods provide useful consistency checks when you get the same answer with all these methods. 
+
+**Example 1**: Suppose you are given a data frame containing the scores of 4 exams of a class of 200 students. You want to compute the average scores of the 4 exams in the class. For simplicity, we will demonstrate the calculation using a simulated data set instead of a real data set. 
+
+The following code generates the scores of 4 exams for a hypothetical class of 200 students.
+```{r}
+set.seed(82368623)
+score <- sample(0:100, 800, prob=(0:100)^2, replace=TRUE)
+dim(score) <- c(200,4)
+score <- as.data.frame(score)
+names(score) <- paste0("Exam",1:4)
+```
+The command in the second line randomly generates 800 integers between 0 and 100 with a probability proportional to the square of the number. That is, the probability of getting a 60 is (60/30)<sup>2</sup>=4 times of the probability of getting a 30. The third command turns the vector `score` into a matrix of 200 rows and 4 columns (review Section 5.9 of the textbook or Lesson 7 of swirl if you forget how it works). The fourth command turns the matrix `score` into a data frame. The last line assigns names to the 4 columns of the data frame.
+
+Here are the first few rows of the data frame `score`:
+```{r}
+head(score)
+```
+We can visualize the score distribution by plotting histograms:
+```{r}
+par(mfrow=c(2,2))
+for (i in 1:4) {
+  hist(score[[i]], main=names(score)[i], xlab="Score",las=1,col=i+1)
+}
+```
+
+Now we compute the class averages of the 4 exam scores. There are at least 5 different methods to do it. We will use 5 methods and verify that they give the same result. 
+
+**Method 1**: This is the most straightforward method and the most tedious one. We just apply the `mean()` function on the 4 exam scores one by one and gather the result in a numeric vector `means1` of length 4. 
+```{r}
+means1 <- NULL
+means1["Exam1"] <- mean(score$Exam1)
+means1["Exam2"] <- mean(score$Exam2)
+means1["Exam3"] <- mean(score$Exam3)
+means1["Exam4"] <- mean(score$Exam4)
+means1
+```
+
+**Method 2**: Use a for-loop.
+```{r}
+means2 <- NULL
+for (i in 1:4) {
+  means2[paste0("Exam",i)] <- mean(score[,i])
+}
+means2
+```
+
+**Method 3**: Use `sapply()`:
+```{r}
+(means3 <- sapply(score,mean))
+```
+
+**Method 4**: Use `apply()` on columns (`margin`=2):
+```{r}
+(means4 <- apply(score,2,mean))
+```
+
+**Method 5**: Use `colMeans()`:
+```{r}
+(means5 <- colMeans(score))
+```
+
+We see the same result for all 5 methods, indicating that all calculations are done correctly.
+
+**Example 2**: Continuing with Example 1. Suppose now you are asked to add a new column to the data frame that stores the average of the 4 exam scores for each of the 200 students. This time, I can think of 4 different methods.
+
+**Method 1**: Compute the averages directly.
+```{r}
+(means1 <- with(score, (Exam1+Exam2+Exam3+Exam4)/4))
+```
+
+**Method 2**: Use a for-loop.
+```{r}
+means2 <- rep(NA, 200)
+for (i in 1:200) {
+  means2[i] <- sum(score[i,])/4
+}
+```
+
+**Method 3**: Use `apply()` on rows (`margin`=1). 
+```{r}
+means3 <- apply(score,1,mean)
+```
+
+**Method 4**: Use `rowMeans()`.
+```{r}
+means4 <- rowMeans(score)
+```
+Now let's check if the 4 methods agree:
+```{r}
+identical(means1,means2)
+identical(means1,means3)
+identical(means1,means4)
+```
+Now that we've confirmed the 4 methods give the same averages, we can confidently add them to a new column of the data frame.
+```{r}
+score$ExamAvg <- means1
+head(score)
+```
+
+**Example 3**: Three different methods are used to perform the randomization test on <a href="../Week11/Optimization.html" target="_blank">this page</a>. The easiest and most reliable method is to use R's built-in function `lm()`. However, it is also the slowest code. The other two methods are created to speed up the computation, but they are all tested using the most reliable code to make sure they give the same numerical results within the machine round-off error. This is essential since the faster methods are longer and more error-prone. It is very important to make sure that the optimized code is correct before being used to perform a large-scale simulation.
+
+#Checking Invariants / Inequalities
+
+Here we only talk about invariants.
+
+In many systems, there are quantities that remain fixed as the systems evolve. These are called the invariants. Invariants are very common in Physics. For example, consider the objects in the solar system moving around under the gravity of the Sun and each other. Apart from the minute influence of gravity from objects outside the solar system, the total energy, momentum and angular momentum remain unchanged as the objects move. These are the invariants of the solar system. 
+
+Most people have heard of Einstein's Theory of Relativity, but few people know that Einstein had said he thought it should be called a Theory of Invariance.
+
+Invariants are so important in Physics that it was the subject of the first lesson in an introductory Physics course I taught a few years ago. My colleague suggested me to ask students the following question in the first class.
+
+<blockquote>
+On the table are a glass of apple juice and a glass of orange juice, each about equal in volume. Now watch this demonstration. I take a spoon of liquid from the apple-juice glass into the orange-juice glass, stir the mixed liquid, and then take a spoon of the mixed liquid into the apple-juice glass and stir the liquid. Now both glasses contain mixed liquid. 
+
+i> clicker question: The amount of apple juice inside the orange-juice glass is _____ the amount of orange juice in the apple-juice glass.
+
+(a) greater than 
+(b) less than 
+(c) equal to 
+</blockquote>
+
+Not surprisingly, most student did not get the right answer. It is a hard question if you are not thinking it in the right way. Before telling them the answer I asked the following question, which I thought was easier: 
+
+<blockquote>
+Suppose there are two bags. Bag 1 contains 100 white balls and Bag 2 contains 100 black balls. I draw 10 white balls from Bag 1 (without replacement) and put them in Bag 2. Then I randomly draw 10 balls from Bag 2 (without replacement) and put them into Bag 1. Now both bags contain white and black balls. 
+
+i>clicker question: The number of white balls in Bag 2 is _______ the number of black balls in Bag 1.
+
+(a) greater than 
+(b) less than 
+(c) equal to 
+</blockquote>
+
+It turned out most students didn't get the right answer for this one either. The key to the answer is to consider four invariants before and after the experiment: the number of white balls = 100, number of black balls = 100, number of balls in Bag 1 = 100, number of balls in Bag 2 = 100. These numbers are fixed before and after the experiment. Initially, Bag 1 had 100 white balls and Bag 2 had 100 black balls. After the experiment, Bag 1 has $m$ black balls and $100-m$ white balls. Where are the "missing" $m$ white balls that were there initially? They must have been drawn to Bag 2. So Bag 2 must contain $m$ white balls and $100-m$ black balls. Hence the number of black balls in Bag 1 is equal to the number of white balls in Bag 2. The juice question is just the continuous version of the bag question. The answer to both questions is c.
+
+Here is a code that simulates the mixing of balls in two bags:
+```{r}
+# A function that performs the mixing of balls in two bags.
+# The contents of the two bags are stored in the list 'Bags' 
+mixing <- function(Bags, d) {
+  bag1 <- Bags$bag1
+  bag2 <- Bags$bag2
+  
+  # Number of balls in Bag 1 and Bag 2
+  n1 <- length(bag1)
+  n2 <- length(bag2)
+  
+  # Draw d balls from Bag 1
+  random <- sample.int(n1, d)
+  balls_drawn <- bag1[random]
+  bag1 <- bag1[-random]
+  
+  # Put the drawn balls to Bag 2 and then shuffle the content
+  bag2 <- sample( c(bag2, balls_drawn) )
+  
+  # Draw d balls from Bag 2
+  random <- sample.int(n2+d, d)
+  balls_drawn <- bag2[random]
+  bag2 <- bag2[-random]
+  
+  # Put the drawn balls to Bag 1 and then shuffle the content
+  bag1 <- sample( c(bag1, balls_drawn) )
+  
+  # outputed the result to a list 
+  list(bag1=bag1, bag2=bag2)
+}
+
+# Set up the initial configuration: 
+# 100 white balls in Bag 1 and 100 black balls in Bag 2
+bag1 <- rep("white", 100)
+bag2 <- rep("black", 100)
+initial <- list(bag1=bag1, bag2=bag2)
+
+# Run a simulation with d = 10
+set.seed(4724412)
+final <- mixing(initial, 10)
+
+# Check invariants
+
+# Invariant 1 and 2: Number of balls in each bag should be 100
+sapply(final, length)
+
+# Invariant 3: Total number of white balls = 100
+sum(final$bag1=="white") + sum(final$bag2=="white")
+
+# Invariant 4: Total number of black balls = 100
+sum(final$bag1=="black") + sum(final$bag2=="black")
+
+# Now look at the numbers of balls in each bag
+lapply(final, table)
+```
+We see that all of the four invariant quantities remain unchanged, a good indication that the code is probably correct. The result is as expected: the number of black balls in Bag 1 is equal to the number of white balls in Bag 2. 
+
+As shown in the simulation above, after one experiment, there are 92 white balls and 8 black balls in Bag1, and 92 black balls and 8 white balls in Bag 2. Suppose the process of drawing 10 balls from each bag is repeated again: draw 10 balls from Bag 1 and put them into Bag 2; then draw 10 balls from bag 2 and put them into Bag 1. What will happen?
+
+If you think about it, you will conclude that the result is the same even if the process is repeated many times: the number of black balls in Bag 1 is equal to the number of white balls in Bag 2 no matter how many times the process is repeated. Let's try it 10 times:
+```{r}
+# Run the simulation 10 times with d = 10
+final <- initial
+set.seed(4724412)
+for (i in 1:10) {
+  final <- mixing(final, 10) 
+}
+# Now look at the numbers of balls in each bag
+lapply(final, table)
+```
+The result is as expected. We also expect that the number of each color of balls will approach 50 in each bag as the process is repeated many many times, apart from random fluctuations. The balls will be completely mixed in the two bags in that case. You can easily verify that by modifying the code above.
+
+If you think about it more, you will also conclude that the initial numbers of balls in Bag 1 and Bag 2 need not be the same. If we consider Bag 1 having 200 white balls and Bag 2 having 100 black balls initially, the final result is the same: the number of black balls in Bag 1 is equal to the number of white balls in Bag 2. This is true no matter how many times the drawing process is repeated. You can easily verify that by changing the initial setup in the code above. The function `mixing()` has been written to allow the number of balls in each bag to be unequal, so you don't need to change it. What will be the expected numbers of black and white balls in each bag if the process is repeated many many times? Think about it and then do a simulation to verify your answer. 
+
+The problem can be generalized by considering $n$ bags, each of which initially has different amounts of colors of balls inside. For example, consider 5 bags having the following initial configuration:
+
+<table>
+<tr><th></th> <th>Black balls</th> <th>White balls</th> <th>Red balls</th> <th>Total</th></tr>
+<tr><th>Bag 1</th> <td>50</td> <td>20</td> <td>30</td> <th>100</th></tr>
+<tr><th>Bag 2</th> <td>24</td> <td>35</td> <td>13</td> <th>72</th></tr>
+<tr><th>Bag 3</th> <td>18</td> <td>10</td> <td>20</td> <th>48</th></tr>
+<tr><th>Bag 4</th> <td>30</td> <td>17</td> <td>36</td> <th>83</th></tr>
+<tr><th>Bag 5</th> <td>12</td> <td>22</td> <td>43</td> <th>77</th></tr>
+<tr><th>Total</th> <th>134</th> <th>104</th> <th>142</th> <th>380</th></tr>
+</table>
+
+Draw 10 balls from Bag 1 to Bag 2, then 10 balls from Bag 2 to Bag 3, then 10 balls from Bag 3 to Bag 4, then 10 balls from Bag 4 to Bag 5, then 10 balls from Bag 5 to Bag 1. After the experiment, the total numbers of balls in each bag remain unchanged and the total number of white, black and red balls are also unchanged. These are the invariants. Now if the mixing process is repeated many many times, what will be the expected numbers of each color of balls in each bag? 
+
+Hint: There is a close connection between this question and the concept behind the $\chi^2$ independence test. Think about how the expected frequencies are calculated in a $\chi^2$ independence test. 
+
+You probably have noticed that checking an invariant is a special case of a consistency check. Like other consistency checks, passing an invariant check is a necessary but not sufficient condition for a code to be error-free. However, invariants in some models are non-trivial and a code that passes non-trivial invariant checks is likely to be correct.
+
+<br />
+<br />
+<br />

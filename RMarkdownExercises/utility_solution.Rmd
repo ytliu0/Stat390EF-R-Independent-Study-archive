@@ -1,0 +1,196 @@
+---
+title: "Utility"
+output: 
+   html_document:
+     toc: yes
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+</style>
+
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+Utility companies, which must plan the operation and expansion of electricity generation, are vitally interested in predicting customer demand over both short and long periods of time. A short-term study was conducted to investigate the effect of each month's mean daily temperature (MDT) and of cost per kilowatt-hour, PKWH, on the mean daily consumption (in kWh), MDC, per household. The company officials expected the consumption of electricity to rise in cold weather (due to heating), fall when the weather was moderate, and rise again when the temperature rose and there was a need for air conditioning. They expected consumption to decrease as the cost per kilowatt-hour increased, reflecting greater attention to conservation. Data were collected for 2 years, a period during which the cost per kilowatt-hour PKWH increased due to the increasing costs of fuel. 
+
+The data set has only 24 observations. Instead of asking you to download it and then load it to R, it is easier to just enter the data using the following code:
+```{r}
+column1 <- rep(c(8,10), each=12)
+column2 <- c(31, 34, 39, 42, 47, 56, 62, 66, 68, 71, 75, 78, 32, 36, 39, 42, 48, 56, 62, 66, 68, 72, 75, 79)
+column3 <- c(55, 50, 46, 45, 40, 43, 41, 46, 44, 51, 62, 73, 50, 44, 42, 42, 38, 40, 39, 42, 42, 44, 50, 55)
+utility <- data.frame(PKWH=column1, MDT=column2, MDC=column3)
+rm(list=paste0('column',1:3))
+```
+
+This is again a very small data set and you can view the whole data by typing name of the data frame `utility`. The first column, PKWH, is the cost per kilowatt-hour in cents. The second column is MDT, the mean daily temperature in &deg;F. The third column is MDC, the mean daily consumption in kilowatt-hour. In the two-year period, PKWH took only two values: 8 cents in the first year and 10 cents in the second year.
+
+###a. (3 points) 
+
+**Make a scatter plot of MDC versus MDT. Plot the data in different colors for the two different values of PKWH. Explain your color code (i.e. which color represents PKWH = 8 cents and which represents PKWH = 10 cents) in either a figure legend (preferred) or a figure caption.**
+
+Here's the plot:
+```{r}
+plot(MDC ~ MDT, data=utility, pch=16, col=PKWH/2-3, las=1, 
+     xlab=expression(paste("mean daily temperature (",degree,"F)")), 
+     ylab="mean daily consumption (kWh)")
+legend(40,70,c("8 cents","10 cents"), pch=16, col=1:2)
+```
+
+Note that we use `col=PKWH/2-3` to assign two different colors to the two PKWH values: col=8/2-3=1 (black) for PKWH=8 and col=10/2-3=2 (red) for PKWH=10.
+
+###b. (3 points) 
+
+**Fit a model predicting MDC from MDT with a quadratic function MDC = &beta;<sub>0</sub> + &beta;<sub>1</sub>MDT + &beta;<sub>2</sub>MDT<sup>2</sup>.**
+
+```{r}
+fit1 <- lm(MDC ~ MDT + I(MDT^2), data=utility)
+summary(fit1)
+```
+```{r, echo=FALSE}
+num_to_char <- function(num) {
+  if (num >= 0) {
+    return(paste0("+ ",num))
+  } else {
+    return(paste0("- ",-num))
+  }
+}
+beta0 <- as.character(signif(fit1$coefficient[1],4))
+beta1 <- num_to_char( signif(fit1$coefficient[2],4) )
+beta2 <- num_to_char( signif(fit1$coefficient[3],4) )
+```
+So the fitting equation is 
+
+<span style="border-style:solid; padding:3pt;">MDC = `r beta0` `r beta1` MDT `r beta2` MDT<sup>2</sup></span>
+
+
+###c. (6 points) 
+
+**The model in (b) ignores the cost per kilowatt-hour PKWH. If you look at your plot of MDC versus MDT with color-coded PKWH in (a), you will notice that the values of MDC are smaller for PKWH = 10 cents at similar MDT. This suggests that the fitting formula should include PKWH. Even though PKWH has only two values in the data set, we will treat it as a continuous variable in the regression. Fit a multiple regression model predicting MDC from MDT and PKWH with a quadratic function in MDT and with interaction terms:**
+
+**MDC = &beta;<sub>0</sub> + &beta;<sub>1</sub>MDT + &beta;<sub>2</sub>MDT<sup>2</sup> + PKWH (&beta;<sub>3</sub> + &beta;<sub>4</sub>MDT + &beta;<sub>5</sub>MDT<sup>2</sup>)**
+
+Include interaction terms with PKWH:
+```{r}
+fit2 <- lm(MDC ~ PKWH*MDT + PKWH*I(MDT^2), data=utility)
+summary(fit2)
+```
+```{r, echo=FALSE}
+beta0 <- as.character(signif(fit2$coefficient[1],4))
+beta1 <- num_to_char( signif(fit2$coefficient[3],4) )
+beta2 <- num_to_char( signif(fit2$coefficient[4],4) )
+beta3 <- as.character(signif(fit2$coefficient[2],4))
+beta4 <- num_to_char( signif(fit2$coefficient[5],4) )
+beta5 <- num_to_char( signif(fit2$coefficient[6],4) )
+```
+So the fitting equation is 
+
+<span style="border-style:solid; padding:3pt;">MDC = `r beta0` `r beta1` MDT `r beta2` MDT<sup>2</sup> + PKWH (`r beta3` `r beta4` MDT `r beta5` MDT<sup>2</sup>)</span>
+
+
+###d. (4 points) 
+
+**Split the equation in (c) into two equations, one for PKWH = 8 cents and one for PKWH = 10 cents. Your equations should look like the following:**
+
+**PKWH = 8 cents: MDC = (some number) + (some number) MDT + (some number) MDT<sup>2</sup>**
+
+**PKWH = 10 cents: MDC = (some number) + (some number) MDT + (some number) MDT<sup>2</sup>**
+
+**Note: Use the method you learned in Stat 200 to split the multiple regression equation (see, e.g., Example 1 of Ch. 17 in the Stat 200 nootbook). You don't need to use any R command.**
+
+```{r, echo=FALSE}
+beta0_8cents <- as.character( signif(fit2$coefficient[1],4) + 8*signif(fit2$coefficient[2],4) )
+beta1_8cents <- num_to_char( signif(fit2$coefficient[3],4) + 8*signif(fit2$coefficient[5],4) )
+beta2_8cents <- num_to_char( signif(fit2$coefficient[4],4) + 8*signif(fit2$coefficient[6],4) )
+beta0_10cents <- as.character( signif(fit2$coefficient[1],4) + 10*signif(fit2$coefficient[2],4) )
+beta1_10cents <- num_to_char( signif(fit2$coefficient[3],4) + 10*signif(fit2$coefficient[5],4) )
+beta2_10cents <- num_to_char( signif(fit2$coefficient[4],4) + 10*signif(fit2$coefficient[6],4) )
+```
+
+The 8 cents equation is obtained by setting PKWH=8 in the equation in (c). The result is 
+
+PKWH = 8 cents: MDC = `r beta0` `r beta1` MDT `r beta2` MDT<sup>2</sup> + 8&times;(`r beta3` `r beta4` MDT `r beta5` MDT<sup>2</sup>),
+
+which is simplified to 
+
+<span style="border-style:solid; padding:3pt;">PKWH = 8 cents: MDC = `r beta0_8cents` `r beta1_8cents` MDT `r beta2_8cents` MDT<sup>2</sup></span>
+
+The 10 cents equation is obtained by setting PKWH=10 in the equation in (c). The result is 
+
+PKWH = 10 cents: MDC = `r beta0` `r beta1` MDT `r beta2` MDT<sup>2</sup> + 10&times;(`r beta3` `r beta4` MDT `r beta5` MDT<sup>2</sup>),
+
+which is simplified to 
+
+<span style="border-style:solid; padding:3pt;">PKWH = 10 cents: MDC = `r beta0_10cents` `r beta1_10cents` MDT `r beta2_10cents` MDT<sup>2</sup></span>
+
+
+###e. (6 points) 
+
+**Plot the fitted curves in (d) together with the data for the two values of PKWH. Make sure to color code the data and curves for each of the two PKWH values. Explain your colors and curves clearly, either in a figure legend (preferred) or in a figure caption.**
+
+As you've seen in Week 12's notes, there are at least two methods to create the plot. 
+
+**Method 1: Use `predict()`**
+
+The following is a plot summarizing the data and fitted curves. The range of MDT in the data is from 31 to 79. So we create a vector `x` of length 100 with points uniformly spaced between 31 and 79. We then use the `predict()` function to calculate the fitted values for each of the two PKWH values. Data points are first plotted with the `plot()` function. Then the fitted values are added by the `lines()` function.
+```{r}
+x <- seq(31,79, length=100) # Range of MDT in the data is 31 - 79
+fitted_8cents <- predict(fit2, newdata=data.frame(MDT=x, PKWH=8))
+fitted_10cents <- predict(fit2, newdata=data.frame(MDT=x, PKWH=10))
+plot(MDC ~ MDT, data=utility, pch=PKWH/2+12, col=PKWH/2-3, 
+     las=1, ylab="mean daily consumption (kWh)", 
+     xlab=expression(paste("mean daily temperature (",degree,"F)")))
+lines(x, fitted_8cents, lwd=2)
+lines(x, fitted_10cents, col="red", lwd=2, lty=2)
+legend("top",c("data: PKWH = 8 cents","data: PKWH = 10 cents", 
+               "fitted curve: PKWH = 8 cents", "fitted curve: PKWH = 10 cents"), 
+       pch=c(16,17,-1,-1), lty=c(0,0,1,2), lwd=2, col=c(1,2,1,2))
+```
+
+Note that in `data.frame(MDT=x, PKWH=8)`, `x` is a vector of length 100 and `8` is a vector of length 1, but `data.frame(MDT=x, PKWH=8)` still returns a data frame with 100 rows and 2 columns because `8` is recycled 99 times to match the length of `x`.
+
+**Method 2: Use `curve()`**
+
+The equations for the two curves are given in part (d) or you can simply recalculate them. Then you can use the `curve()` function to add the two curves to the data. 
+```{r}
+plot(MDC ~ MDT, data=utility, pch=PKWH/2+12, col=PKWH/2-3, 
+     las=1, ylab="mean daily consumption (kWh)", 
+     xlab=expression(paste("mean daily temperature (",degree,"F)")))
+curve(fit2$coef[1]+fit2$coef[3]*x +fit2$coef[4]*x^2 + 
+        8*(fit2$coef[2]+fit2$coef[5]*x+fit2$coef[6]*x^2), lwd=2, add=TRUE)
+curve(fit2$coef[1]+fit2$coef[3]*x +fit2$coef[4]*x^2 + 
+        10*(fit2$coef[2]+fit2$coef[5]*x+fit2$coef[6]*x^2), 
+      lwd=2, lty=2, col="red", add=TRUE)
+legend("top",c("data: PKWH = 8 cents","data: PKWH = 10 cents", 
+               "fitted curve: PKWH = 8 cents", "fitted curve: PKWH = 10 cents"), 
+       pch=c(16,17,-1,-1), lty=c(0,0,1,2), lwd=2, col=c(1,2,1,2))
+```
+
+###f. (3 points) 
+
+**Suppose the weather forecast says the mean daily temperature on a particular day is 75&deg;F. What is the expected consumption of electricity according to the model in (c) if the cost per kilowatt-hour is 9 cents? Give your answer to the nearest integer. Don't forget to include units.**
+
+Use the `predict()` function to do the calculation. 
+```{r}
+predict(fit2, newdata=data.frame(MDT=75, PKWH=9))
+```
+```{r, echo=FALSE}
+pred <- as.character(round(predict(fit2, newdata=data.frame(MDT=75, PKWH=9)),0))
+```
+Rounded to the nearest integer, the predicted consumption of electricity is `r pred` kWh.
+
+<br />
+<br />
+<br />

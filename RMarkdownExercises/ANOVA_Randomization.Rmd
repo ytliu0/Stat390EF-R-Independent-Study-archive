@@ -1,0 +1,116 @@
+---
+title: "Multi-Sample Tests and Randomization Test"
+output: 
+   html_document:
+      toc: yes
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+</style>
+
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+**In this problem, you will analyze the Stat 100 survey 3 data in Fall 2015. The csv file can be downloaded <a href="http://courses.las.illinois.edu/stat/stat100/survey/archive/Stat100_2015fall_survey03.csv" target="_blank">here</a>. The column variables are described on <a href="http://courses.las.illinois.edu/stat/stat100/survey/archive/Stat100_2015fall_survey03.html" target="_blank">this webpage</a>. The purpose of this exercise is to find out if there is any association between happiness (a person's subjective well-being) and a person's temperament (introvert/extrovert/ambirvert).** 
+
+###a. (2 points)
+
+**Create box plots of `happiness` for the introverts, extroverts and ambiverts. Add the group means to the box plots.**
+
+```{r}
+# Load the data to R:
+survey <- read.csv("Stat100_2015fall_survey03.csv")
+
+# Create box plots
+plot(happiness ~ temperament, data=survey, las=1)
+# Calculate group means
+group_means <- tapply(survey$happiness, survey$temperament, mean)
+# Add group means with red points
+points(group_means, col="red", pch=16)
+```
+
+###b. (3 points) 
+
+**Perform an F-test to determine if there are any significant differences on the reported scale of happiness among introverts, extroverts and ambiverts. (2 pts)** 
+
+The R command for the F-test is 
+```{r}
+summary(aov(happiness ~ temperament, data=survey))
+```
+
+**Report the p-value and state your conclusion. (1 pt)**
+
+From the output, the p-value is 1.43&times;10<sup>-6</sup>. This means that at least one group is significantly different from the other.
+
+
+###c. (4 points) 
+
+**Perform pairwise t-tests with Bonferroni correction to adjust the p-values. (2 pts)** 
+
+Pairwise t-tests with Bonferroni correction: 
+```{r}
+pairwise.t.test(survey$happiness, survey$temperament, p.adjust="bonferroni")
+```
+
+**Determine from the adjusted p-values which pairs of groups show significant differences at the 5% level. (2 pts)**
+
+All of the adjusted p-values are less than 5%, which means that all pairs of groups show significant differences at the 5% level.
+
+
+###d. (5 points) 
+
+**Perform a randomization test by scrambling the `happiness` variable and calculate the values of R<sup>2</sup> of the scrambled data. Repeat the experiment at least 5000 times. (3 pts)**
+
+**Note: The result of your randomization test must be *reproducible*. Therefore, you must set a seed number before calling any function involving random numbers. Use `set.seed(your UIN number)`. You can simply follow the procedure in <a href="http://courses.atlas.illinois.edu/spring2018/STAT/STAT200/RProgramming/ANOVA.html" target="_blank">this week's notes</a>. You are not required to optimize the code.**
+
+Following the same method as in <a href="http://courses.atlas.illinois.edu/spring2018/STAT/STAT200/RProgramming/ANOVA.html" target="_blank">this week's notes</a>, the code is as follows.
+```{r, cache=TRUE}
+# Define a function that computes R^2
+computeR2 <- function(y,x) {
+  summary(lm(y~x))$r.squared
+}
+
+# Compute the original R^2
+(R20 <- computeR2(survey$happiness, survey$temperament))
+
+# Perform randomization test. Do 5000 experiments 
+set.seed(69678689)
+R2 <- replicate(5000, computeR2(sample(survey$happiness),survey$temperament))
+```
+
+**Make a histogram of these R = $\sqrt{R^2}$ and indicate the position of the original R (from the unscrambled data). (2 pt)**
+
+```{r}
+hist(sqrt(R2), freq=FALSE,breaks=50, xlim=c(0,0.2), xlab="R")
+# Add a vertical line at the position of the original R
+abline(v=sqrt(R20), col="red")
+```
+
+
+###e. (3 points) 
+
+**Use the result of (d) to estimate the p-value. How does this estimated p-value compare to the one computed in part (b)?**
+
+The estimated p-value is the fraction of the values in R2 greater than R20:
+```{r}
+(p_estimate <- mean(R2>R20))
+```
+The value is 0. This means that none of the 5000 values in R2 is greater than R20. So the estimated p-value is less than 1/5000 or 2&times;10<sup>-4</sup>. This is consistent with the p-value 1.43&times;10<sup>-6</sup> calculated from the F statistic in part (b). 
+
+
+<br />
+<br />
+<br />

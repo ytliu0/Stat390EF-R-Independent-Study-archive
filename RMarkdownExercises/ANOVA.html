@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<meta charset="UTF-8" />
+<meta name="keywords" content="Statistics, Stat 200, Stat 390, R, RMarkdown Exercise" />
+<head>
+<title>R Markdown Exercise: Multi-Sample Tests and Randomization Test</title>
+<link rel="stylesheet" href="../styles.css">
+    
+<style>
+ol.question {
+  margin: 0 0 1.5em;
+  padding: 0;
+  counter-reset: item;
+}
+
+ol.question > li {
+  margin: 0;
+  padding: 1em 0em 0 2em;
+  line-height: 1.25;
+  text-indent: -1em;
+  list-style-type: none;
+  counter-increment: item;
+}
+
+ol.question > li:before {
+  display: inline-block;
+  width: 1em;
+  padding-right: 0.5em;
+  font-weight: bold;
+  text-align: right;
+  content: counter(item, lower-alpha) ".";
+}
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+<article>
+<br />
+<h1>R Markdown Exercise: Multi-Sample Tests and Randomization Test</h1>
+    
+<p>Please use <a href="ANOVA_Randomization_template.Rmd" target="_blank">this template</a> (Right click and choose Save Link As...) for this RMarkdown exercise.</p>
+    
+<p>In this problem, you will analyze the Stat 100 survey 3 data in Fall 2015. The csv file can be downloaded <a target="_blank" href="Stat100_2015fall_survey03.csv">here</a>. The column variables are described on <a href="Stat100_2015fall_survey03.html" target="_blank">this webpage</a>. The purpose of this exercise is to find out if there is any association between happiness (a person's subjective well-being) and a person's temperament (introvert/extrovert/ambirvert).</p>
+    
+<ol class="question">
+
+<li>(2 points) Create box plots of 'happiness' for the introverts, extroverts and ambiverts. Add the group means to the box plots.</li>
+
+<li>(3 points) Perform an F-test to determine if there are any significant differences on the reported scale of happiness among introverts, extroverts and ambiverts. Report the p-value and state your conclusion.</li>
+
+<li>(4 points) Perform pairwise t-tests with Bonferroni correction to adjust the p-values. Determine from the adjusted p-values which pairs of groups show significant differences at the 5% level.</li>
+
+<li>(5 points) Perform a randomization test by scrambling the 'happiness' variable and calculate the values of R<sup>2</sup> of the scrambled data. Repeat the experiment at least 5000 times. Make a histogram of these R = &radic;<span style="text-decoration:overline;">R<sup>2</sup></span> and indicate the position of the original R (from the unscrambled data).<br /> 
+Note: The result of your randomization test must be <b>reproducible</b>. Therefore, you must set a seed number before calling any function involving random numbers. Use <code>set.seed(your UIN)</code> to set the seed. You can simply follow the procedure in <a href="../Week11/ANOVA.html" target="_black">this week's notes</a>. You are not required to optimize the code.</li>
+
+<li>(3 points) Use the result of (d) to estimate the p-value. How does this estimated p-value compare to the one computed in part (b)?</li>
+</ol>
+    
+<h2>Guidelines</h2>
+    
+<ul>
+<li>Write down your name in the R markdown file.</li>    
+<li>Generate an html file from the markdown file by knitr.</li>
+<li>You should download the data file to your computer and then load it to R, instead of loading it directly from the website. This is for the purpose of reproducibility: the file at the remote website may be changed or disappear later and your R markdown file cannot be run. By saving it to your computer in the same location of the markdown file, you can be sure that your markdown result is reproducible.</li>
+<li>Show all codes and output. If your code chunk contains more than a few lines, include a brief explanation of what you are doing unless you write your code in a self-explanatory style.</li>
+<li>Label and state the answers to each question clearly. Don't just show the code and say that the information is in the output.</li>
+</ul>
+
+<br />
+    
+<h2>Solution</h2>
+<ul>
+<p><li><a href="ANOVA_Randomization.Rmd">RMarkdown file</a> (Download the file and save it in the same folder as the data file you downloaded above. Open it with R Studio and then click "Knit".)</li></p>
+<p><li><a href="ANOVA_Randomization.html">Knitted html file</a></li></p>
+</ul>
+</article>
+</div>
+<br/><br />
+</body>
+</html>

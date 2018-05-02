@@ -1,0 +1,146 @@
+---
+title: "Introduction to R"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+
+<!-- Open all external html links in a new browser window  -->
+<script type="text/javascript">
+      // Creating custom :external selector
+      $.expr[':'].external = function(obj){
+          return !obj.href.match(/^mailto\:/)
+                  && (obj.hostname != location.hostname);
+      };
+
+      $(function(){
+        // Add 'external' CSS class to all external links
+        $('a:external').addClass('external');
+
+        // turn target into target=_blank for elements w external class
+        $(".external").attr('target','_blank');
+
+      })
+</script>
+
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+
+## Objective
+
+R is one of the most popular statistical software used today. Our goal is to introduce the basic operations of R and use it as a pedagogical tool to demonstrate some of the concepts you will learn in Stat 200. 
+
+## Textbook
+
+[*R Programming for Data Science*](https://leanpub.com/rprogramming) by Roger D. Peng
+
+This is an ebook, available at Leanpub https://leanpub.com/rprogramming. This is a required textbook. All books at Leanpub have "variable pricing". For this particular book, the suggested price is $20, but you can choose how much you want to pay by moving the pricing slider. The minimum price for this book is $0, meaning that you can get it for free if you want. 
+
+The book is written based on a Coursera course the author teaches. Almost every topic in the book has accompanying videos on youtube, and you can find links to the videos in the book. You can choose to watch those videos instead of reading the book. However, the book will come in handy when you want to have a quite review on a topic or search for specific topics or R commands .
+
+## Installation of R 
+
+To complete the assignments on R in this course, you need to download and install R on your computer. R works on Windows, Mac OS X, and Linux systems. It can be downloaded at http://cran.r-project.org/. There is also an integrated development environment available for R that is built by RStudio, which can be downloaded at https://www.rstudio.com/products/rstudio/. You need to install R first before you can install RStudio. **While you can complete most of the assignments in this course using the standard R console, it is highly recommended that you download and use RStudio.** 
+
+The installation of R and RStudio is straightforward. For a step-by-step instruction, watch the videos linked on P.12 of the textbook: 
+
+[Installing R on Windows](https://www.youtube.com/watch?v=Ohnk9hcxf9M&feature=youtu.be)   
+[Installing R on the Mac](https://www.youtube.com/watch?v=uxuuWXU-7UQ&feature=youtu.be)    
+[Installing RStudio](https://www.youtube.com/watch?v=bM7Sfz-LADM&feature=youtu.be)  
+
+You can also watch the following video by a former Stat 200 student Amanda Hwu here at U of I for Stat 100 Honor project:  
+
+[Downloading & Exploring RStudio](https://www.youtube.com/watch?v=x4Y17w6ZfuU&feature=youtu.be)  
+
+## swirl
+
+Like learning many other complex skills, learning R requires you to spend time practicing it. [swirl](http://swirlstats.com/) is a software package of R originally  developed by a graduate student in Biostatistics department at Johns Hopkins University. It is designed for beginners to learn R interactively. There are 15 lessons on R programming. Each lesson takes about 10-20 minutes to complete. I recommend that you go through every lesson over the course of the semester at least once. It is highly recommended that you revisit the lessons regularly to get yourself familiar with the R commands and syntax. As mentioned above, you need to keep practicing it over and over in order to be a "fluent" user of the R language. So think of going through the exercises in the lessons as practicing the basic skills of a new musical instrument.
+
+### Install and Run swirl  
+
+You need to first install R before you can install swirl.  
+
+To install swirl, open R (or RStudio) and type 
+```{r, eval=FALSE}
+install.packages("swirl")
+```
+You will then be asked to select a CRAN mirror site to download the package. Any mirror site in the US should be fine (assuming you are installing it in the US). It should take less than a few seconds to install the package. After the installation is completed, type 
+```{r, eval=FALSE}
+library(swirl)
+```
+to load the package. If you see the error message
+```{r, eval=FALSE}
+Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) :
+there is no package called 'stringi'
+Error: package or namespace load failed for 'swirl' 
+```
+use the following commands to install the required package 'stringi':
+```{r, eval=FALSE}
+options(install.packages.check.source = "no")
+install.packages('stringi') 
+```
+The <code>library(swirl)</code> command should work now. 
+
+Next type 
+```{r, eval=FALSE}
+install_from_swirl("R Programming")
+```
+to install the R programming course. If you see an error message that looks something like 
+```{r, eval=FALSE}
+Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) :
+there is no package called 'curl' 
+```
+install the required package 'curl' using the following commands:
+```{r, eval=FALSE}
+options(install.packages.check.source = "no")
+install.packages('curl')
+```
+
+Finally, type 
+```{r, eval=FALSE}
+swirl()
+```
+to run swirl. The first time you run swirl, there will be brief introduction texts to describe how swirl works. Then you will be asked to select a course from a list. Choose the R programming. You will then be asked to choose a lesson. There are 15 lessons in the R programming course. You can start the first lesson or you can do it at a later time.
+
+Now that you have installed swirl. The next time you want to run swirl, open R and type <code>library(swirl)</code> then <code>swirl()</code>. 
+
+## Importance of Constant Practice
+
+Just like learning to play piano, watching other people playing piano doesn't make you a great player. You have to practice it, and you have to practice it constantly. The same is true for learning R. In this course, you will be introduced to many R commands and functions. You have to practice it over and over in order to be familiar with these commands and functions. Cognitive science sheds light on the connection between repetition and learning. 
+
+A stimulus of any sort triggers a pattern of signals transmitted from neurons to neighboring clusters of neurons. Afterwards, the activated neurons remain sensitized for hours or possibly days. If the stimulus is an isolated event and the pattern is not repeated (rehearsed) during that period, the event is likely to be lost from memory. If it is repeated, the neuronal group undergoes *long-term potentiation (LTP)*, developing greater sensitivity and a tendency to fire together rapidly. Enough repetition binds the neurons together so if one fires, they all do ("neurons that fire together, wire together"), forming a new memory trace. Learning a procedure &ndash; say, for solving a specific type of problem &ndash; involves forming a number of such traces. Repetition continues to strengthen the connections among the neurons, so that the procedure becomes more skillful and requires progressively less conscious effort, eventually reaching the automaticity that characterizes expert performance ([*How the Brain Learns*, Sousa](https://books.google.com/books/about/How_the_Brain_Learns.html?id=IR9sjPa3d-4C), 2011, Ch. 3).
+
+An implication is that if you read about an R command from a book/a set of notes/swirl and don't encounter the command again, it should come as no surprise in a later time when you feel as if you never saw it before in your life.
+
+Doing the swirl exercises is one way of practice. Extensive research reveals that 70% to 90% of new learning is forgotton within 18 to 24 hours after the lesson. That's why it is important that you should do the exercises at least a few times in *spaced intervals*. For example, do exercise 2 in the second week and then do it again in week 5, 8, 11 and 14. 
+
+## Assignment
+
+Week 1's assignment is straightforward:
+
+- install R 
+- install swirl
+- Complete lessons 1 and 3 of R programming in swirl (you'll do lesson 2 later)
+- Watch one video on setting your working directory on [Windows](https://www.youtube.com/watch?v=XBcvH1BpIBo) or on [Mac](https://www.youtube.com/watch?v=8xT3hmJQskU)
+- Do Week 1 syllabus quiz on [Lon Capa](http://lon-capa.uiuc.edu)
+- optional reading: Chapter 3 of the text (*History and Overview of R*)
+
+After finishing a swirl lesson, you'll see this question: "Would you like to receive credit for completing this course on Coursera.org?" Just answer "No", you're just using swirl to practice R commands, not for any credit.
+
+If everything goes well and you want to do more, feel free to work on other lessons in swirl. You can also start reading Chapter 5 the text (*R Nuts and Bolts*) if you want. You can save everything you type in the R console, including swirl lessons, to a text file from the File menu.
+
+<br /><br />

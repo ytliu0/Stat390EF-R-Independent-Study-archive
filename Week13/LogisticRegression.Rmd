@@ -1,0 +1,320 @@
+---
+title: "Logistic Regression"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: require file - Default.csv
+
+## Formalism
+
+In the previous notes, we introduced the concept of maximum likelihood and applied it to box models and simple logistic regression. To recap, we consider a binary variable $y$ that takes the values of 0 and 1. We want to use the maximum likelihood method to estimate the parameters $\{ p(x) \}$. These are the fractions, or equivalently the probabilities, of the $y=1$ outcome as a function of another variable $x$. In the box models, $x$ is categorical.  In simple logistic regression, $x$ can be a continuous variable (as well as discrete categorical variable, as will be seen below). The maximum likelihood estimate for $\{ p(x) \}$ is to find the parameters to maximize the log-likelihood function
+$$\ln L(\{ p(x) \}) = \sum_{i=1}^N \{ y_i \ln p(x_i) + (1-y_i) \ln [1-p(x_i)] \}$$
+In a k-box models, $x$ is a factor variable with k levels, $\{ p(x) \}$ contains k values corresponding to the k parameters $p_1, p_2,\cdots,p_k$. If $x$ is a continuous variable, $\{ p(x) \}$ in principle has infinite possible values and we have to use another approach: specify a functional form for $p(x)$ containing a few parameters. In (one-variable) logistic regression, we specify the function having the form 
+$$p(x) = p(x; \beta_0,\beta_1) =  \frac{e^{\beta_0 + \beta_1 x}}{1+e^{\beta_0+\beta_1 x}} 
+= \frac{1}{1+e^{-\beta_0-\beta_1 x}}$$ 
+The logistic function is constructed so that the log odds, $\ln [p/(1-p)]$, is a linear function of $x$:
+$$\ln \frac{p}{1-p} = \beta_0 + \beta_1 x$$
+The two parameters $\beta_0$ and $\beta_1$ are determined by maximizing the log-likelihood function
+$$\ln L(\beta_0,\beta_1) = \sum_{i=1}^N \{ y_i \ln p(x_i; \beta_0,\beta_1) + (1-y_i) \ln [1-p(x_i;\beta_0,\beta_1)] \}$$
+
+The logistic regression is a probability model that is more general than the box model. Setting ln(odds) = &beta;<sub>0</sub> + &beta;<sub>1</sub> x is just the simplest model. We can consider a model in which ln(odds) depends on multiple variables $X_1$, $X_2$, ..., $X_k$:
+$$\ln \frac{p}{1-p} = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_p X_k$$
+The probability can then be written as 
+$$p(X_1, X_2, \cdots, X_k; \beta_0, \beta_0, \beta_1,\cdots , \beta_k) = 
+\frac{e^{\beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_k X_k}}{1+e^{\beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_k X_k}} = \frac{1}{1+e^{-\beta_0 - \beta_1 X_1 - \beta_2 X_2 - \cdots - \beta_k X_k}}$$
+The parameters $\beta_0$, $\beta_1$, ..., $\beta_k$ are determined by maximizing the corresponding log-likelihood function. 
+
+Note that in general the variables $X_1$, $X_2$, ..., $X_k$ are not restricted to be continuous variables. Some of them can be continuous variables and some of them can be discrete categorical variables. We can also make ln(odds) depend nonlinearly on a variable $x$. For example, we can consider a model where 
+$$\ln\frac{p}{1-p} = \beta_0 + \beta_1 x + \beta_2 x^2$$ 
+The ln(odds) is still linear in the fitting parameters $\beta_0$, $\beta_1$, $\beta_2$. We can set $X_1=x$ and $X_2=x^2$ and the ln(odds) equation becomes 
+$$\ln\frac{p}{1-p} = \beta_0 + \beta_1 X_1 + \beta_2 X_2$$ 
+Thus we can still use R's `glm()` function to fit this model. 
+
+In the special case where $\ln[p/(1-p)]=\beta_0+\beta_1 x$ and $x$ is a factor variable with k levels, $p(x)$ has only k values and it can be shown that the logistic regression model reduces to the k-box model. Therefore, the k-box model is a special case of a logistic regression model. 
+
+Another special case is to assume $\ln[p/(1-p)]=\beta_0$, or $p=e^{\beta_0}/(1+e^{\beta_0})$. In this model, the probability $p$ is independent of any other variable and is the same for all data points. This is equivalent to the one-box model we considered previously. This is also called the *null model*. The probability $p$ in the null model is equal to the value of $y$ averaged over all data points. 
+
+In the following, we use the credit card data considered in the previous notes to demonstrate how to use R to fit various logistic regression models. 
+
+## Logistic Regression Examples
+
+Recall that the credit card data is a <a href="http://finzi.psych.upenn.edu/library/ISLR/html/Default.html" target="_blank">simulated data set</a> freely available from the ISLR package for the book <a href="http://www-bcf.usc.edu/~gareth/ISL/" target="_blank"><i>An Introduction to Statistical Learning</i></a>. 
+A copy of the data has been uploaded <a href="Default.csv" target="_blank">here</a>. You can download it to your R's work space and then load it to R using the command
+```{r}
+Default <- read.csv("Default.csv")
+``` 
+The data contain 10,000 observations and 4 columns. The first column, `default`, is a two-level (No/Yes) factor variable indicating whether the customer defaulted on their debt. The second column, `student`, is also a two-level (No/Yes) factor variable indicating whether the customer is a student. The third column, `balance`, is the average balance that the customer has remaining on their credit card after making their monthly payment. The last column, `income`, lists the income of the customer. 
+
+For convenience of later calculations, we create a new column named `y`. We set `y` to 1 for defaulted customers and 0 for undefaulted customers. This can be achieved by the command 
+```{r}
+Default$y <- as.integer(Default$default=="Yes")
+```
+
+As stated in the previous notes, R's `glm()` function can be used to fit families of generalized linear models. The logistic regression model belongs to the 'binomial' family of generalized linear models. The syntax of `glm()` for logistic regression is very similar to the `lm()` function:
+```{r, eval=FALSE}
+glm(formula, data=data_name, family=binomial)
+```
+Like `lm()` in linear regression, the formula syntax can take variety of forms. The simplest form is y ~ x, but it can also be y ~ x1 + x2 + x3 for multiple variables.  
+
+### Null Model 
+
+The simplest model is the null model, where we only fit one parameter:
+```{r}
+fit0 <- glm(y ~ 1, data=Default, family=binomial)
+```
+Just like linear regression, we can see the coefficient by typing `fit0` or `summary(fit0)`.
+```{r}
+fit0
+summary(fit0)
+```
+The output is also similar to linear regression. We only have one parameter: the intercept. The fitted equation is $\ln[p/(1-p)]=-3.36833$ or $p = e^{-3.36833}/(1+e^{-3.36833})=0.0333$. This means that 3.3% of the customs defaulted, the same result as the one-box model we considered in the previous note. If we don't have any other information about a customer, we can only predict that the probability for this customer to default is 3.3%.
+
+### Regression with Binary Factor Variable
+
+The column named `student` is a No/Yes binary factor variable, with the reference level set to "No" by default since "N" precedes "Y" in alphabetical order. We can fit a logistic regression model predicting `y` from `student` using the command 
+```{r}
+fit1 <- glm(y ~ student, data=Default, family=binomial)
+summary(fit1)
+```
+Since `student` is a two-level factor variable, `glm()` creates a binary variable `studentYes`, which is equal to 1 for the value "Yes" in 'student' and 0 for the value "No" in `student`. The intercept and slope are the coefficients for ln(odds). So the fitted equation is 
+$$\ln \frac{p}{1-p} = -3.50413 + 0.40489 S $$
+or 
+$$ p = \frac{e^{-3.50413+0.40489S}}{1+e^{-3.50413+0.40489S}}$$
+Here we use $S$ to denote the binary variable `studentYes` for simplicity. We see that the slope is positive. This means that ln(odds) is larger for a student, which also translates to the statement that a student has a higher probability to default than a non-student. `summary(fit1)` also provides the information of the standard errors, z-values and p-values of the fitted coefficients. These parameters are analogous to the standard errors, t-values and p-values in linear regression. The small p-value for the slope indicates that there is a significant difference in ln(odds) between students and non-students. 
+
+For non-students, $S=0$. So ln(odds) = -3.50413 and p(non-students) = 0.02919. For students, $S=1$. So ln(odds)=-3.50413+0.40489=-3.09924 and p(students) = 0.04314. This means that about 2.9% of non-students defaulted and 4.3% of students defaulted. These numbers are exactly the same as the two-box model we considered in the previous notes. This is not a coincidence. It can be shown that a logistic regression on a factor variable produces the same result as a box model.
+
+Recall that the `predict()` function can be used to predict the outcome of new data. In our example, there are only two possible values for `student`: "No" and "Yes" and we can obtain the predicted values using the command 
+```{r}
+predict(fit1, newdata=data.frame(student=c("No","Yes")))
+```
+The function returns the values of ln(odds) by default. If we want the values of probability, we use the option `type="response"`:
+```{r}
+predict(fit1, newdata=data.frame(student=c("No","Yes")), type="response")
+```
+
+### Regression with a Continuous Variable
+
+At the end of the previous notes, we fit a logistic regression model predicting `y` from `balance`, which is a continuous variable. 
+```{r}
+fit2 <- glm(y ~ balance, data=Default, family=binomial)
+summary(fit2)
+```
+The slope is positive, indicating that the fraction of defaults increases with increasing values of `balance`. The fitted values of the probability of the data are stored in the vector `fit2$fitted.values`. The name can be abbreviated. Here is a plot of the fitted probabilities: 
+```{r}
+plot(fit2$fitted ~ Default$balance, pch='.', xlab="balance", ylab="Probability", las=1)
+```
+
+To calculate the probability of default for a given value of `balance`, we can use the fitted coefficients to calculate ln(odds) and then use it to calculate the probability. Alternative, we can use the `predict()` function as shown above. For example, to calculate the probability of default for `balance` = 1850, we use the command 
+```{r}
+predict(fit2, newdata=data.frame(balance=1850), type="response")
+```
+Hence the probability that the customer will default is 38.3% if the credit balance is $1850.
+
+### Regression with Multiple Variables
+
+Since we find that the probability of default depends on balance as well as whether or not the customer is a student, we can use these two variables to fit a model predicting `y` from both `balance` and `student`:
+```{r}
+fit3 <- glm(y ~ student + balance, data=Default, family=binomial)
+summary(fit3)
+```
+This model has three parameters: one intercept and two slopes. The ln(odds) equation is 
+$$\ln \frac{p}{1-p} = -10.75 -0.7149 S + 0.005738 B$$
+For simplicity, we use the symbol $S$ for `studentYes` and $B$ for `balance`. Here we find something interesting. Previously, when we fit $y$ with $S$ alone, the slope for $S$ is positive, meaning that students are more likely to default compared to non-students. Now when we fit $y$ with both $S$ and $B$, the slope for $S$ is negative, meaning that for a fixed value of `balance`, students are less likely to default compared to non-students. This is Simpson's paradox. 
+
+To understand the discrepancy, we plot the probability as a function of `balance` for both students and non-students. Setting $S=0$ in the ln(odds) equation, we obtain the ln(odds) equation for non-students:
+$$\ln \frac{p}{1-p} = -10.75 + 0.005738 B \ \ \ \mbox{(non-students)}$$
+Setting $S=1$ we obtain the ln(odds) equation for students:
+$$\ln \frac{p}{1-p} = -11.46 + 0.005738 B \ \ \ \mbox{(students)}$$
+The curves for students and non-students can be plotted using the `curve()` function. <a href="#fn01" id="fnref01"><sup>1</sup></a> 
+```{r}
+# Define the logistic function
+logit <- function(x, beta0,beta1) {
+  1/(1+exp(-beta0-beta1*x))
+}
+
+# Curve for non-students
+curve(logit(x,-10.75,0.005738), xlim=c(0,2650), xlab="balance", 
+      ylab="Probability",las=1)
+# Curve for students
+curve(logit(x, -11.46, 0.005738), col="red", add=TRUE)
+# Overall probability for non-students and students
+abline(h=0.0292, lty=2)
+abline(h=0.0431, col="red", lty=2)
+legend(0,1,c("non-students", "students", "non-students (overall)", 
+             "students (overall)"), lty=c(1,1,2,2), col=1:2)
+```
+
+In this plot, black solid line is the probability of default for non-students versus balance; red solid line is the probability of default for students versus balance; black horizontal line is the probability of default for non-students (0.0292) averaged over all values of `balance`; red horizontal line is the  probability of default for students (0.0431) averaged over all values of `balance`. The plot clearly shows that at every value of `balance`,the student default rate is at or below that of the non-student default rate. The reason why the overall default rate for students is higher must be due to the fact that students tend to have higher levels of `balance`. This can be seen from the following box plots.
+```{r}
+plot(balance ~ student, data=Default)
+```
+
+This explains the paradox. Students tend to have a higher level of credit balance, which is associated with higher default rates. Therefore, even though at a given balance students are less likely to default compared to non-students, the overall default rate for students is still higher. This is an important information for a credit card company. A student is riskier than a non-student if no information about the student's credit card balance is available. However, a student is less risky than a non-student with the same credit card balance!
+
+The credit card data has a column named `income`. We can include it in the model in addition to `balance` and `student`:
+```{r}
+fit4 <- glm(y ~ balance + student + income, data=Default, family=binomial)
+summary(fit4)
+```
+We see that the p-value of the slope for `income` is large, suggesting that `y` is not dependent on the `income` variable. Including `income` in the model may not improve the accuracy of the model substantially. This raises the question: how do we know if a model is better than another? In linear regression, both R<sup>2</sup> and the residual standard error can be used to judge the "goodness of fit". Are there similar quantities in logistic regression? 
+
+## Deviance and McFadden's Pseudo R<sup>2</sup>
+
+Recall that in logistic regression the coefficients are determined by maximizing the log-likelihood function. Thus a good model should produce a large log-likelihood. Recall that the likelihood is a joint probability, and  probability is a number between 0 and 1. Also recall that ln(x) is negative if x is between 0 and 1. It follows that log-likelihood is a negative number, so larger log-likelihood means the number is less negative. Dealing with negative numbers is inconvenient. There is a quantity called *deviance*, which is defined to be -2 times the log-likelihood: 
+$${\rm Deviance} = -2 \ln ({\rm likelihood})$$
+Since log-likelihood is negative, deviance is positive. Maximizing log-likelihood is the same as minimizing the deviance. 
+
+In `glm()`, two deviances are calculated: the residual deviance and null deviance. The residual deviance is the value of deviance for the fitted model, whereas null deviance is the value of the deviance for the null model, i.e. the model with only the intercept and the probability $P(y=1)$ is the same for all data points and is equal to the average of $y$. Hence the null deviance $D_{\rm null}$ is given by the formula 
+$$D_{\rm null} = -2\ln L_{\rm null} = -2 \sum_{i=1}^n [y_i \ln \bar{y} + (1-y_i) \ln (1-\bar{y})]$$
+From summary output of the models above, we see that the deviance of the null model is 2920.6.<a href="#fn02" id="fnref02"><sup>2</sup></a> 
+
+The difference between the null deviance and residual deviance provides some information on the "goodness of fit" of the model. From the summary output of the models considered above, we see that residual deviance for `fit1` (predicting P(y=1) from `student`) is 2908.7. This is only slightly smaller than the null deviance. For `fit2` (predicting P(y=1) from `balance`), the residual deviance is 1596.5, substantially smaller than `fit1`. For `fit3` (predicting P(y=1) from `balance` and `student`), the residual deviance is 1571.7, slightly better than `fit2`. For `fit4` (predicting P(y=1) from `balance`, `student` and `income`), the residual deviance is 1571.5, almost the same as `fit3`. We therefore conclude that adding `income` to the model does not substantially improve the model's accuracy. 
+
+The null deviance in logistic regression plays a similar role as SST in linear regression, whereas residual deviance plays a similar role as SSE in linear regression. In linear regression, R<sup>2</sup> can be written as 
+$$R^2 = \frac{SSM}{SST} = \frac{SST-SSE}{SST}=1-\frac{SSE}{SST}$$
+Similarly, in logistic regression, one can define a quantity similar to R<sup>2</sup> as 
+$$R_{MF}^2 = 1-\frac{D_{\rm residual}}{D_{\rm null}}$$
+This is called McFadden's R<sup>2</sup> or pseudo R<sup>2</sup>. McFadden's R-squared also takes a value between 0 and 1. The larger the $R_{MF}^2$, the better the model fits the data. It can be used as an indicator for the "goodness of fit" of a model. For the model `fit3`, we have 
+$$R_{MF}^2=1-\frac{1571.7}{2920.6}=0.46$$
+The R returned by the logistic regression in our <a href="http://dataprogram.stat.illinois.edu/" target="_blank">data program</a> is the square root of McFadden's R-squared. The data program also provides a $\chi^2$, which is analogous to the F-value in linear regression. It can be used to calculate a p-value from which we can determine if at least one of the slopes is significant. The returned $\chi^2$ is simply the difference between the null deviance and residual deviance. It can be shown that for a model with $p$ parameters and the number of data is sufficiently large, $D_{\rm null}-D_{\rm residual}$ follows a $\chi^2$ distribution with $p$ degrees of freedom under the null hypothesis that all slopes are equal to 0.
+
+##Confusion Matrix, Prediction, Type I and Type II Errors
+
+So far, we have been using logistic regression to predict the probability of y=1. In many applications, however, we need to make a prediction whether a particular observation is y=1 or y=0. For example, if we use a logistic regression to build a spam filter (as in one of the Bonus 4 problems), we want to classify emails to be spams and non-spams. We will have to classify an observation as y=1 or y=0 based on the probability P(y=1) computed from the logistic regression. One common way to do this is to specify a threshold probability p<sub>th</sub>: predict y=1 if P(y=1) > p<sub>th</sub> and predict y=0 if P(y=1) &le; p<sub>th</sub>. One reasonable choice of p<sub>th</sub> is 0.5. 
+
+As an example, consider the logistic regression model `fit3` above. Setting p<sub>th</sub>=0.5, we predict y=1 if P(y=1) > 0.5 and predict y=0 if P(y=1) &le; 0.5. Since the probability is stored in the vector `fit3$fitted.values`, we can calculated the predicted values of `y` using the following command. 
+```{r}
+Default$predicted <- as.integer(fit3$fitted.values > 0.5)
+```
+We can compare our prediction and the actual values of `y` by constructing the following contingency table:
+```{r}
+(tbl <- with(Default, table(predicted,y)))
+```
+This 2&times;2 matrix is known as the *confusion matrix*. The diagonal elements (`r tbl[1,1]` and `r tbl[2,2]`) are the correct predictions, and the off-diagonal elements (`r tbl[1,2]` and `r tbl[2,1]`) are the wrong predictions. 
+
+The *prediction error* or *misclassification rate* is defined to be the proportion of wrong predictions. From the confusion matrix, we have 
+
+prediction error = (`r tbl[1,2]` + `r tbl[2,1]`)/10000 = `r 1e-4*(tbl[1,2]+tbl[2,1])`. 
+
+A more direct approach to compute the prediction error is to use this command:
+```{r}
+with(Default, mean(predicted != y))
+```
+The result says that the model makes wrong predictions `r 0.01*(tbl[1,2]+tbl[2,1])`% of the times. It sounds good, but we know the majority of the customers don't default. As computed previously, only 3.33% of customers defaulted. If we construct a simple model that predicts everyone has y=0, the prediction error will be 3.33%. From this perspective, a prediction error of `r 0.01*(tbl[1,2]+tbl[2,1])`% is only a small improvement over the simple model. 
+
+As you have learned in Stat 200, two other ways of characterizing errors are the Type I and Type II errors. Type I error rate characterizes the false positive rate, and Type II error rate characterizes the false negative rate. In our context, "negative" is associated with y=0 and "positive" is associated with y=1. The Type I error rate is the proportion of y=0 (negative) cases misclassified as y=1 (positive). The Type II error rate is the proportion of y=1 (positive) cases misclassified as y=0 (negative). From the confusion matrix, we have 
+
+Type I error rate = `r tbl[2,1]`/(`r tbl[1,1]` + `r tbl[2,1]`) = `r with(Default, mean(predicted[!y]))` 
+
+Type II error rate = `r tbl[1,2]`/(`r tbl[1,2]` + `r tbl[2,2]`) = `r with(Default, mean(!predicted[y==1]))`
+
+The two types of error rates can also be computed directly by the following commands:
+```{r}
+# Type I error rate
+with(Default, mean(predicted[y==0]))
+# Type II error rate
+with(Default, mean(predicted[y==1]==0))
+```
+In the first command, `predicted[y==0]` takes a subset in which `y=0`. The variable `predicted` has only two possible values 0 and 1. Thus, `mean(predicted[y==0])` counts the proportion of `predict=1` in the subset `y=0`: the proportion of y=0 cases wrongly predicted to be y=1. This is precisely the Type I error rate. Similarly, `mean(predicted[y==1]==0)` calculates the proportion of y=1 cases wrongly predicted to be y=0.
+
+This Type II error rate means that the model fails to identify `r with(Default, round(mean(predicted[y==1]==0)*100,1))`% of the defaulted customers. If the purpose of building the model is to detect defaulted customers, this model performs poorly. One way to decrease the Type II error is to set a lower value of the threshold probability p<sub>th</sub>. For example, we can set p<sub>th</sub>=0.3 instead of 0.5. We can recalculate the predictions and error rates.
+```{r}
+# new prediction 
+Default$pred_new <- as.integer(fit3$fitted.values > 0.3)
+# misclassification error rate
+with(Default, mean(pred_new != y))
+# Type I error rate
+with(Default, mean(pred_new[y==0]))
+# Type II error rate
+with(Default, mean(pred_new[y==1]==0))
+```
+We see that lowering the threshold probability decreases the Type II error rate and increases the Type I error rate. The new Type II error rate is still rather high. Decreasing p<sub>th</sub> further can further reduce the Type II error rate, but the Type I error rate will increase. This is the tradeoff between Type I and Type II errors you have learned in Stat 200. The only way to reduce both types of error is to build a better model. 
+
+Finally, we mention two related terms. Associated with the Type I and Type II error rates are *specificity* (true negative rate) and *sensitivity* (true positive rate, power, the recall, or probability of detection). Specificity = 1-(Type I error rate) measures the proportion of negatives (y=0) that are correctly identified as such. Sensitivity = 1-(Type II error rate) measures the proportion of positives (y=1) that are correctly identified as such.
+
+<br /> <hr /> <br />
+
+## Footnotes
+
+<ol>
+<li id="fn01"><p>There is another method to make the same plot. We can use the `predict()` function to generate two vectors for the predicted values of probability for both students and non-students. Then we make the plot using `plot()` and `lines()` as shown below.</p>
+```{r}
+# Generate a vector of length 100 uniformly spaced between 0 and 2650 (range of 'balance')
+x <- seq(0,2650, length=100)
+# Compute the probabilities for both students and non-students at balance values in x
+fitted_y_nonstudents <- predict(fit3,
+                                newdata=data.frame(student="No",balance=x),
+                                type="response")
+fitted_y_students <- predict(fit3,
+                             newdata=data.frame(student="Yes", balance=x), 
+                             type="response")
+# Plot curves for both students and non-students
+plot(x, fitted_y_nonstudents, type='l', las=1, xlab="balance", 
+     ylab="Probability")
+lines(x, fitted_y_students, col="red")
+# Overall probability for non-students and students
+abline(h=0.0292, lty=2)
+abline(h=0.0431, col="red", lty=2)
+legend(0,1,c("non-students", "students", "non-students (overall)", 
+             "students (overall)"), lty=c(1,1,2,2), col=1:2)
+```
+
+<a href="#fnref01">&#8617;</a></li>
+
+<li id="fn02"><p>We can also calculate the null and residual deviance directly and compare them with the results of the `glm()` function. We first write a function to compute the deviance. Recall that deviance is defined as -2 times the log-likelihood. Explicitly, 
+$$D = -2 \ln L = -2 \sum_{i=1}^N [y_i \ln p_i + (1-y_i)\ln(1-p_i)]$$
+In R, the above formula can be vectorized for any given vectors y and p:</p>
+```{r}
+# Function that calculates the deviance for given vectors y and p
+deviance <- function(y,p) {
+  -2*sum( y*log(p) + (1-y)*log(1-p) )
+}
+```
+For null deviance, $p_i=\bar{y}$ is the same for all data points. For the credit card data, the null deviance is
+```{r}
+ybar <- mean(Default$y)
+p_null <- rep(ybar, length(Default$y)) 
+D_null <- deviance(Default$y, p_null)
+D_null
+```
+We see that we get the same number as in the summary output of the `glm()` function (type, e.g., `summary(fit3)$null.deviance` to extract the null deviance directly from the summary output). To compute the residual deviance of e.g. the model `fit3`, we need to know the fitted values of the probability $p_i$ for all data points. These values are stored in the vector `fit3$fitted.values`, so we can simple pass it to the `deviance()` function:
+```{r}
+D_residual <- deviance(Default$y, fit3$fitted.values)
+D_residual
+```
+<p>Again, we obtain the same number as in the output of `summary(fit3)` (type `summary(fit3)$deviance` to extract the residual deviance directly). 
+<a href="#fnref02">&#8617;</a></p></li>
+</ol>
+
+<br />
+<br />
+<br />

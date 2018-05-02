@@ -1,0 +1,356 @@
+---
+title: "Introduction to Monte Carlo Simulations"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: 
+
+## Introduction 
+
+Life is full of uncertainties. We can't predict with certainty whether it will be sunny on someone's wedding day. We don't know how much money we will earn in the stock we invest in. We don't know with certainty how the housing prices will change over the next few years. Uncertainties arise for various reasons. For example, they arise from the lack of complete information, or from a complex system where a slight change in condition could snowball and lead to a drastically different final outcome. However, we can still estimate the chances of the outcomes of how things will turn out in spite of these uncertainties.
+
+Monte Carlo simulations are a technique to simulate the uncertainties by building models with random samplings. The uncertainties are modeled by probability distributions. Since we are dealing with stochastic (random) processes, the calculations are repeated over and over in a typical simulation. Depending on the number of uncertainties and the parameter ranges specified by the model, a Monte Carlo simulation could involve thousands or tens of thousands of calculations. The simulation produces distributions of possible outcomes, and they can then be used to calculate useful statistics. The Monte Carlo approach is widely used by professionals in various fields such as finance, insurance, science and engineering. 
+
+In this page, we will use a financial investment as an example to demonstrate the process of a Monte Carlo simulation. Before we begin, we want to mention that a model is at least as important as the simulation results. As the saying goes, "garbage in, garbage out". If a model fails to capture an important part of the nature of stochastic processes relevant to the problem, the simulation results could be completely wrong. Building a good model may not be easy. It involves a great deal of knowledge about the problem we want to simulate and sometimes requires expertise in the relevant subject. As a result, we will only briefly mention model building here. We will instead focus on the simulation technique and the analysis of simulation results.
+
+## Financial Investment
+
+Suppose we invest $10,000 in a particular stock. We want to estimate how much money we will get in 10 years. The change of stock prices is stochastic, meaning that they change randomly. The stock returns can be treated as random events. 
+
+Suppose the annual returns of this stock in the next 10 years are 0.2, 0.01, 0.3,.... Then by the end of the first year, we will earn an interest of $10,000&times;0.2 = $2,000 and our total balance will be $10,000 + $2,000 = $12,000 = $10,000&times;(1+0.2). By the end of the second year, we will earn an interest of $12,000&times;0.01 = $120 and our total balance will be $12,000 + $120 = $12,120 = $10,000&times;(1+0.2)&times;(1+0.01). Doing the same calculation for the third year, we find our total balance will be $10,000&times;(1+0.2)&times;(1+0.01)&times;(1+0.3) = $15,756. In general, if the annual return rates in the next 10 years are $r_1, r_2, \cdots, r_{10}$, the total amount of money we will get (including our initial $10,000) is 
+$$A = P (1+r_1)(1+r_2)\cdots (1+r_{10}) = P \prod_{i=1}^{10} (1+r_i)$$
+where $P=$$10,000 is the initial amount of money we invest in the stock. To simulate the possible outcomes in 10 years, we need to build a model for the annual return rates.
+
+### Simple Model
+
+One reasonable approach to build a model is to look at how this particular stock performed in the past. It is relatively easy to get the data of a particular stock nowadays. Suppose the annual returns of this hypothetical stock in the past 35 years (from 1981 to 2015) are as follows.
+```{r}
+historical_stock_return <- c(-0.0470239, 0.2041906, 0.2233716, 0.06146142, 0.3123515, 0.1849458, 0.05812722, 0.1653719, 0.3147518, -0.03064452, 0.3023484, 0.07493728, 0.09967052, 0.01325921, 0.371952, 0.2268097, 0.3310365, 0.2833795, 0.2088535, -0.09031819, -0.1184976, -0.2196605, 0.283558, 0.1074278, 0.04834477, 0.1561256, 0.05484735, -0.3655234, 0.2593523, 0.1482109, 0.02098375, 0.1589059, 0.3214509, 0.1352442, 0.01359949)
+```
+The data is stored in the variable `historical_stock_return`, which can be used to make plots.
+```{r}
+plot(1981:2015,historical_stock_return, pch=16, xlab="Year", ylab="Annual Return")
+lines(1981:2015,historical_stock_return)
+```
+
+The first line in the code chuck makes a scatter plot of the data. The second line plots the same data, but the data points are connected by straight lines instead of showing individual points.
+
+The plot shows that the annual returns fluctuate from year to year randomly. Most of the time the returns are positive, which is good (otherwise, we probably shouldn't invest in this stock) as we expect to earn money.
+
+The distribution of the stock returns can be visualized by a histogram.
+```{r}
+hist(historical_stock_return)
+```
+
+We can also make a density plot, which is a smoothed version of the histogram:
+```{r}
+plot(density(historical_stock_return))
+```
+
+The distribution does not resemble something we are familiar with. Instead of making up a probability distribution that mimics the curve above, we consider a simple model by setting $r_1, r_2, \cdots, r_{10}$ to values randomly drawn with replacement from the annual returns of the past 35 years. The following is a simple R function that performs the Monte Carlo simulation of the total amount of money we will get after $n$ years if we invest an initial amount of $P$ money in this stock. 
+```{r}
+# Function that performs Monte Carlo simulation of stock investment
+# P: initial amount of money invested in the stock
+# n: number of years 
+# return: amount of money after n years
+stock <- function(P,n) {
+  # generate the annual returns in the next n years from historical stock returns
+  r <- sample(historical_stock_return, n, replace=TRUE)
+  
+  # amount of money after n years
+  P*prod(1+r)
+}
+```
+The function has only two lines. The first line is to generate the annual returns $r_1, r_2, \cdots, r_n$ by taking $n$ random samples with replacement from the historical returns of the stock. The values are stored in a vector `r` of length $n$. The second line returns the total amount of money $A=P(1+r_1)(1+r_2)\cdots (1+r_n)$. 
+
+Note that the product $(1+r_1)(1+r_2)\cdots (1+r_n)$ is computed by the `prod()` function introduced in <a href="../Week02/RCalculator.html" target="_blank">Week 2</a>. The command `1+r` is a vectorized operation, returning a vector of length $n$ consisting of $1+r_1, 1+r_2, \cdots, 1+r_n$. Then `prod(1+r)` returns the product of the elements of the vector, giving $(1+r_1)(1+r_2)\cdots (1+r_n)$. The `prod()` function thus provides a convenient way to compute the product. In many other programming languages, the product calculation will have to be carried out by a for-loop. In R, the use of a for-loop is generally discouraged as it could potentially slow down the code. The slowdown could be dramatic compared to other programming languages.
+
+### Simulation Result
+
+Since the calculation involves random processes, we want to set a seed number in order for the result to be reproducible, as mentioned in <a href="../Week03/NormalChisqT.html" target="_blank">Week 3</a>. Let's now do one calculation to see what we get. We invest $10,000 (`P`=1e4) for 10 years (`n`=10):
+```{r}
+set.seed(47238789)
+(A <- stock(1e4,10))
+```
+```{r, echo=FALSE}
+Achar = as.character(round(A))
+```
+For this particular calculation or one realization of the random processes, we get $`r Achar` after 10 years. In order to obtain the distribution of $A$, the calculation has to be repeated many times. We choose to do it 100,000 times in order to obtain statistics of decent accuracy. Repeating the calculations 100,000 times can be easily carried out using the `replicate()` function:
+```{r}
+set.seed(47238789)
+A <- replicate(1e5, stock(1e4, 10))
+```
+The variable `A` is now a numeric vector of length 100,000. We can visualize the result by making a histogram:
+```{r}
+hist(A, breaks=20, freq=FALSE, xlab="Amount of Money after 10 Years")
+abline(v=1e4, col="blue", lw=2)
+```
+
+The vertical blue line indicates $10,000, the initial amount of money we put in the stock. Another way of visualizing the result is to make a density plot:
+```{r}
+plot(density(A), xlab="", main="Amount of Money after 10 Years")
+abline(v=1e4, col="blue", lw=2)
+```
+
+The plot shows that most of the time we get more than $10,000. The mean of `A` is 
+```{r}
+mean(A)
+```
+```{r, echo=FALSE}
+Achar <- as.character(round(mean(A)))
+```
+So on average, we expect to get $`r Achar` after 10 years. The graphs above indicate that sometimes we can earn a lot more money than the average. We can use the simulation data to calculate the statistics of `A`. For example, the `summary()` function returns the quantiles and mean of `A`:
+```{r}
+summary(A)
+```
+```{r, echo=FALSE}
+Amin <- as.character(signif(min(A),4))
+Amax <- as.character(signif(max(A),4))
+```
+It shows that in this particular simulation, the outcomes of `A` can be as low as $`r Amin` and as high as $`r Amax`. We can estimate the probability that we will get more than $50,000 by counting the fraction of times `A` exceeds 5e4 using the `mean()` function:
+```{r}
+mean(A > 5e4)
+```
+```{r, echo=FALSE}
+prob <- paste0(round(mean(A > 5e4)*100),"%")
+```
+This means that the probability of getting more than $50,000 is about `r prob`. There are also chances that we will lose money after 10 years, having `A` smaller than $10,000. The probability is 
+```{r}
+mean(A < 1e4)
+```
+```{r, echo=FALSE}
+prob <- paste0(round(mean(A < 1e4)*100),"%")
+```
+or about `r prob`.
+
+### Inflation
+
+The Monte Carlo simulation above gives us an idea on what the possible outcomes will be based on a simple model. However, there is one important factor that hasn't been taken into accounted: inflation. The effect of inflation is to decrease the purchasing power of money. In other words, inflation does not change the amount of money $A$ we will get in 10 years, but it affects the purchasing power of that money. If the annual inflation rate is 0.05 (5%), for example, the purchasing power of a $100 will be devalued by the factor 1+0.05 or 1.05. This means that a $100 next year will have the same purchasing power as a $100/1.05 = $95.24 today. If the annual inflation rates of the next two years are 0.05 and 0.04, a $100 two years later will have the same purchasing power as $100/(1.05&times;1.04) = $91.58 today. In general, if the inflation rates in the next $n$ years are $f_1, f_2, \cdots, f_n$, $n$ years later the purchasing power of an amount of money $A$ will be the same as the amount $A^*$ today, with $A^*$ given by 
+$$A^* = \frac{A}{(1+f_1)(1+f_2)\cdots (1+f_n)}$$
+In order to see how our investment $P$ will be affected by inflation over the $n$-year period, we also want to compute the total amount of money adjusted for inflation $A^*$. So an investment $P$ in the stock will result in the inflation-adjusted amount $A^*$ after $n$ year given by the equation 
+$$A^* = \frac{A}{(1+f_1)(1+f_2)\cdots (1+f_n)} =P \frac{(1+r_1)(1+r_2)\cdots (1+r_n)}{(1+f_1)(1+f_2)\cdots (1+f_n)}$$
+Like the annual stock returns, the annual inflation rates fluctuate randomly from year to year. In the  following we store the inflation rates in the years 1981&ndash;2015 in the US to the variable `historical_inflation` and then plot the data.
+```{r}
+historical_inflation <- c(0.1031553, 0.06160616, 0.03212435, 0.04317269, 0.03561116, 0.01858736, 0.03740876, 0.04009088, 0.04827003, 0.05397956, 0.04234964, 0.0302882, 0.02951657, 0.02607442, 0.0280542, 0.02931204, 0.0233769, 0.01552279, 0.02188027, 0.03376857, 0.02826171, 0.01586032, 0.02270095, 0.02677237, 0.03392747, 0.03225944, 0.02852672, 0.038391, -0.003555463, 0.01640043, 0.03156842, 0.02069337, 0.01464833, 0.01622223, 0.001186271)
+
+plot(1981:2015, historical_inflation, pch=16, xlab="Year", ylab="Inflation Rate")
+lines(1981:2015, historical_inflation)
+```
+
+To see the distribution, we make a density plot.
+```{r}
+plot(density(historical_inflation))
+```
+
+To calculate the inflation-adjusted total money $A^*$, we need to assign the inflation rates $f_1, f_2,\cdots, f_n$. One simple model is to assume that the stock returns are independent of the inflation rates and we assign the inflation rates by drawing random samples from the historical data. The assumption of independence will be examined closely in the next subsection. 
+
+In the following function `stock2()`, we modify the `stock()` function above by considering the effect of inflation. The function returns $A$ and $A^*$ put into a vector of length two. The elements of the vector are given the names of "tot" (for $A$) and "adj" (for $A^*$).
+```{r}
+# Function that does Monte Carlo simulation of stock investment
+# P: initial amount of money invested in the stock
+# n: number of years 
+# return: vector of length 2: (total amount after n years, 
+#                              total amount adjusted for inflation)
+stock2 <- function(P, n) {
+  # generate the annual returns and inflation in the next n years 
+  # from historical data
+  r <- sample(historical_stock_return, n, replace=TRUE)
+  f <- sample(historical_inflation, n, replace=TRUE)
+  
+  # amount of money after n years and the adjusted amount
+  A <- P*prod(1+r)
+  Astar <- A/prod(1+f)
+  
+  output <- c(A, Astar)
+  names(output) <- c("tot", "adj")
+  output
+}
+```
+This function is very similar to the `stock()` function we have above. We added a line that sets the inflation rates by drawing random samples with replacement from the historical inflation data. Then we compute $A^*$ by dividing $A$ by the product $(1+f_1)(1+f_2)\cdots (1+f_n)$, which is computed by  `prod(1+f)`.
+
+We now use this function to do one calculation for an initial investment of $10,000 for the stock. We again set a seed number for reproducibility.
+```{r}
+set.seed(9436591)
+(A2 <- stock2(1e4,10))
+```
+```{r, echo=FALSE}
+Achar <- as.character(round(A2[1]))
+Aschar <- as.character(round(A2[2]))
+```
+For this particular realization, we get $`r Achar` after 10 years. However, inflation has devalued the purchasing power. This amount of money has the same purchasing power as $`r Aschar` today, which is not as attractive as $`r Achar` taken in face value. However, we still successfully overcome inflation and increase the purchasing power of our money from this investment. This is just one calculation. To calculate useful statistics, we repeat the calculation 100,000 times as before: 
+```{r}
+set.seed(9436591)
+A2 <- replicate(1e5, stock2(1e4,10))
+```
+Now `A` is a 2&times;100000 matrix. The first row, named "tot", stores the total amount $A$ for the 100,000 realizations. The second row, named "adj", stores the adjusted amount $A^*$. To analyze the result, we make a density plot and compute other quantities for $A$ to make sure we get a similar result as before:
+```{r}
+plot(density(A2["tot",]), xlab="", main="Amount of Money after 10 Years")
+abline(v=1e4, col="blue", lw=2)
+summary(A2["tot",])
+# probability of getting > $50,000
+mean(A2["tot",] > 5e4)
+# probability of getting < $10,000
+mean(A2["tot",] < 1e4)
+```
+```{r, echo=FALSE}
+avg <- as.character(round(mean(A2["tot",])))
+p5 <- paste0(round(mean(A2["tot",] > 5e4)*100),"%")
+p1 <- paste0(round(mean(A2["tot",] < 1e4)*100),"%")
+```
+We see that the density plot is essentially the same as before. The mean of $A$ is $`r avg`, close to what we have above. The probability of getting more than $50,000 after 10 years is about `r p5`, the same as before. The probability of getting less than $10,000 is about `r p1`, also consistent with the result before.
+
+The new information this simulation provides is the distribution for the amount adjusted for inflation $A^*$, which is plotted below. 
+```{r}
+plot(density(A2["adj",]), xlab="", main="Amount of Money after 10 Years Adjusted for Inflation")
+abline(v=1e4, col="blue", lw=2)
+```
+
+To visual the difference between $A$ and $A^*$, we plot their density curves together. 
+```{r}
+plot(density(A2["tot",]), xlab="",ylim=c(0,4e-5),main="Density Plot of A and A* after 10 Years")
+lines(density(A2["adj",]), col="blue", lty=2)
+legend(1e5,3e-5,c("A","A*"),lty=1:2,col=c("black","blue"))
+abline(v=1e4, col="red", lw=2)
+```
+
+The red vertical line indicates the original $10,000. Now compute the summary statistics and probabilities.
+```{r}
+summary(A2["adj",])
+# probability of getting > $50,000
+mean(A2["adj",] > 5e4)
+# probability of getting < $10,000
+mean(A2["adj",] < 1e4)
+```
+```{r, echo=FALSE}
+avg <- as.character(round(mean(A2["adj",])))
+p5 <- paste0(round(mean(A2["adj",] > 5e4)*100),"%")
+p1 <- paste0(round(mean(A2["adj",] < 1e4)*100),"%")
+```
+Not surprisingly, the density plot of $A^*$ is shifted towards lower values compared to that for $A$. The model predicts that on average, we will end up with an amount of money with a purchasing power the same as $`r avg` today. There is about `r p5` chance of getting an amount money that has 5 times the purchasing power of $10,000 today. However, there is about `r p1` chance that our investment fails to beat inflation over the 10-year period, and we will end up worse than our original $10,000 in terms of purchasing power. 
+
+### Correlation
+
+The model in the previous subsection assumes that the annual stock returns are independent of inflation. Here we want to investigate the validity of this assumption. We first use the historical data to calculate the correlation between the stock returns and inflation:
+```{r}
+cor(historical_stock_return, historical_inflation)
+```
+This suggests that the correlation is negative. To determine if the result is statistically significant, we fit a linear model predicting the stock returns from inflation:
+```{r}
+fit <- lm(historical_stock_return ~ historical_inflation)
+summary(fit)
+```
+```{r, echo=FALSE}
+pval <- paste0(round(summary(fit)$coefficients[2,4]*100),"%")
+```
+The slope is negative, but the p-value is `r pval`, suggesting that the slope is not statistically significant. So the historical data are consistent with the assumption that the stock returns are uncorrelated with inflation and our simulation result is fine. 
+
+You might still be skeptical about this conclusion. One good thing about simulations is that we can verify the validity of theoretical statements by doing more simulations. To further test the assumption of independence of stock returns and inflation rates, we build another model for the simulation. We randomly select $n$ integers between 1 and 35 with replacement, corresponding to the 35 years in the historical data. Then we assign $r$ and $f$ from the selected years. For example, suppose 12 and 18 are chosen to be the first two integers. We assign $r_1$ = `historical_stock_return[12]`, which is `r historical_stock_return[12]`. We assign $r_2$ = `historical_stock_return[18]`, which is `r historical_stock_return[18]`. We also assign $f_1$ = `historical_inflation[12]` = `r historical_inflation[12]` and $f_2$ = `historical_inflation[18]` = `r historical_inflation[18]`. This way we always choose the ($r$, $f$) pairs from the same years in the historical data. This takes care of any possible correlation between inflation and stock return. In the following, we construct a function `stock3()` to implement this model.
+```{r}
+stock3 <- function(P, n) {
+  # generate inflation and stock returns in the next n years
+  # by randomly drawing the pair from historical data
+  i <- sample.int(35, n, replace=TRUE) # Pick n random integers between 1 and 35
+  f <- historical_inflation[i]
+  r <- historical_stock_return[i]
+  
+  # amount of money after n years and the adjusted amount
+  A <- P*prod(1+r)
+  Astar <- A/prod(1+f)
+  
+  output <- c(A, Astar)
+  names(output) <- c("tot", "adj")
+  output
+}
+```
+We now perform the simulation with this new model and compare the results.
+```{r}
+set.seed(38682912)
+A3 <- replicate(1e5, stock3(1e4, 10))
+plot(density(A3["adj",]), main="Density Plot for A* after 10 Years", 
+     xlab="", col="blue", lty=2)
+lines(density(A2["adj",]))
+legend(7e4,3e-5,c("Result for stock2()","Result for stock3()"), col=c("black","blue"),lty=1:2)
+abline(v=1e4, col="red", lwd=2)
+summary(A2["adj",])
+summary(A3["adj",])
+c(mean(A2["adj",] > 5e4), mean(A2["adj",] < 1e4))
+c(mean(A3["adj",] > 5e4), mean(A3["adj",] < 1e4))
+```
+We see that the results are close to the previous model. Thus the assumption of the independence between stock returns and inflation rates is justified both by the theoretical calculation and numerical simulations.
+
+### Inflation Adjusted Stock Return
+
+A simpler method of taking into account the possible correlation between inflation and stock return is to use the inflation adjusted stock return r<sup>\*</sup>, defined as 
+$$1+r^* = (1+r)/(1+f)$$ 
+or 
+$$r^*=\frac{1+r}{1+f}-1=\frac{r-f}{1+f}$$
+The inflation adjusted total money $A^*$ is given by 
+$$A^* = P \frac{(1+r_1)(1+r_2)\cdots (1+r_n)}{(1+f_1)(1+f_2)\cdots (1+f_n)}=P(1+r^*_1)(1+r^*_2)\cdots (1+r^*_n)$$
+In the following, we compute the historical r<sup>*</sup> of our hypothetical stock.
+```{r}
+historical_rstar <- (historical_stock_return-historical_inflation)/(1+historical_inflation)
+```
+The following code, named `stock4()`, uses this historical r<sup>\*</sup> in the simulation to compute $A^*$ directly.
+
+```{r}
+stock4 <- function(P, n) {
+  # generate inflation-adjusted stock returns in the next n years
+  # by randomly drawing data from historical r*
+  rstar <- sample(historical_rstar, n, replace=TRUE)
+  
+  # amount of money (adjusted for inflation) after n years
+  P*prod(1+rstar)
+}
+```
+
+We now perform the simulation with `stock4()` and compare the result with that of `stock3()`.
+```{r}
+set.seed(38682912)
+A4star <- replicate(1e5, stock4(1e4, 10))
+diff <- (A4star - A3["adj",])/A4star
+summary(diff)
+```
+We see that the fractional differences between `A4star` and `A3["adj",]` are smaller than 2&times;10<sup>-15</sup>, which can be attritbuted to the machine roundoff error. In other words, `stock3()` and `stock4()` give the exact same result (within machine roundoff error) for $A^*$. This is expected since the two sampling methods are mathematically equivalent. The numerical implementations are also designed to give identical results within machine roundoff error.  
+
+### Caveat
+
+We want to re-emphasize that building a good model is as important as performing the simulations and analyzing simulation results. Garbage in, garbage out. If there is a serious flaw in the model, the simulation results are useless. 
+
+The models we consider above are rather simple and are not necessarily suitable for analyzing real stocks. For example, all of our models use the sampling of historical data as a basis for modeling stochastic processes. The assumption is that the stock returns and inflation rates in the next 10 years will follow a similar statistical pattern as in the past. The assumption may not hold in some cases. For example, there could be a major change in the structure of a company associated with a stock so that we may expect the stock returns will follow a statistical distribution that will deviate substantially from the historical data. In this case, we will need to build a new model for the stock returns. 
+
+Another possible scenario is that we may think (or some financial experts have convinced us) that the double-digit inflation in 1981 and the negative inflation in 2009 are highly unlikely to occur in the next 10 years. In this case, we will want to eliminate them from our modeling, or set a very low sampling probability for them (the `prob` parameter in the `sample` function can be used to change the sampling probabilities). 
+
+Another major assumption in our models is that the annual stock return $r$ and inflation rate $f$ in any given year are independent of their values in the previous year. This assumption appears to be supported by the historical data in our example, but may not hold in general. 
+
+Instead of sampling the historical data, we can also consider setting the stock returns and inflation rates drawn from specified probability distributions and may also add more parameters to take into account the possible correlation of their values in time. Different models will produce different simulation results. To determine which model is the best is not always easy, but these are issues one will need to consider when building a reliable model.
+
+<br />
+<br />
+<br />

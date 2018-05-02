@@ -1,0 +1,335 @@
+---
+title: "Non-Parametric Statistics"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+    toc: true
+fontsize: 18pt
+---
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: 
+
+## Introduction
+
+Here we will introduce four R functions that can be used to perform the non-parametric tests introduced in the last three chapters of Stat 200. The four functions are  
+
+1. <code>wilcox.test()</code>: Wilcoxon Mann-Whitney Rank Sum Test
+2. <code>kruskal.test()</code>: Kruskal-Wallis Test
+4. <code>pairwise.wilcox.test()</code>: Pairwise Wilcoxon Mann-Whitney Rank Sum Test
+3. <code>cor.test()</code>: Spearman's Rank-Order Correlation test
+
+In each case, we will first follow the same step-by-step calculation as in your Stat 200 notebook before showing you how to use these functions to obtain the answers directly. As you will see, the functions do not always give the exact same results as the step-by-step calculations. 
+
+## Wilcoxon Mann-Whitney Rank Sum Test
+
+### Step-by-step calculation
+
+**Example 1 in Stat 200 notebook, Chapter 40 (p. 202 in Fall 2017 edition)**: Two different forms of the Final (A and B) were randomly given to a group of 15 students. Seven got Form A and eight got Form B. Here are the scores of the 2 groups:
+
+Group A: 11, 70, 75, 85, 88, 92, 96 &nbsp; &nbsp; &nbsp; Group B: 60, 65, 70, 79, 81, 90, 95, 100 
+
+**Null Hypothesis**: No difference in difficulty between the two exam forms for any segment of the population. Note: this is stronger than just saying the means are the same. It's more like every percentile is the same. 
+
+**Alternative Hypothesis**: The exam forms are not the same level of difficulty for at least one segment of the population. 
+
+**Step 0**: Enter the data to R. We create a vector `final` that stores all the final scores, and a factor `group` that indicates whether the score is from group A or B
+```{r}
+final <- c(11, 70, 75, 85, 88, 92, 96, 60, 65, 70, 79, 81, 90, 95, 100)
+group <- factor(rep(c("A","B"),c(7,8)), levels=c("A","B"))
+
+# Check to see if final and group are correct:
+final
+group
+# scores in group A:
+final[group=="A"]
+# scores in group B:
+final[group=="B"]
+```
+We have checked that the data have been entered correctly.
+
+**Step 1**: Calculate the ranks of the scores. This can be done using R's <code>rank()</code> function. 
+```{r}
+final_ranked <- rank(final)
+final_ranked
+```
+These are the same numbers as in your Stat 200 notes.
+
+**Step 2**: Calculate the rank sum for each group. This can be done easily using <code>tapply()</code>:
+```{r}
+R <- tapply(final_ranked, group, sum)
+R
+# Check to see if R_A + R_B = N(N+1)/2
+R["A"] + R["B"]
+N <- length(final) 
+N*(N+1)/2
+```
+Checked.
+
+**Step 3**: Z-test. 
+```{r}
+# Expected R_A = n_A (N+1)/2
+nA <- sum(group=="A")
+nB <- N - nA
+Exp_RA <- nA*(N+1)/2
+# Standard error
+SE <- sqrt(nA*nB*(N+1)/12)
+# Z-score for group A
+Z_A <- (R["A"] - Exp_RA)/SE
+Z_A
+```
+The two-sided p-value can be computed using <code>pnorm()</code>. The area under the normal curve for Z &lt; -|Z<sub>A</sub>| is <code>pnorm(-abs(Z_A))</code>. The two-sided p-value P(|Z| &gt; |Z<sub>A</sub>|) is twice of that value:
+```{r}
+2*pnorm(-abs(Z_A))
+```
+
+**Conclusion**: The p-value is greater than 5%. We do not reject the null and conclude that there is no evidence to suggest that exams are not of the same level of difficulty.
+
+### wilcox.test() Function
+
+The test can be done automatically using the `wilcox.test()` function. As with many other R functions, there are many options in `wilcox.test()`, which can be looked up in the help page `?wilcox.test`. Here we only mention two different syntaxes. The first syntax is 
+```{r, eval=FALSE}
+wilcox.test(y ~ x, alternative=c("two.sided", "less", "greater"))
+```
+Here `y` is a numeric vector containing data for the two groups and `x` is a two-level factor vector specifying the group for the corresponding elements of `y`. Like `t.test()`, the parameter `alternative` specifies whether the alternative hypothesis is two-sided (R<sub>A</sub> &ne; ExpR<sub>A</sub>), less (R<sub>A</sub> < ExpR<sub>A</sub>), or greater (R<sub>A</sub> > ExpR<sub>A</sub>). Here R<sub>A</sub> is the rank sum of the first group and ExpR<sub>A</sub>=n<sub>A</sub>(N+1)/2 is the expected rank sum of the first group. The default value of the `alternative` parameter is "two.sided".
+
+The second syntax is
+```{r, eval=FALSE}
+wilcox.test(y1,y2, alternative=c("two.sided", "less", "greater"))
+```
+Here `y1` is a numeric vector containing data in group 1, and `y2` is a numeric vector containing data in group 2. 
+
+Let's apply the function to the example above. Use the first syntax:
+```{r}
+wilcox.test(final ~ group)
+```
+In the output, W is a rank sum subtracted by a constant. Since "A" is the reference level in the factor variable `group`, the rank sum is computed for the data in group A. As stated in the note of the help page `?wilcox.test`:
+
+<blockquote>
+The literature is not unanimous about the definitions of the Wilcoxon rank sum and Mann-Whitney tests. The two most common definitions correspond to the sum of the ranks of the first sample with the minimum value subtracted or not: R subtracts and S-PLUS does not, giving a value which is larger by m(m+1)/2 for a first sample of size m. (It seems Wilcoxon's original paper used the unadjusted sum of the ranks but subsequent tables subtracted the minimum.)
+</blockquote>
+
+Therefore, the value of W is the rank sum for group A subtracted by n<sub>A</sub>(n<sub>A</sub>+1)/2. From the previous calculation, we have R<sub>A</sub> = 56.5. The number of data points in group A is n<sub>A</sub> = 7, so W = 56.5 - 7&times;8/2 = 28.5. This is the value returned by `wilcox.test()`. This is also the same as the U statistic calculated in the same example in Chapter 40 of the Stat 200 notes, which is not a coincidence because it can be shown that rank sum is related to the U statistic by the additional term n<sub>A</sub>(n<sub>A</sub>+1)/2 (see, e.g., Section 2 of <a href="NonParametric.pdf" target="_blank">these notes</a>).
+
+We perform the Wilcoxon Mann-Whitney test to determine if there is significant difference between the two groups, so the value of W is not important. It is the p-value we are primarily interested in. From the output, we see that the p-value is 1. This means that the difference is not significant. 
+
+As stated in the help page `?wilcox.test`,  by default `wilcox.test()` calculates an exact p-value if the samples contain less than 50 finite values and there are no ties. Otherwise, a normal approximation is used. In our example, the sample contains less than 50 finite values but there are ties. That's why we see the warning message "cannot compute exact p-value with ties" above. R uses normal approximation to calculate the p-value. However, the returned p-value is different from our step-by-step calculation above, which uses the normal approximation. The reason is that the p-value is adjusted by the continuity correction which is supposed to be more accurate. We will not go into detail the concept of continuity correction here. To get the p-value we calculated above, we can use the option <code>correct=FALSE</code> to turn off the continuity correction:
+```{r}
+wilcox.test(final ~ group, correct=FALSE)
+```
+We see that with the continuity correction turned off, the returned p-value matches exactly our step-by-step calculation above. 
+
+If the data are stored inside a data frame, we can use the option `data=data_name` to specify the data frame. As an example, we create a data frame <code>score</code> to store the final scores and group information:
+```{r}
+score <- data.frame(x=final, g=group)
+score
+```
+The call `wilcox.test(final ~ group, correct=FALSE)` is the same as 
+```{r}
+wilcox.test(x ~ g, data=score,correct=FALSE)
+```
+We can of course use `wilcox.test(score$x ~ score$g, correct=FALSE)` to get the same result.
+
+Let's use the second syntax of `wilcox.test()` to do the same calculation:
+```{r}
+wilcox.test(final[group=="A"], final[group=="B"], correct=FALSE)
+```
+We get exactly the same result. As you have seen in the context of `t.test()` in one of the Lon Capa problems, the second syntax is useful when a factor variable is not available. 
+
+The presence of ties in 'final' prevents the `wilcox.test()` function to compute the exact probability. Let's see how the result changes if there are no ties. We can remove the ties by changing the second number in `final`:
+```{r}
+final[2] <- 70.00001
+```
+There are no ties now. Let's see how the result changes:
+```{r}
+wilcox.test(final ~ group)
+```
+The p-value is now computed exactly and it changes slightly. Setting `final[2] <- 69.9999` will also change the p-value slightly (try it!). In any cases, the conclusion is the same: there is no significant difference between the two groups.
+
+## Kruskal-Wallis Test
+
+### Step-by-step calculation
+
+**Example 1 in Stat 200 notes, Chapter 41 (p. 207 in Fall 2017 edition)**: Let's say we have 3 forms of the Final randomly distributed to 16 students. Were all 3 versions of the Final equally difficult for all types of students?
+
+Here are the scores: 
+
+Group A: 10, 60, 70, 80, 100 &nbsp; &nbsp; &nbsp; &nbsp; Group B: 50, 70, 81, 85, 95 &nbsp; &nbsp; &nbsp; Group C: 20, 75, 86, 90, 98, 99
+
+**Step 0**: Enter the data.
+```{r}
+final = c(10,60,70,80,100, 50,70,81,85,95, 20,75,86,90,98,99)
+group = factor(rep(c("A","B","C"),c(5,5,6)), levels=c("A","B","C"))
+# Check...
+# Group A's scores
+final[group=="A"]
+# Group 's scores
+final[group=="B"]
+# Group C's scores
+final[group=="C"]
+```
+Another method of checking the scores in each group is to use `tapply()`:
+```{r}
+tapply(final,group,print)
+```
+
+**Step 1**: Calculate rank sums. We need to calculate the ranks first and then compute the rank sums, but these two steps can be combined using `rank()` and `tapply()`:
+```{r}
+R <- tapply(rank(final), group, sum)
+R
+# Check they sum to N(N+1)/2: 
+N <- length(final)
+c(sum(R), N*(N+1)/2)
+```
+Checked.
+
+**Step 2**: Calculate the H statistics according to the formula 
+$$H = \frac{12}{N(N+1)}\sum_{i=1}^g \frac{(R_i - ExpR_i)^2}{n_i} \ \ \ , \ \ \ 
+ExpR_i = \frac{n_i (N+1)}{2}$$
+Even though there are only three groups here, we will do it in general. So the same code can be used for arbitrary number of groups.
+```{r}
+g <- length(levels(group)) # number of groups
+n <- table(group) # number of observations in each group
+N <- sum(n) # toal number of observations
+expR <- n*(N+1)/2  # expected R
+H <- 12/(N*(N+1))*sum( (R-expR)^2/n )
+H
+```
+Note that `R`, `n` and `expR` are vectors of length `g` (g=3 in our example), so the expression `(R-expR)^2/n` is a vectorized operations creating a vector of length `g`.
+
+**Step 3**: Calculate the p-value. For large enough data points, H follows the $\chi^2$ distribution approximately with g-1 degrees of freedom. The p-value can be calculated using the <code>pchisq()</code> function:
+```{r}
+pchisq(H, g-1, lower.tail=FALSE)
+```
+
+**Conclusion**: The p-value is greater than 5%, so we do not reject the null. 
+
+### kruskal.test() Function
+
+The syntax of the `kruskal.test()` is very similar to the `wilcox.test()` function:
+```{r, eval=FALSE}
+kruskal.test(y ~ x, data=data_name)
+```
+Here `y` is a numeric vector and `x` is a factor vector specifying the group for the corresponding elements of `y`. The parameter `data=data_name` is optional, as in the case of `wilcox.test()`. 
+
+Let's apply it to our example: 
+```{r}
+kruskal.test(final ~ group)
+```
+We see that the returned $\chi^2$ and the p-value are close to but not exactly the same as our step-by-step calculation. This is because the formula used in the `kruskal.test()` is slightly different in the presence of ties. 
+
+If there are no ties, the `kruskal.test()` function returns exactly the same $\chi^2$ and p-value as the step-by-step calculation. To verify that, we change the value of the third element in `final` from 70 to 69:
+```{r}
+final[3] <- 69
+```
+There are no ties after this change. Following the step-by-step calculation, we recompute the H statistics and p-value:
+```{r}
+R <- tapply(rank(final), group, sum) # rank sums
+g <- length(levels(group)) # number of groups
+n <- table(group) # number of observations in each group
+N <- sum(n) # total number of observations
+expR <- n*(N+1)/2  # expected R
+H <- 12/(N*(N+1))*sum( (R-expR)^2/n )
+H
+# p-value
+pchisq(H, g-1, lower.tail=FALSE)
+```
+We now do the test using `kruskal.test()`:
+```{r}
+kruskal.test(final ~ group)
+```
+The returned $\chi^2$ and p-value now match exactly the step-by-step calculation.
+
+## Pairwise Wilcoxon Rank Sum Test 
+
+We can use the function `pairwise.wilcox.test()` to perform pairwise Wilcoxon Rank Sum Tests. The syntax is the same as `pairwise.t.test()`:
+```{r, eval=FALSE}
+pairwise.wilcox.test(y, x, p.adjust=method)
+```
+Here `y` is a numeric/integer vector, `x` is a factor variable, `method` is the name of method you want to adjust the p-value. There are 8 methods, but we will only use "bonferroni" for the Bonferroni correction. 
+
+We apply this function to the previous example of the final scores: 
+```{r}
+pairwise.wilcox.test(final, group, p.adjust="bonferroni")
+```
+We see that the adjusted p-values are all equal to 1. There is no significant difference among the three groups, in agreement with the Kruskal-Wallis test above.
+
+## Spearman Rank-Order Correlation Test 
+
+### Step-by-step calculation
+
+**Example in Stat 200 notes, Chapter 42 (p. 209 in Fall 2017 edition)**: Imagine these 7 (x,y) pairs (27,45) (43,40) (58,70) (80,
+61) (86,99) (92,79) and (94,82). 
+
+**Null Hypothesis**: population correlation is 0
+
+**Alternative Hypothesis**: population correlation &ne; 0
+
+**Step 0**: Enter the data to R.
+```{r}
+x <- c(27,43,58,80,86,92,94)
+y <- c(45,40,70,61,99,79,82)
+```
+
+**Step 1**: Calculate Spearman's rank-order correlation coefficient r<sub>s</sub>:
+```{r}
+r_s <- cor(rank(x),rank(y))
+r_s
+```
+
+**Step 2**: Calculate the p-value. For large samples, the distribution of r<sub>s</sub> under the null is approximately normal with mean 0 and standard deviation $SE=1/\sqrt{n-1}$, where $n$ is the number of points in x or y. So the Z-score under the null is $Z=r_s/SE=r_s\, \sqrt{n-1}$.
+```{r}
+n <- length(x)
+Z <- r_s*sqrt(n-1)
+Z
+```
+The two-sided p-value is given by 
+```{r}
+2*pnorm(-abs(Z))
+```
+
+**Conclusion**: The p-value is less than 5%, so the null is rejected. 
+
+### cor.test() Function
+
+The syntax of the `cor.test()` function for Spearman's correlation test is very simple:
+```{r, eval=FALSE}
+cor.test(x,y, alternative=c("two.sided", "less", "greater"), method="spearman")
+```
+The `alternative` parameter specifies if the alternative hypothesis is two-sided (r<sub>s</sub> &ne; 0), less (r<sub>s</sub> < 0), or greater (r<sub>s</sub> > 0). The default value is "two.sided".
+
+Use it to our example:
+```{r}
+cor.test(x,y, method="spearman")
+```
+The returned p-value is different from our step-by-step calculation. This is because for n &lt; 10, `cor.test()` computes the p-value exactly. For larger n, the p-value is computed by a different approximation. It approaches the p-value computed by the normal approximation only at large n. In any case, the returned p-value is less than 5%, so the conclusion remains the same. 
+
+<br />
+<br />
+<br />
+
+
+

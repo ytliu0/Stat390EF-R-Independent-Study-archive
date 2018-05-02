@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<meta charset="UTF-8" />
+<meta name="keywords" content="Statistics, Stat 200, Stat 390, R, RMarkdown Exercise" />
+<head>
+<title>R Markdown Exercise: Mammographic Mass</title>
+<link rel="stylesheet" href="../styles.css">
+    
+<style>
+ol.question {
+  margin: 0 0 1.5em;
+  padding: 0;
+  counter-reset: item;
+}
+
+ol.question > li {
+  margin: 0;
+  padding: 1em 0em 0 2em;
+  line-height: 1.25;
+  text-indent: -1em;
+  list-style-type: none;
+  counter-increment: item;
+}
+
+ol.question > li:before {
+  display: inline-block;
+  width: 1em;
+  padding-right: 0.5em;
+  font-weight: bold;
+  text-align: right;
+  content: counter(item, lower-alpha) ".";
+}
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+<article>
+<br />
+<h1>Mammographic Mass</h1>
+
+<p>Use <a href="mammograph_template.Rmd" target="_blank">this template</a> (right click and choose Save Link As...) for this exercise.</p>
+
+<p>Breast cancer is common. It is estimated that 1 out of 8 women will develop a breast cancer at some point. A mammogram is an x-ray picture of the breast. Mammograms are used to check for breast cancer in women who have no signs or symptoms of the disease (screening mammograms). If a breast abnormality is found, further mammograms may be necessary to determine if the abnormality is benign or malignant (diagnostic mammograms).</p>
+
+<p>After mammography, the mammograms are examined by radiologists to look for abnormalities in breast tissue. Sometimes a <i>mass</i>, something more substantial and clear than a <i>lesion</i>, may be found. Most breast masses are benign, but certain characteristics of mass may suggest a breast cancer. A radiologist will write a report to describe and assess the nature of any abnormality found. BI-RADS (Breast Imaging Reporting and Data System) is a standard system to describe mammogram findings and results. It sorts the results into categories numbered 0 through 6 (see <a target="_blank" href="https://www.cancer.org/cancer/breast-cancer/screening-tests-and-early-detection/mammograms/understanding-your-mammogram-report.html">this page</a> and <a href="http://breast-cancer.ca/bi-rads/" target="_blank">this page</a> for an explanation of the assessment codes). In addition to the BI-RADS assessment codes, several other BI-RADS attributes are also reported: shape (round/oval/lobular/irregular), density (the amount of fat cells present and density of suspicious cells) and margin (characteristics of its edge, circumscribed/microlobulated/obscured/ill-defined/spicularted). A more detailed explanation can be found on <a href="http://breast-cancer.ca/mass-chars/" target="_blank">this page</a>.</p>
+
+<p>Although mammograms are currently the best tool for detecting a breast cancer, mammogram results are not accurate. About 70% of the positive results turned out to be false positives when biopsies were performed, causing major mental and physical discomfort for the patients. Several computer-aided diagnosis (CAD) systems were proposed based on the BI-RADS attributes, hoping to improve the accuracy.</p> 
+
+<p>In this exercise, you are going to construct a logistic regression model to predict if a mammographic mass is benign or malignant based on the BI-RADS attributes (i.e. shape, density, margin) and the patient's age. That is, you are going to ignore the BI-RADS assessment code and rely only on the BI-RADS attributes and the patient's age to predict if a mass is benign or malignant. You will use a version of the mammographic mass data set from the UCI machine learning repository. The data file can be downloaded <a href="mammographic_masses_cleaned.txt" target="_blank">here</a> and the data description is on <a target="_blank" href="MammographicMasses.html">this page</a>. The data were collected at the Institute of Radiology of the University Erlangen-Nuremberg between 2003 and 2006. The data set has been cleaned. They contain the patients' ages, BI-RADS assessment codes, the three BI-RADS attributes (shape, margin, density). The last column, named severity, is a binary 0/1 variable indicating whether the mass is benign or malignant. Take some time to explore the data.</p>
+
+<br />
+    
+<ol class="question">
+
+<li> (1 point) Use 'read.table()' with an appropriate parameter to load the data to R.</li>
+
+<p style="padding: 0.5em 0em 0 2.5em;">Note: The data file is not in csv form. In Week 9, some students did not know how to read a non-csv data file properly with R. Many real-world data are not in csv form, so it is very important to know how to read a non-csv file properly. As emphasized in Section 6.2 of Peng's textbook, it is worth reading the help file in '?read.table' in its entirety.</p>
+
+
+<br />
+<p>Before building a model, it is useful to make some plots to visualize how the different variables are correlated with the probability of a breast cancer.</p>
+
+<p>There are 72 different values of 'age' in the data set, as can be seen from the output of the <code>table()</code> applied on the 'age' column. We can calculate the fraction of people with malignant mass (<code>severity</code>=1) versus the different values of age using the command <code>f_age &lt;- with(data_frame_name, tapply(severity, age, mean))</code> (replace <code>data_frame_name</code> by the name of the data frame you use when you load the data set). The 72 different values of age are in the names of f_age, which are characters. We can extract the ages by converting the characters to numbers using the command <code>age &lt;- as.numeric(names(f_age))</code>.</p>
+
+<li> (2 points) Make a scatter plot showing the fraction of patients with malignant mass versus age in the data set. How does the chance of getting a breast cancer change with a patient's age?</li>
+
+<li> (4 points) Calculate the percentage of malignant masses for each of the 4 categories in 'shape'. Then make a barplot showing the percentages for the 4 categories.</li>
+
+<li> (2 points) Do the same calculations for the 'margin' variable. That is, calculate the percentages of malignant masses for each category in 'margin' and then make a barplot of percentages for the categories.</li>
+
+<li> (2 points) Do the same calculations for the 'density' variable. That is, calculate the percentages of malignant masses for each category in 'density' and then make a barplot of percentages for the categories.</li>
+
+<li> (4 points) Build a logistic regression model predicting 'severity' from 'age', 'shape', 'margin' and 'density'. Treat 'age' as a continuous variable and the other 3 BI-RADS attributes as factor variables. How many parameters (intercept and slopes) are returned by the model? Which slopes are <i>not</i> significant at the 5% level?</li>
+
+<li> (7 points) Suppose we decide that a mass is malignant if the predicted probability from the logistic regression model above is greater than 0.5. Calculate the percentage of wrong predictions of this model. Calculate the Type I and Type II error rates.</li>
+
+<li> (3 points) Suppose doctors decide that it is more important to make sure that a breast cancer be detected, so they would want to reduce the Type II error. This can be achieved by setting a lower threshold value for the classification of malignant masses. Instead of 0.5, suppose now we classify a mass to be malignant if the predicted probability from the logistic regression model above is greater than 0.3. Calculate the Type I and Type II error rates in this case.</li>
+</ol>
+    
+<br />
+<p>You should see from your calculation that we can decrease the Type II error rate in the expense of increasing the Type I error rate for a fixed detection system. This is the tradeoff between the Type I/Type II error described in Chapter 1 of your Stat 200 notes. Thus, a better approach is to construct a better detection system to reduce both type of errors. In our example here, we need to build a model better than the logistic regression model considered in this exercise. However, a sophisticated model usually involves many parameters and the model is prone to overfitting &mdash; it gives accurate prediction on the data the model is constructed but doesn't perform very well on new data. A commonly used strategy to prevent overfitting is to split the data randomly into two sets, called the traning set and the test set (or the held-out data). Models are constructed using the training set and then the accuracy is evaluated by applying the models to predict responses for the data on the test set.</p>
+    
+<h2>Guidelines</h2>
+    
+<ul>
+<li>Write down your name in the R markdown file.</li>    
+<li>Generate an html file from the markdown file by knitr.</li>
+<li>You should download the data file to your computer and then load it to R, instead of loading it directly from the website. This is for the purpose of reproducibility: the file at the remote website may be changed or disappear later and your R markdown file cannot be run. By saving it to your computer in the same location of the markdown file, you can be sure that your markdown result is reproducible.</li>
+<li>Show all codes and output. If your code chunk contains more than a few lines, include a brief explanation of what you are doing unless you write your code in a self-explanatory style.</li>
+<li>Label and state the answers to each question clearly. Don't just show the code and say that the information is in the output.</li>
+</ul>
+
+<br />
+    
+<h2>Solution</h2>
+<ul>
+<p><li><a href="mammograph_solution.Rmd">RMarkdown file</a> (Download the file and save it in the same folder as the data file you downloaded above. Open it with R Studio and then click "Knit".)</li></p>
+<p><li><a href="mammograph_solution.html">Knitted html file</a></li></p>
+</ul>
+</article>
+</div>
+<br/><br />
+</body>
+</html>

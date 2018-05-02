@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<meta charset="UTF-8" />
+<meta name="keywords" content="Statistics, Stat 200, Stat 390, R, RMarkdown Exercise" />
+<head>
+<title>R Markdown Exercise: Galton's Height Data</title>
+<link rel="stylesheet" href="../styles.css">
+    
+<style>
+ol.question {
+  margin: 0 0 1.5em;
+  padding: 0;
+  counter-reset: item;
+}
+
+ol.question > li {
+  margin: 0;
+  padding: 1em 0em 0 2em;
+  line-height: 1.25;
+  text-indent: -1em;
+  list-style-type: none;
+  counter-increment: item;
+}
+
+ol.question > li:before {
+  display: inline-block;
+  width: 1em;
+  padding-right: 0.5em;
+  font-weight: bold;
+  text-align: right;
+  content: counter(item, lower-alpha) ".";
+}
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+<article>
+<br />
+<h1>R Markdown Exercise: Galton's Height Data</h1>
+    
+<p>You now have experience in creating an RMarkdown document from scratch. <b>We now strongly recommend you to use <a href="Galton_template.Rmd" target="_blank">this RMarkdown template</a> (right click the link and choose Save Link As...) for this exercise.</b> Download the template and fill in the calculations as indicated in the file.</p>
+    
+<p>Sir Francis Galton (1822&ndash;1911) was an English statistician. He founded many concepts in statistics, such as correlation, quartile, percentile and regression, that are still being used today.</p>
+    
+<p>In this R markdown exercise, you are going to analyze the famous Galton data on the heights of parents and their children. The data were collected in the late 19th century in England. He coined the term <a href="http://galton.org/essays/1880-1889/galton-1886-jaigi-regression-stature.pdf" target="_blank">regression towards mediocrity</a> to describe the result of his linear model. (Note that the paper was written in 1886. The "computer" mentioned in the paper was actually a person whose job was to do number crunching.) Surprisingly, Galton's analysis is still useful today (see e.g. <a href="https://www.wired.com/2009/03/predicting-height-the-victorian-approach-beats-modern-genomics/" target="_blank">Predicting height: the Victorian approach beats modern genomics</a>, <a href="http://www.nature.com/ejhg/journal/v17/n8/full/ejhg20095a.html?foxtrotcallback=true" target="_blank">Predicting human height by Victorian and genomic methods</a>).</p>
+    
+<p>Galton's height data can be download 
+<a href="galton.txt" target="_blank">here</a> (right click and choose Save Link As...). The description of the data can be found on <a href="GaltonData.html" target="_blank">this webpage</a>. Note that this is not a csv file. You need to use the <code>read.table()</code> function with appropriate parameters to load the data correctly to R.</p>
+
+<ol class="question">
+    
+<li> (1 points) Calculate the correlation matrix between 'Height', 'Father' and 'Mother'.</li>
+    
+<li> (2 points) Use the <code>pairs()</code> function to create a matrix of scatterplots of the columns 'Height', 'Father' and 'Mother'. This is a graphical representation of the correlation matrix calculated above. (Hint: You need to subset the data frame to pull the 3 columns and then pass them to the <code>pairs()</code> function.)</li>
+    
+<li> (5 points)<br /> (4 pts) Fit a multiple regression model predicting children's height ('Height') from father's height ('Father'), mother's height ('Mother'), and gender ('Gender'). In other words, the model should contain the following terms:<br />
+H<sub>children</sub> = &beta;<sub>0</sub> + &beta;<sub>1</sub> f<sub>gender</sub> + &beta;<sub>2</sub> H<sub>father</sub> + &beta;<sub>3</sub> H<sub>mother</sub>, <br />
+where H<sub>children</sub> is the predicted height (in inches) of the adult children, H<sub>father</sub> and H<sub>mother</sub> are the height (in inches) of the father and mother, respectively. f<sub>gender</sub> is a binary variable: f<sub>gender</sub>=0 for males and f<sub>gender</sub>=1 for females.<br />
+(1 pt) Which slopes are significant (at the 5% level)?</li>
+    
+<li>(2 points) Plot the residuals versus the fitted values for the multiple regression model above.</li>
+    
+<br />
+    
+<p>Instead of fitting a multiple regression model, Galton constructed a simple model predicting children's height from parents' heights. However, he first had to deal with the gender difference between male and female heights.</p>
+    
+<li>(4 points)<br />
+(2 pts) Calculate the means of Father's and Mother's heights in the data set. Then show that Father's mean height is about 8% higher than Mother's mean height. <br />
+(2 pts) Calculate the mean heights of the adult male and female children in the data set. Then show that male children's mean height is also about 8% higher than female children's mean height.</li>
+    
+<li>(4 points)<br />
+(2 pts) Calculate the medians of Father's and Mother's heights in the data set. Then show that Father's median height is about 8% higher than Mother's median height.<br />
+(2 pts) Calculate the median heights of the adult male and female children in the data set. Then show that male children's median height is also about 8% higher than female children's median height.</li>
+
+<br />
+<p>Galton defined the mid-parental height as the average of the Father's and Mother's height:<br />
+H<sub>midparental</sub> = (H<sub>father</sub> + 1.08 H<sub>mother</sub>)/2, <br />
+where the factor 1.08 was introduced to account for the gender difference. He also "transmuted" the heights of all female children to the male equivalents by multiplying the female heights by 1.08. He then fitted a model predicting children's adjusted height from the mid-parental height.</p>
+    
+<li>(4 points)<br />
+(1 pt) Add a column to the data frame that stores the mid-parental heights.<br />
+(2 pts) Add another column to the data frame that stores the adjusted heights of the children: the adjusted heights of the male children are the same as their heights; the adjusted heights of the female children are equal to their heights times 1.08.<br />
+(1 pt) Calculate the correlation coefficient between the children's adjusted height and the mid-parental height</li>
+    
+<li>(4 points)<br />
+(2 pts) Fit a simple regression model predicting children's adjusted height from the mid-parental height.<br />
+(2 pts) Make a scatter plot of children's adjusted height vs the mid-parental height and then add the regression line on the plot.</li>
+    
+<li>(2 points) Plot the residuals versus the fitted values for the simple regression model above.</li>
+    
+<br />
+<p>How does the simple regression model in (h) compare with the multiple regression model in (c)? One measure of the "goodness of fit" is R<sup>2</sup>. However, comparing R<sup>2</sup> returned by the model in (c) and R<sup>2</sup> of the model in (h) is midleading because their predicted variables are different. In (c), the predicted variable is children's height, whereas in (h) the predicted variable is children's adjusted height. To have a fair comparison, we want to calculate the R<sup>2</sup> of the model in (c) for the adjusted height and then compare it with the R<sup>2</sup> in (h).</p>
+    
+<li>(8 points)
+<ol type="1">
+    <li>&nbsp;&nbsp;(2 pts) Calculate the predicted values of children's adjusted height from the multiple regression model by multiplying the predicted heights by 1.08 for female children and keeping the predicted heights of the male children unchanged. Store the result in a new variable.</li>
+    <li>&nbsp;&nbsp;(5 pts) Calculate R<sup>2</sup> for the adjusted heights of the model in (c) by R<sup>2</sup><sub>AH</sub> = 1 - SSE<sub>AH</sub>/SST<sub>AH</sub>, where SSE<sub>AH</sub>=&sum; (AH-AH<sub>predicted</sub>)<sup>2</sup> and SST<sub>AH</sub>=&sum; (AH-<span style="text-decoration:overline;">AH</span>)<sup>2</sup> = (n-1) s<sup>2</sup><sub>AH</sub>. Here AH is the actual adjusted heights of the Galton children calculated in (h) above, AH<sub>predicted</sub> is the predicted adjusted heights calculated in (j1) above, <span style="text-decoration:overline;">AH</span> is the mean of the adjusted height, s<sup>2</sup><sub>AH</sub> is the sample variance of the adjusted height, and n is the total number of observations in the dataset.</li>
+    <li>&nbsp;&nbsp;(1 pt) Based on the values of the R<sup>2</sup> for the adjusted height, is the multiple regression model in (c) much better than the simple regression model in (h)?</li>
+</ol>
+    
+<br />
+<p>Alan is a boy born in Guatemala. Carly is a girl born in India. They are both two years old. The heights of Alan's father and mother are 62 inches and 58 inches, respectively. The heights of Carly's father and mother are 68 inches and 65 inches, respectively.</p>
+    
+<li>(4 points) Use the multiple regression model above to predict the height of Alan and Carly when they become adults.</li>
+    
+<li>(4 points) Use the simple regression model above to predict the height of Alan and Carly when they become adults.<br />
+Note: You'll need to convert the predicted adjusted height back to height for Carly.</li>
+    
+<li>(2 points) Explain why the multiple and simple regression models above may not be suitable for predicting the adult heights for Alan and Carly.<br />
+Hint: Watch <a href="https://youtu.be/C_NTLtM-f2I#t=6m54s" target="_blank">this video</a> for a similar question, or read Example 1e in <a href="http://www.stat.illinois.edu/courses/stat100/Notes/Chap17.pdf" target="_blank">this Stat 100 notes</a>, or the bottom of P.35 in the Fall 2017 Stat 200 notebook for two other similar questions.</li>
+</ol>
+    
+<h2>Guidelines</h2>
+    
+<ul>
+<li>Write down your name in the R markdown file.</li>    
+<li>Generate an html file from the markdown file by knitr.</li>
+<li>You should download the data file to your computer and then load it to R, instead of loading it directly from the website. This is for the purpose of reproducibility: the file at the remote website may be changed or disappear later and your R markdown file cannot be run. By saving it to your computer in the same location of the markdown file, you can be sure that your markdown result is reproducible.</li>
+<li>Show all codes and output. If your code chunk contains more than a few lines, include a brief explanation of what you are doing unless you write your code in a self-explanatory style.</li>
+<li>Label and state the answers to each question clearly. Don't just show the code and say that the information is in the output.</li>
+</ul>
+
+<br />
+    
+<h2>Solution</h2>
+<ul>
+<p><li><a href="Galton_solution.Rmd">RMarkdown file</a> (Download the file and save it in the same folder as the data file you downloaded above. Open it with R Studio and then click "Knit".)</li></p>
+<p><li><a href="Galton_solution.html">Knitted html file</a></li></p>
+</ul>
+</article>
+</div>
+<br/><br />
+</body>
+</html>

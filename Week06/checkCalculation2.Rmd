@@ -1,0 +1,188 @@
+---
+title: "Checking Your Calculations: Part 2"
+author: Yuk Tung Liu
+output: 
+  html_document:
+    theme: readable
+fontsize: 18pt
+---
+<!-- Written by Yuk Tung Liu -->
+<style type="text/css">
+
+body, td {
+   font-size: 18px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+<!-- script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "all" } }
+});
+</script -->
+
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+[//]: 
+
+In Part 2 of the series of notes on checking calculations, we introduce two powerful methods of making sure your code produces the correct answers in at least special cases. If your code passes these tests, you can be quite confidence that it is correct. 
+
+We use the <a href="https://library1.lon-capa.uiuc.edu/res/uiuc/ytliu/R-Programming/open/05/distance.problem" target="_blank">distance problem</a> in this week's HW to demonstrate the methods. You should have read through the HW problem before reading this article. Recall that you are asked to write a code to find two cities farthest apart in a data file.
+
+The distance between two cities on Earth's surface is given by the formula 
+$$d_{12} = R \cos^{-1} [ \sin \phi_1 \sin \phi_2 + \cos \phi_1 \cos \phi_2 \cos(\lambda_1-\lambda_2)]$$
+where R = 6371 km is Earth's radius, $\lambda_1$, $\phi_1$ are the longitude and latitude of the first city, and $\lambda_2$ and $\phi_2$ are the longitude and latitude of the second city.
+
+We adopt a convention that a positive (negative) longitude means that the city is to the east (west) of Greenwich; a positive (negative) latitude means that the city is in the northern (southern) hemisphere.
+
+The code can be tested in three steps. The first step is to make sure the distance calculation is correct. The second is to check that your code gives the correct answer to a scaled down data set. The third step is to test that your code gives the correct answer to a data set where the answer is known.
+
+#Checking Distance Calculation
+
+How do we make sure the distance calculation is correct? The distance formula is not very complicated so you can simply check your R's answer using a calculator. 
+
+Perhaps the most tricky part is the unit conversion. Latitudes and longitudes in the data file are given in degrees but R's `sin()`, `cos()` and `acos()` functions require angles in radians. The conversion is straightforward: 1&deg; = &pi;/180 radians. In many calculators, you can use degrees in the sin and cos functions, but the cos<sup>-1</sup> also returns an angle in degrees. The distance formula, however, requires the cos<sup>-1</sup> angle in radians, so we have to convert the angle from degrees to radians.
+
+To make sure your calculation is correct, you can consider the following special cases. The shortest length between two points on a sphere is a segment of a great circle. A great circle on a sphere is a circle whose center is at the center of the sphere. For example, the equator is a great circle. The longitude lines are also segments of great circles. It follows that the distance between two points at the equator (latitude=0) is equal to Earth's radius R times the difference in longitudes in radians. That is, $d_{12}=R|\lambda_1-\lambda_2|$. For example, the distance between the points $(\lambda_1,\phi_1)$=(30&deg;,0&deg;) and $(\lambda_2,\phi_2)$=(150&deg;,0&deg;) is 
+$$d_{12}=6371~{\rm km} \times |30-150|\times \pi/180 = 13343.39~{\rm km}$$
+
+The distance between two points on the same longitude is equal to R times the difference in the latitudes in radians: $d_{12}=R|\phi_1-\phi_2|$. For example, the distance between $(\lambda_1,\phi_1)$=(120&deg;,20&deg;) and $(\lambda_2,\phi_2)$=(120&deg;,-45&deg;) is 
+$$d_{12}=6371~{\rm km} \times |20-(-45)|\times \pi/180 = 7227.67~{\rm km}$$
+
+Finally, there is one important special case we should consider. For any given point on a sphere, the point with the farthest distance from the given point is on the opposite side of the sphere. The distance is then half of the circumference of the sphere: $\pi R$ = 20015.09 km for Earth. These are called the antipodes. One example is the north pole and south pole. For a point with longitude $\lambda$ and latitude $\phi$, its antipode is a point with longitude $\lambda-180^{\circ}$ and latitude $-\phi$. For example, the antipode of $(\lambda_1,\phi_1)$=(120&deg;,20&deg;) is $(\lambda_2,\phi_2)$=(-60&deg;,-20&deg;).[^1]
+
+[^1]: If your code give you a NaN (not a number) for the distance, you have just encountered one of the annoying things in numerical calculations: NaN caused by machine roundoff error. In the case of antipodes, the value of $\sin \phi_1 \sin \phi_2 + \cos \phi_1 \cos \phi_2 \cos(\lambda_1-\lambda_2)$ is exactly -1, cos<sup>-1</sup>(-1) = &pi; and so the distance is &pi;R. However, R, as well as many other programming languages, uses 8 bytes to store a real number (a.k.a. floating point number) and all computations involving real numbers are accurate to about 16 significant figures. So instead of exactly -1,  the computation might give -0.9999999999999999 or -1.00000000000001. The problem arises if the number -1.00000000000001 occurs since cos<sup>-1</sup>(-1.00000000000001) is not a real number (recall that for any real number $x$, $-1 \leq \cos x \leq 1$) and R returns a NaN. One way to fix the problem is to check the value $\sin \phi_1 \sin \phi_2 + \cos \phi_1 \cos \phi_2 \cos(\lambda_1-\lambda_2)$ before taking the arccos. If the value is close to -1 to within, say 14 significant figures, just use &pi; instead of taking acos().
+
+Your R code should be able to reproduce these results. This is an example of the technique "comparison to problems with known answers".
+
+#Scaling Down the Problem
+
+Assume that you have now tested your distance calculation. The next step is to develop a code that finds the two cities farthest apart in a data file. Suppose you have finished the code. How do you test it? With 100 cities, there are 100&times;99/2=4950 distance calculations. It is easier to consider a scaled down problem. For example, if there are only 3 cities, you will only need to do 3 distance calculations and you can surely do it by hand. So let's now construct a data file with only a few cities. 
+
+First load the data file you are asked to analyze. For this demonstration, we assume that the data file is http://courses.atlas.illinois.edu/spring2016/STAT/STAT200/RProgramming/data/world_cities/cities009.csv. We load it using the command 
+```{r, eval=FALSE}
+cities <- read.csv("http://courses.atlas.illinois.edu/spring2016/STAT/STAT200/RProgramming/data/world_cities/cities009.csv", as.is=TRUE)
+```
+The `as.is=TRUE` is an option telling R not to convert strings to factors. 
+```{r, echo=FALSE}
+# download from the computer instead
+cities <- read.csv("cities009.csv", as.is=TRUE)
+# create auxiliary variables
+city <- paste(cities$city,cities$country,sep=', ')
+long_rad <- cities$longitude*pi/180
+lat_rad <- cities$latitude*pi/180
+dist <- function(long1,lat1,long2,lat2) {
+  as.character(signif(6371*acos(sin(lat1)*sin(lat2) + cos(lat1)*cos(lat2)*cos(long1-long2))),7)
+}
+d12 <- dist(long_rad[1],lat_rad[1],long_rad[2],lat_rad[2])
+d13 <- dist(long_rad[1],lat_rad[1],long_rad[3],lat_rad[3])
+d14 <- dist(long_rad[1],lat_rad[1],long_rad[4],lat_rad[4])
+d15 <- dist(long_rad[1],lat_rad[1],long_rad[5],lat_rad[5])
+d23 <- dist(long_rad[2],lat_rad[2],long_rad[3],lat_rad[3])
+d24 <- dist(long_rad[2],lat_rad[2],long_rad[4],lat_rad[4])
+d25 <- dist(long_rad[2],lat_rad[2],long_rad[5],lat_rad[5])
+d34 <- dist(long_rad[3],lat_rad[3],long_rad[4],lat_rad[4])
+d35 <- dist(long_rad[3],lat_rad[3],long_rad[5],lat_rad[5])
+d45 <- dist(long_rad[4],lat_rad[4],long_rad[5],lat_rad[5])
+```
+The file contains 100 cities, but we can easily reduce the number by taking the first few observations. For example, the following command extracts the first 3 observations:
+```{r}
+cities3 <- cities[1:3,]
+cities3
+```
+With 3 cities, it's easy to calculate all the distances by hand. Here are the results.
+
+City 1                  City 2                         Distance (km)
+-----------------   -----------------------------   ---------------------
+`r city[1]`          `r city[2]`                      `r d12`
+`r city[1]`          `r city[3]`                      `r d13`
+`r city[2]`          `r city[3]`                      `r d23`
+
+So the two cities farthest apart are `r city[1]` and `r city[3]`, and the distance between them is `r d13` km.
+
+You can now export this data frame with 3 cities to a csv file.
+```{r, eval=FALSE}
+write.csv(cities3, "three_cities.csv", row.names=FALSE)
+```
+Test your code on this file and see if you get the correct answer. 
+
+If you are not satisfied with a data set with only 3 cities, you can use a similar technique to create a data set with 5 cities:
+```{r}
+cities5 <- cities[1:5,]
+cities5
+```
+Now you have to calculate 5&times;4/2=10 distances and so it's more than 3 times harder than the 3 cities. It still takes just a few minutes to do all the calculations using a calculator. Here are the results.
+
+City 1                  City 2                         Distance (km)
+--------------------   -----------------------------   ---------------------
+`r city[1]`             `r city[2]`                      `r d12`
+`r city[1]`             `r city[3]`                      `r d13`
+`r city[1]`             `r city[4]`                      `r d14`
+`r city[1]`             `r city[5]`                      `r d15`
+`r city[2]`             `r city[3]`                      `r d23`
+`r city[2]`             `r city[4]`                      `r d24`
+`r city[2]`             `r city[5]`                      `r d25`
+`r city[3]`             `r city[4]`                      `r d34`
+`r city[3]`             `r city[5]`                      `r d35`
+`r city[4]`             `r city[5]`                      `r d45`
+
+
+The two cities farthest apart are `r city[3]` and `r city[4]`, and the distance between them is `r d34` km.
+
+Now export this 5-city data to a csv file.
+```{r, eval=FALSE}
+write.csv(cities5, "five_cities.csv", row.names=FALSE)
+```
+Test your code on this file and see if you get the correct answer. One nice thing about scaling down the problem is that the data set is small so it is much easier to debug your code if it doesn't produce the correct answer. It is a very useful technique for code development, especially for a complex code. It allows you to test your code frequently as you add more features during the development to make sure that you get the expected result before you move forward.
+
+If your code gives the correct answer on the 5-city data, it probably doesn't have bugs. The logic of searching for the farthest distance among 5 cities is the same as that among 100 cities. It just involves much more calculations with 100 cities.
+
+#Comparison to Problems with Known Answers
+
+The scaled down technique is nice, but to really test a code it is useful to use data that are comparable to the real data. It will be great if we have a data set where we know the correct answer to our question. We don't have such a data set, but we can create one. 
+
+We will alter the data in the data frame `cities`. The idea is simple. We know the maximum possible distance on Earth is half of the circumference of the Earth, 20015.09 km calculated above. Let's create an antipode to a city in the data frame. Let's randomly pick a city, say the 15th row in the data.
+```{r}
+cities[15,]
+```
+The city is `r city[15]`. We now create an antipode to this city and put it in the 77th row by altering the longitude and latitude of the data in the 77th row:[^2]
+```{r}
+cities$longitude[77] <- cities$longitude[15]-180
+cities$latitude[77] <- -cities$latitude[15]
+```
+
+[^2]: If you get a NaN in the distance calculation, use the command `cities$latitude[77] <- -cities$latitude[15]+1e-10` instead. This will avoid the NaN caused by machine roundoff error.
+
+There is probably no city at this location. To prevent confusion, we also alter the other columns in the 77th row:
+```{r}
+cities$city[77] <- "Utopia"
+cities$population[77] <- 0
+cities$country[77] <- "Neverland"
+cities$province[77] <- "Lala"
+```
+We have just created a fake data set where we know the answer to our question: the two cities farthest apart in the data set are `r city[15]` and Utopia, Neverland, and the distance between them is 20015.09 km.
+
+Now export this data to a csv file.
+```{r, eval=FALSE}
+write.csv(cities, "fake_city_data.csv", row.names=FALSE)
+```
+Test your code on this csv file and see if you get the correct answer. The nice thing about this data set is that it's the same size as the original data and we only alter one data point. 
+
+You might wonder if it's possible to have another pair of cities in the data that are also antipodes. If that happens, we will have a tie in the data. This is theoretically possible but highly unlikely. If your code finds another pair of cities having the distance 20015.09 km. You should be suspicious and check by hand if their distance is indeed that value (consistency check). It is more likely that your code has bugs and finds a wrong pair of cities.
+
+We construct the data set with known answer based on our knowledge that the maximum possible distance on a sphere is &pi;R and the two points are antipodes. In general, constructing non-trival data set of known answers to our questions for code test requires expertise. Sometimes, a special analytic solution is derived just for the purpose of testing a code. 
+
+<hr />
+
+Scaling down the problem and comparison with problem with known answers are two very useful techniques of testing a code, especially a complex code. The tests mentioned here are very powerful. If your code passes these tests, you should be very confident that it has no bugs.
+
+<br />
+<br />
+<br />
