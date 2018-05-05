@@ -2,7 +2,7 @@
 // BEGIN: Common Header with Navigation Bar
 document.write("<header style='text-align:center;'>");
 
-document.write("<a href='https://stat.illinois.edu/' target='_blank'>");
+document.write("<a href='http://illinois.edu/' target='_blank'>");
 document.write("<img border=0 width=468 height=20 id='_x0000_i1025' ");
 document.write("src='uiorgnbluebar.gif'");
 document.write("alt='University of Illinois at Urbana-Champaign' />");
