@@ -159,8 +159,8 @@ MathJax.Hub.Config({
 <div id="scaling-down-the-problem" class="section level1">
 <h1>Scaling Down the Problem</h1>
 <p>Assume that you have now tested your distance calculation. The next step is to develop a code that finds the two cities farthest apart in a data file. Suppose you have finished the code. How do you test it? With 100 cities, there are 100×99/2=4950 distance calculations. It is easier to consider a scaled down problem. For example, if there are only 3 cities, you will only need to do 3 distance calculations and you can surely do it by hand. So let’s now construct a data file with only a few cities.</p>
-<p>First load the data file you are asked to analyze. For this demonstration, we assume that the data file is <a href="http://courses.atlas.illinois.edu/spring2016/STAT/STAT200/RProgramming/data/world_cities/cities009.csv" class="uri">http://courses.atlas.illinois.edu/spring2016/STAT/STAT200/RProgramming/data/world_cities/cities009.csv</a>. We load it using the command</p>
-<pre class="r"><code>cities &lt;- read.csv(&quot;http://courses.atlas.illinois.edu/spring2016/STAT/STAT200/RProgramming/data/world_cities/cities009.csv&quot;, as.is=TRUE)</code></pre>
+<p>First load the data file you are asked to analyze. For this demonstration, we assume that the data file is <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/data/world_cities/cities009.csv" class="uri">https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/data/world_cities/cities009.csv</a>. After downloading it to the work space, we load it using the command</p>
+<pre class="r"><code>cities &lt;- read.csv(&quot;cities009.csv&quot;, as.is=TRUE)</code></pre>
 <p>The <code>as.is=TRUE</code> is an option telling R not to convert strings to factors.</p>
 <p>The file contains 100 cities, but we can easily reduce the number by taking the first few observations. For example, the following command extracts the first 3 observations:</p>
 <pre class="r"><code>cities3 &lt;- cities[1:3,]
