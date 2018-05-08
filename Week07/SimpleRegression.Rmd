@@ -273,7 +273,7 @@ $$SSM = \sum_{i=1}^n (\hat{y}_i-\bar{y})^2$$
 $$SSE = \sum_{i=1}^n (y_i-\hat{y}_i)^2$$
 
 Note that SST is independent of the model parameters $\beta_0$ and $\beta_1$ and is given by $SST=nSD_y^2$ from the definition of the standard deviation. The other two quantities SSM and SSE depend on the parameters. You are told that if $\beta_0$ and $\beta_1$ are given by the regression formulae, then SST=SSM+SSE, 
-$SSM=nr^2SD_y^2$ and $SSE=n(1-r^2)SD_y^2$. The mathematical proof can be found in <a href="Linear_Regression_Demystified.pdf" target="_blank">these notes</a> for mathematically inclined students. Here we will confirm these claims using R. 
+$SSM=nr^2SD_y^2$ and $SSE=n(1-r^2)SD_y^2$. The mathematical proof can be found in <a href="../Linear_Regression_Demystified.pdf" target="_blank">these notes</a> for mathematically inclined students. Here we will confirm these claims using R. 
 
 Below is a simple function that calculates SSE, SSM and SST-SSM-SSE.
 <p id="computeSS">

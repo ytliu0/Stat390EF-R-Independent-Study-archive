@@ -1,0 +1,346 @@
+%\documentclass[14pt]{extarticle}
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.8in,top=0.8in,bottom=0.8in]{geometry}
+
+%\usepackage{hyperref, extsizes, amsmath}
+\usepackage{hyperref, amsmath}
+
+\newcommand{\beq}{\begin{equation}}
+\newcommand{\eeq}{\end{equation}}
+\newcommand{\beqn}{\begin{eqnarray}}
+\newcommand{\eeqn}{\end{eqnarray}}
+\newcommand{\ve}[1]{\mbox{\boldmath $#1$}}
+
+%\numberwithin{equation}{section}
+
+\begin{document}
+\title{Coin Toss Problem}
+\author{Yuk Tung Liu}
+\date{2017-02-17}
+\maketitle
+
+\bigskip
+\section{Introduction}
+
+What is the probability that at least $k$ consecutive heads or tails occur in 
+$n$ coin flips? This problem can be solved analytically using a recurrence formula. 
+
+First, we will map this problem to a related problem. We will prove that the 
+probability of getting at least $k$ consecutive heads or tails in $n$ coin flips 
+is equal to the probability of getting at least $k-1$ tails in $n-1$ coin flips. 
+Next we will derive a recurrence formula for the probability. Finally, we 
+derive a formula for the expected value of the number of consecutive heads or tails 
+in $n$ coin flips.
+
+\section{Mapping} 
+
+We first want to prove that the probability of getting at least $k$ consecutive 
+heads or tails in $n$ coin flips is equal to the probability of getting at least $k-1$ 
+consecutive tails in $n-1$ coin flips.
+
+Let $X_i$ be the random variable corresponding to the outcome of the $i$th coin flip. We set 
+$X_i=0$ if the $i$th flip is a tail and $X_i=1$ is the $i$th flip is a head. 
+As an example, consider the following outcome of 10 coin flips: 
+0100110001, where 0 denotes a tail and 1 denotes a head. For this example, we have 
+
+$X_1=0, X_2=1, X_3=0, X_4=0, X_5=1, X_6=1, X_7=0, X_8=0, X_9=0,  X_{10}=1$. 
+
+So the outcome can also be represented by the sequence \{0, 1, 0, 0, 1, 1, 0, 0, 0, 1\}. In 
+general, the outcome of $n$ coin flips can be represented by the sequence of 0s and 1s 
+as $S_n=\{X_1, X_2, ..., X_n\}$. 
+
+Given any sequence $S_n=\{X_1, X_2, ..., X_n\}$, construct $n-1$ random variables $Y_1,Y_2,...,Y_{n-1}$ 
+according to the following rule: 
+\beq
+  Y_i = |X_{i+1}-X_i| , \ \ \ \ \ i=1,2,\cdots ,n-1.
+\label{def:Y}
+\eeq
+That is, set $Y_i=0$ if $X_{i+1}=X_i$ and $Y_i=1$ if $X_{i+1} \neq X_i$. In terms of coin flips, 
+we set $Y_i=0$ if the outcome of the $(i+1)$th flip is the same as the outcome of the $i$th flip (i.e.\  
+both heads or both tails), and set $Y_i=1$ if the outcome of the $(i+1)$th flips is not 
+the same as the outcome of the $i$th flip (i.e.\ one is head and one is tail). 
+
+Given any sequence $S_n=\{ X_1,X_2,...,X_n \}$, we can construct another unique sequence 
+$S'_{n-1}=\{Y_1,Y_2,...,Y_{n-1}\}$. 
+For example, the outcome of the 10 coin flips in the above example can be represented by 
+the sequence $S_{10}=\{0,1,0,0,1,1,0,0,0,1\}$, and its associated $S'_9$ is 
+$S'_9 = \{1,1,0,1,0,1,0,0,1\}$.
+It is easier to see the relationship between the two sequences if we display them in a staggered pattern:
+
+\begin{tabular}{cccccccccccccccccccc}
+  $S_{10}$: & 0 && 1 && 0 && 0 && 1 && 1 && 0 && 0 && 0 && 1 \\
+  $S'_9$:  && 1 && 1 && 0 && 1 && 0 && 1 && 0 && 0 && 1 & 
+\end{tabular}
+
+By construction, giving any $S_n$ there is a unique $S'_{n-1}$. What about the inverse? 
+Given any sequence $S'_{n-1}$, can we construct a sequence $S_n$ that maps to $S'_{n-1}$? It turns out 
+that we can always do that, but the sequence $S_n$ is not unique. In fact, given any $S'_{n-1}$, 
+we can construct exactly two sequences $S_n$ that map to $S'_{n-1}$. 
+
+The construction can be done as follows. Given any $S'_{n-1}=\{Y_1,Y_2,...,Y_{n-1}\}$, 
+there is no way we can determine $X_1$. So we can have either $X_1=0$ or $X_1=1$. 
+Once $X_1$ is fixed, the 
+other $X_i$ can be constructed uniquely by the values of $Y_i$ by solving 
+equation~(\ref{def:Y}). If $Y_i=0$, we have $|X_{i+1}-X_i|=0$ and so $X_{i+1}=X_i$. 
+If $Y_i=1$, we have $|X_{i+1}-X_i|=1$. Since $X_i$ and $X_{i+1}$ can only take values 
+of 0 and 1, we must have $X_{i+1}=1$ if $X_i=0$ and $X_{i+1}=1$ if $X_i=0$. That is, 
+$X_{i+1}=1-X_i$ if $Y_i=1$. To summarize, we have 
+\beq
+  X_{i+1} = \left \{ \begin{array}{ll} X_i & \mbox{if } Y_i=0 , \\ 
+1-X_i & \mbox{if } Y_i=1  , \end{array} \right. \ \ \ \ \ i=1,2,\cdots, n-1.
+\label{eq:XfromY0}
+\eeq
+This equation can be combined to give 
+\beq
+  X_{i+1} = (1-2X_i)Y_i + X_i , \ \ \ \ \ i=1,2,\cdots, n-1.
+\label{eq:XfromY}
+\eeq
+When $Y_i=0$, the above equation gives $X_{i+1}=X_i$; when $Y_i=1$, the above equation 
+gives $X_{i+1}=1-X_i$. This is exactly the same as equation~(\ref{eq:XfromY0}).
+
+Once the value of $X_1$ is known, equation~(\ref{eq:XfromY}) determines $X_i$ 
+uniquely for $i>1$. There are two possible values for $X_1$, so the sequence 
+$S'_{n-1}$ has exactly 
+two distinct sequences of $S_n$ that map to it.
+
+We are now ready to prove that the probability of getting at least $k$ consecutive heads or tails in 
+$n$ coin flips is equal to the probability of getting at least $k-1$ consecutive tails in $n-1$ 
+coin flips. Suppose $S_n$ is the sequence corresponding to at least $k$ consecutive heads or tails 
+in $n$ coin flips. Then $S_n$ contains at least $k$ consecutive 1s or 0s. It follows that the associated 
+sequence $S'_{n-1}$ contains at least $k-1$ consecutive 0s. Let $N_1(k,n)$ be the number of sequences 
+with at least $k$ consecutive 1s or 0s, and $N_2(k-1,n-1)$ be the number of sequences $S'_{n-1}$ with 
+at least $k-1$ consecutive 0s. Since there are exactly two distinct sequences $S_n$ that map to the same 
+$S'_{n-1}$, we have $N_1(k,n)=2N_2(k-1,n-1)$. In $n$ coin flips, each flip has two possible outcomes. 
+So there are $2^n$ total possible outcomes in $n$ coin flips. Hence, 
+\beq
+  P({\rm at~least}~k~{\rm consecutive~1s~or~0s~in}~n~{\rm flips})=\frac{N_1(k,n)}{2^n} = \frac{2N_2(k-1,n-1)}{2^n} 
+= \frac{N_2(k-1,n-1)}{2^{n-1}}, 
+\eeq
+which is the probability of getting $k-1$ consecutive tails in $n-1$ coin flips. This completes the proof.
+
+\section{Recurrence Relations}
+\label{sec:recursion}
+
+Let $Q(k,n)$ be the probability of getting at least $k$ consecutive heads or tails 
+in $n$ coin flips; and let $G(k,n)$ be the probability of getting at least $k$ consecutive 
+tails in $n$ coin flips. In the previous section, we show that $Q(k,n)=G(k-1,n-1)$. We now 
+want to find a general formula for $Q(k,n)$. It turns out that it is easier to analyze $G(k,n)$. 
+We will find a formula for $G(k,n)$ and then use the relationship between $Q$ and $G$ to 
+obtain $Q(k,n)$.
+
+The value of $G(k,n)$ is easy for $k \geq n$. To have at least $k$ tails, we must flip the coin 
+at least $k$ times. Hence, $G(k,n)=0$ if $k>n$. For $k=n$, we must get all tails in the $n$ flips. 
+Since P(tail)=1/2 and all flips are independent, $G(n,n)=1/2^n$. So we have 
+\beq
+  G(k,n) = 0 \ \ \mbox{ if } \ \ k>n, \ \ \ G(n,n)=\frac{1}{2^n} .
+\label{eq:Gkn0}
+\eeq
+
+Now we want to derive a formula 
+for $G(k,n)$ when $n >k$. 
+
+When $n>k$, we look at the outcome of the last $k$ flips. For concreteness, we consider 
+$k=6$ but the analysis works for general $k$. We consider 2 cases: 
+(1) the last flip is a head and (1') the last flip 
+is a tail. The outcomes of the last 6 flips are as follows:
+
+Case 1: xxxxx1 
+
+Case 1': xxxxx0
+
+Here x stands for 0 (for tail) or 1 (for head). Case 1 and 1' are mutually exclusive. We further split 
+Case 1' into two mutually exclusive cases: 
+
+Case 2: xxxx10 
+
+Case 2': xxxx00 
+
+In Case 2, the last 2 flips are head and tail. In Case 2', the last 2 flips are all tails. We further 
+split Case 2' into two mutually exclusive cases:
+
+Case 3: xxx100
+
+Case 3': xxx000
+
+So Case 3 and Case 3' differ from the last third flip. We can go on to split Case 3' into Cases 4 and 4', 4' into 
+5 and 5' and so on. The rule is that we keep splitting the cases with all tails until we get a head or all 6 
+outcomes are tails. In the end, we have the following 7 mutually exclusive cases: 
+
+Case 1: xxxxx1
+
+Case 2: xxxx10
+
+Case 3: xxx100
+
+Case 4: xx1000
+
+Case 5: x10000
+
+Case 6: 100000
+
+Case 7: 000000
+
+These are all the possible and mutually exlusive cases we want to consider in the last 6 flips. Let 
+``$\geq 6$'' denote ``getting at least 6 consecutive tails in $n$ coin flips''. Then we have 
+\beqn
+  P(\geq 6) = G(6,n)&=&P(\geq 6 \cap {\rm Case~1}) + P(\geq 6 \cap {\rm Case~2}) + P(\geq 6 \cap {\rm Case~3}) \cr 
+&&+ P(\geq 6 \cap {\rm Case~4}) + P(\geq 6 \cap {\rm Case~5}) + P(\geq 6 \cap {\rm Case~6}) ,
+\eeqn
+where $P(\geq 6 \cap {\rm Case~i})$, $i=1,2,3,4,5,6,7$, means the probability of getting at least 
+6 consecutive tails in $n$ flips and the last 6 flips have the pattern described by Case~i. We can 
+rewrite the above equation in terms of conditional probabilities as 
+\beqn
+  G(6,n) &=& P(\geq 6|{\rm Case~1}) P({\rm Case~1}) + P(\geq 6|{\rm Case~2}) P({\rm Case~2}) 
++ P(\geq 6|{\rm Case~3}) P({\rm Case~3})\cr && + P(\geq 6|{\rm Case~4}) P({\rm Case~4}) 
++ P(\geq 6|{\rm Case~5}) P({\rm Case~5}) + P(\geq 6|{\rm Case~6}) P({\rm Case~6})  \cr
+&& + P(\geq 6|{\rm Case~7}) P({\rm Case~7}) .
+\label{eq:G6n1}
+\eeqn
+The conditional probability $P(\geq 6|{\rm Case~1})$ is the probability of getting at least 
+6 consecutive tails given that the last flip is a head. Since the last flip is a head, the $\geq 6$ 
+consecutive tails must occur in the first $n-1$ flips. Hence $P(\geq 6|{\rm Case~1})=G(6,n-1)$. 
+Similarly, in case 2, the last two flips are head and tail, so if there are $\geq 6$ 
+consecutive tails, they must occur in the first $n-2$ flips. Hence $P(\geq 6|{\rm Case~2})=G(6,n-2)$. 
+In general, you can convince yourself that $P(\geq 6|{\rm Case~i})=G(6,n-i)$ for $i=$1, 2, 3, 4, 5 and 
+6. What about Case~7, in which the last 6 flips are all tails? Obviously, in Case~7, 
+we already have 6 consecutive tails, so $P(\geq 6|{\rm Case~7})=1$. 
+We can now write equation~(\ref{eq:G6n1}) as 
+\beqn
+  G(6,n) &=& G(6,n-1)P({\rm Case~1}) + G(6,n-2)P({\rm Case~2}) + G(6,n-3)P({\rm Case~3}) \cr 
+&& + G(6,n-4)P({\rm Case~4}) + G(6,n-5)P({\rm Case~5}) + G(6,n-6)P({\rm Case~6}) \cr 
+&& + P({\rm Case~7}) .
+\label{eq:G6n2}
+\eeqn
+We now need to calculate $P({\rm Case~i})$ for $i=$1, 2, 3, 4, 5, 6 and 7. In Case~1, we want the 
+last flip to be a head, so $P({\rm Case~1})=1/2$. In Case~2, we want the last flip to be a tail
+and the second last flip to be a head, so $P({\rm Case~2})=(1/2)\times (1/2)=1/4$. You can 
+easily see that $P({\rm Case~i})=1/2^i$ for all $i=$1, 2, 3, 4, 5, and 6. In Case~7, we want 
+all the last 6 flips to be tails, so $P({\rm Case~7})=1/2^6$. Equation~(\ref{eq:G6n2}) can 
+now be written as 
+\beqn
+  G(6,n) &=& \frac{1}{2}G(6,n-1) + \frac{1}{2^2}G(6,n-2) + \frac{1}{2^3}G(6,n-3) \cr \cr 
+&& + \frac{1}{2^4}G(6,n-4) + \frac{1}{2^5}G(6,n-5) + \frac{1}{2^6}G(6,n-6) + \frac{1}{2^6} .
+\label{eq:G6n3}
+\eeqn
+Note that (\ref{eq:G6n3}) is a recurrence formula for $G(6,n)$. If we know the values of 
+$G(6,n-1)$, $G(6,n-2)$, $G(6,n-3)$, ..., $G(6,n-6)$, we can use~(\ref{eq:G6n3}) to calculate 
+$G(6,n)$. From~(\ref{eq:Gkn0}), we know $G(6,1)=G(6,2)=G(6,3)=G(6,4)=G(6,5)=0$ and 
+$G(6,6)=1/2^6$. It follows from~(\ref{eq:G6n3}) that 
+\beq
+  G(6,7) = \frac{1}{2}G(6,6) + \frac{1}{2^6} = \frac{1}{2^7} + \frac{1}{2^6}=\frac{3}{128}.
+\eeq
+Using~(\ref{eq:G6n3}) with $n=8$, we have 
+\beq
+  G(6,8) = \frac{1}{2}G(6,7)+\frac{1}{4}G(6,6)+\frac{1}{2^6}=\frac{3}{256}+\frac{1}{256} 
++\frac{1}{64} = \frac{1}{32}.
+\eeq
+Similarly, 
+\beq
+  G(6,9) = \frac{1}{2}G(6,8)+\frac{1}{4}G(6,7)+\frac{1}{8}G(6,6)+\frac{1}{2^6} 
+= \frac{5}{128} .
+\eeq
+We can go on and on to compute $G(6,n)$ for other values of $n$. 
+
+Following the same analysis, one can derive a recurrence formula for $G(k,n)$ for a 
+general $k$. The result is 
+\beq
+\boxed{ G(k,n) = \frac{1}{2^k} + \sum_{j=1}^k \frac{1}{2^j} G(k,n-j) \ \ , \ \
+  G(k,i)=0 \mbox{ for } i<k \ \mbox{ and } G(k,k)=\frac{1}{2^k} }
+\label{eq:Gkn5}
+\eeq
+
+Having otained $G(k,n)$, we can use the relation $Q(k,n)=G(k-1,n-1)$ to obtain a recurrence 
+formula for $Q(k,n)$:
+\beq
+\boxed{ Q(k,n) = \frac{1}{2^{k-1}} + \sum_{j=1}^{k-1} \frac{1}{2^j} Q(k,n-j) \ \ , \ \
+  Q(k,n) = 0 \ \mbox{ for } k <n } 
+\label{eq:Qkn}
+\eeq
+This is the recurrence formula that can be used to calculate the probability of getting at 
+least $k$ consecutive heads or tails in $n$ coin flips.
+
+{\bf Special Cases} 
+
+(1) $k=1$. Clearly, the probability of getting at least one head or tail is 1, so 
+$Q(1,n)=1$ for all $n\geq 1$.
+
+(2) $k=2$. It follows from~(\ref{eq:Qkn}) that 
+\beq
+  Q(2,n)=\frac{1}{2}+\frac{1}{2}Q(2,n-1) .
+\eeq
+Stating from $Q(2,1)=0$, we have 
+\beqn
+  Q(2,2)&=&\frac{1}{2} + \frac{1}{2}\cdot 0 = \frac{1}{2} \\ \cr
+  Q(2,3) &=& \frac{1}{2} + \frac{1}{2}Q(2,2) = \frac{1}{2}+\frac{1}{4} = \frac{3}{4} \\ \cr 
+  Q(2,4) &=& \frac{1}{2} + \frac{1}{2}Q(2,3) = \frac{1}{2} + \frac{1}{4} + \frac{1}{8} = 
+\frac{7}{8} 
+\eeqn
+It is easy to show that 
+\beq
+  Q(2,n)=\frac{1}{2}+\frac{1}{2^2}+\frac{1}{2^3}+ \cdots + \frac{1}{2^{n-1}}=
+1-\frac{1}{2^{n-1}} .
+\eeq
+The last equality follows from the formula for the sum of a geometric series. 
+It is easy to interpret the result. $Q(2,n)$ is the probability of getting at least 
+two consecutive heads or tails in $n$ coin flips. The only times that won't happen 
+is if the outcome of the flips show alternate pattern, e.g.\ 0101010101... or 1010101010....
+To get this pattern, the first flip can be 0 or 1, but the next $n-1$ flips are determined. 
+So the probability of getting 01010101... or 101010101... is $1/2^{n-1}$. Another way to 
+obtain the result is to notice that in the alternate pattern $Y_i=|X_{i+1}-X_i|=1$ for all 
+$i=1,2,\cdots,n-1$. Following the same analysis as the previous section, the probability 
+of getting the alternate pattern in $n$ flips is the 
+same as the probability of getting $n-1$ heads in $n-1$ coin flips, which is $1/2^{n-1}$. 
+Getting at least two consecutive heads or tails in $n$ coin flips is the complement of 
+getting the alternate pattern in $n$ flips. So $G(2,n)=1-1/2^{n-1}$.
+
+\vskip 1cm
+{\bf Exercise~1} 
+
+(a) Write a function to compute $Q(k,n)$ for any positive integers $k$ and $n$. 
+
+(b) Verify that $Q(7,100)=0.5423369$ and $Q(6,100)=0.8068205$ as claimed in the 
+Lon Capa HW problem on simulating coin flips.
+
+(c) Verify that $1-Q(5,100)=0.02831033$. This is the probability that no more than 
+4 consecutive heads or tails occur in 100 coin flips. 
+
+\section{Expected Value} 
+
+For a fixed $n$, the probability mass function $f(k|n)$ is the probability that exactly 
+$k$ consecutive heads or tails occur in $n$ coin flips. So we have 
+\beq
+  f(k|n) = Q(k,n)-Q(k+1,n) .
+\eeq
+The expected value of consecutive heads or tails in $n$ coin flips is given by the formula 
+\beq
+  E(n) = \sum_{k=0}^n k f(k|n) = \sum_{k=1}^n k [Q(k,n)-Q(k+1,n)] .
+\eeq
+The sum can be carried out by an index-shifting trick:
+\beqn
+  E(n) &=& \sum_{k=1}^n k Q(k,n) - \sum_{k=1}^n k Q(k+1,n) \cr \cr 
+ &=& \sum_{k=1}^n k Q(k,n) -\sum_{k=2}^{n+1} (k-1) Q(k,n) \cr \cr 
+ &=& Q(k,n) + \sum_{k=2}^n [k-(k-1)]Q(k,n) - nQ(n+1,n) \cr \cr 
+ &=& \sum_{k=1}^n Q(k,n) ,
+\label{eq:En}
+\eeqn
+where we have used the fact that $Q(n+1,n)=0$. If you have trouble understanding the trick, write out 
+the terms:
+\beqn
+  E(n)= \sum_{k=1}^n k Q(k,n) &&- \sum_{k=1}^n k Q(k+1,n) \cr \cr 
+     = Q(1,n) && + 2Q(2,n) + 3Q(3,n)+4Q(4,n)+\cdots + nQ(n,n) \cr 
+   &&-Q(2,n)-2Q(3,n)-3Q(4,n)-\cdots -(n-1)Q(n,n) \cr 
+  = && Q(1,n) + Q(2,n) + \cdots Q(n,n) \cr \cr
+ =&& \sum_{k=1}^n Q(k,n) .
+\eeqn
+So we have 
+\beq
+ \boxed{ E(n)=\sum_{k=1}^n Q(k,n) }
+\eeq
+
+\vskip 1cm
+{\bf Exercise~2}: Write a function to calculate $E(n)$ and then verify that $E(100)=6.977432$ as claimed 
+in the Lon Capa problem on simulating coin flips.
+
+\end{document}
