@@ -1,0 +1,17 @@
+# weight is in pounds, heart rate in beats/minutes, lifespan in years
+creature,weight,heartRate,lifespan
+Human,200,60,70
+Cat,4.5,150,15
+Small dog,4.5,100,10
+Medium dog,10,90,15
+Large dogs,20,75,17
+Hamster,0.15,450,3
+Chicken,3.5,275,15
+Monkey,10,190,15
+Horse,2500,44,40
+Cow,2000,65,22
+Pig,350,70,25
+Rabbit,2.5,205,9
+elephant,10000,30,70
+giraffe,2000,65,20
+large whale,250000,20,80
