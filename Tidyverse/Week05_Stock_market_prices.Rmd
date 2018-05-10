@@ -31,7 +31,7 @@ library(tidyverse)
 ```
 
 
-###The daily stock market prices are available on many internet sites. <a href="http://courses.atlas.illinois.edu/spring2017/STAT/STAT200/RProgramming/data/AAPLStock.csv" target="_blank">Here</a> is a data file containing the daily stock price for the Apple Inc.. It was downloaded from <a href="http://finance.yahoo.com/q/hp?s=AAPL+Historical+Prices" target="_blank">Yahoo! Finance</a>. 
+###The daily stock market prices are available on many internet sites. <a href="AAPLStock.csv" target="_blank">Here</a> is a data file containing the daily stock price for the Apple Inc.. It was downloaded from <a href="http://finance.yahoo.com/q/hp?s=AAPL+Historical+Prices" target="_blank">Yahoo! Finance</a>. 
 
 ```{r}
 # load the data

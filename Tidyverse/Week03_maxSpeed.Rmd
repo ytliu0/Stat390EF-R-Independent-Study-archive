@@ -25,12 +25,12 @@ pre {
 knitr::opts_chunk$set(comment = NA)
 ```
 
-In this problem, you are going to look at Stat 100's survey 1 data in Spring 2017. The csv data file can be downloaded <a href="http://courses.atlas.illinois.edu/fall2017/STAT/STAT200/RProgramming/data/Stat100_2017spring_survey01.csv" target="_blank">here</a>. Put the file, Stat100_2017spring_survey01.csv, to your R's working directory and load it with the command
+In this problem, you are going to look at Stat 100's survey 1 data in Spring 2017. The csv data file can be downloaded <a href="Stat100_2017spring_survey01.csv" target="_blank">here</a>. Put the file, Stat100_2017spring_survey01.csv, to your R's working directory and load it with the command
 ```{r, message=FALSE}
 library(tidyverse)
 survey <- read_csv("Stat100_2017spring_survey01.csv")
 ```
-The column variables are explained on this <a href="http://courses.atlas.illinois.edu/fall2017/STAT/STAT200/RProgramming/data/Stat100_2017spring_survey01.html">webpage</a>. 
+The column variables are explained on this <a href="../data/Stat100_2017spring_survey01.html" target="_blank">webpage</a>. 
 
 ```{r, echo=FALSE}
 qnum = 1L

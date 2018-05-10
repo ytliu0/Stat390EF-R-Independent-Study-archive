@@ -30,7 +30,7 @@ knitr::opts_chunk$set(comment = NA)
 library(tidyverse)
 ```
 
-###In the second survey of Stat 100 in Fall 2017, students reported the number of hours they worked per week and the percent of their tuition their parents paid for. The data can be downloaded <a href="http://courses.las.illinois.edu/stat/stat100/survey/archive/stat100_2017fall_survey02.csv" target="_blank">here</a>. The hours students work per week is in the column named `workHr` and the percent of tuition is in the column `tuition`.
+###In the second survey of Stat 100 in Fall 2017, students reported the number of hours they worked per week and the percent of their tuition their parents paid for. The data can be downloaded <a href="stat100_2017fall_survey02.csv" target="_blank">here</a>. The hours students work per week is in the column named `workHr` and the percent of tuition is in the column `tuition`.
 
 ```{r}
 # load data
