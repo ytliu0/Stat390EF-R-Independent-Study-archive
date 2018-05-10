@@ -1,0 +1,113 @@
+---
+title: "Assigning Grades"
+output: html_document
+---
+<!-- Make the font size bigger... easier for my eyes -->
+<style type="text/css">
+
+body, td {
+   font-size: 16px;
+}
+code.r{
+  font-size: 16px;
+}
+pre {
+  font-size: 16px
+}
+
+.boxed {
+  border: 1px solid black;
+  padding: 5px;
+} 
+</style>
+
+
+```{r setoptions, echo=FALSE}
+# Disable the comments in R outputs
+knitr::opts_chunk$set(comment = NA)
+```
+
+```{r, echo=FALSE}
+stat100 <- read.csv("Stat100Spring2017_combined.csv")
+stat100 <- stat100[stat100$Availability=="Yes",]
+stat100[is.na(stat100)] <- 0
+stat100$wt <- with(stat100, (15*HWavg + 20*(Exam1+Exam2+Exam3))/75)
+stat100$wtb <- round(with(stat100, (wt+0.25*Bonus)/(100+0.25*Bonus)*100),2)
+```
+
+
+For simplicity, suppose that there are only five grades: A, B, C, D and F. The cutoff points are 90, 80, 70, and 60, meaning that a score < 60 will be assigned an F; 60 &leq; score < 70 will be assigned a D and so on. 
+
+**If you want to use one of the methods here, you will have to generalize the code to include all the possible grades in the grade table.** You won't get any points by just copying and pasting codes here. 
+
+Assume that the weighted total with bonus scores are stored in a data frame named `stat100` and a column named `wtb`. We will create a new column named `grade` to store the letter grades.
+
+##Method 1
+
+Use an if-else statement and loop over all the observations.
+```{r}
+stat100$grade <- NA
+for (i in 1:(nrow(stat100))) {
+  if (stat100$wtb[i] < 60) {
+    stat100$grade[i] <- "F"
+  } else if (stat100$wtb[i] < 70) {
+    stat100$grade[i] <- "D"
+  } else if (stat100$wtb[i] < 80) {
+    stat100$grade[i] <- "C"
+  } else if (stat100$wtb[i] < 90) {
+    stat100$grade[i] <- "B"
+  } else {
+    stat100$grade[i] <- "A"
+  }
+}
+```
+This is possibly the most straightforward code, but it's also the worse of the three methods. By hard-coding the cutoff points in the loop, it's not very flexible and hard to modify if you want to change the cutoff points and/or add more subgrades.
+
+##Method 2
+
+We want to modify the code in method 1 to make it more flexible. We can define two variables that store the letter grades and break points. 
+```{r}
+grades <- c("F", "D", "C", "B", "A")
+break_pts <- c(-Inf, 59.995, 69.995, 79.995, 89.995, Inf)
+```
+The variable `break_pts` defines intervals to break the scores. We will assign an F to a score that is inside the interval (-&infin;, 59.995), a D to a score inside the interval (59.995, 69.995) and so on. We use 59.995, 69.995 and so on instead of 60, 70 and so on because we don't want to worry about whether or not to include the boundary values. Since the weighted total with bonus (`wtb`) are rounded to 2 decimal places, they will not be equal to any of these boundary values. Also, by setting the lower boundary value to -Inf (represents -&infin;) and upper boundary to Inf (&infin;), we are guaranteed to include the lowest and highest score in the dataset. We use Inf instead of 100 because occasionally we have scores slightly higher than 100 due to extra bonus points being awarded to a student's exam score. [Type `summary(stat100)` to see a summary of values in the columns of the data frame.]
+
+Now we can define a function that assigns a letter grade for any given score, `grades` and `break_pts`.
+```{r}
+letter_grade <- function(score, breaks, grades) {
+  n <- length(breaks)
+  for (i in 1:(n-1)) {
+    if (score < breaks[i+1]) {
+      grade <- grades[i] # found the grade the score belongs to
+      break  # exit the for-loop
+    }
+  }
+  grade
+}
+```
+All we need to do now is to pass all the scores in the `wtb` column to the function and gather the result. We can use a for-loop to do that, but a simpler method is to use the loop function `sapply()`:
+```{r}
+stat100$grade_method2 <- sapply(stat100$wtb, letter_grade, break_pts, grades)
+```
+We can check that we get the same result as method 1:
+```{r}
+identical(stat100$grade, stat100$grade_method2)
+```
+This method is better since you can easily change the break points and/or add subgrades. All you need to do is to modify the two vectors `break_pts` and `grades`. Also, the function can be used later for scores in other courses. 
+
+##Method 3
+
+This method uses the `cut()` function introduced in Week 13's note. Recall that the `cut()` function creates a factor vector by splitting a numeric vector into intervals specified by the break points. This is exactly what we want here. In Week 13, we demonstrate the use of the `cut()` function and the levels of the resulting factor vector are labelled in the form (a,b], where a and b are the lower and upper bounds of the interval. We don't want these labels. Instead, we want them labelled by the characters in `grades`. No problem! Just take a look at the documentation in `?cut` and you will find that `cut()` has a `labels` option that allows you to specify the labels. So the letter grades can be assigned using the following command:
+```{r}
+stat100$grade_method3 <- cut(stat100$wtb, break_pts, labels=grades)
+```
+We can check that we get the same result:
+```{r}
+identical(stat100$grade, as.character(stat100$grade_method3))
+```
+Note that we need to use `as.character(stat100$grade_method3)` to convert the factor vector `stat100$grade_method3` to a character vector before we can compare it to `stat100$grade`, which is a character vector.
+
+This method requires creating the two vectors `break_pts`, `grades` and then applying the one-line command above. So you can assign grades in no more than 3 lines. All the dirty calculations are carried out internally inside the built-in `cut()` function. 
+<br />
+<br />
+<br />
