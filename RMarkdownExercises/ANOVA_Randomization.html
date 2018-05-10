@@ -144,7 +144,7 @@ pre {
   font-size: 16px
 }
 </style>
-<p><strong>In this problem, you will analyze the Stat 100 survey 3 data in Fall 2015. The csv file can be downloaded <a href="http://courses.las.illinois.edu/stat/stat100/survey/archive/Stat100_2015fall_survey03.csv" target="_blank">here</a>. The column variables are described on <a href="http://courses.las.illinois.edu/stat/stat100/survey/archive/Stat100_2015fall_survey03.html" target="_blank">this webpage</a>. The purpose of this exercise is to find out if there is any association between happiness (a person’s subjective well-being) and a person’s temperament (introvert/extrovert/ambirvert).</strong></p>
+<p><strong>In this problem, you will analyze the Stat 100 survey 3 data in Fall 2015. The csv file can be downloaded <a href="hhttps://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/RMarkdownExercises/Stat100_2015fall_survey03.csv" target="_blank">here</a>. The column variables are described on <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/RMarkdownExercises/Stat100_2015fall_survey03.html" target="_blank">this webpage</a>. The purpose of this exercise is to find out if there is any association between happiness (a person’s subjective well-being) and a person’s temperament (introvert/extrovert/ambirvert).</strong></p>
 <div id="a.-2-points" class="section level3">
 <h3>a. (2 points)</h3>
 <p><strong>Create box plots of <code>happiness</code> for the introverts, extroverts and ambiverts. Add the group means to the box plots.</strong></p>
@@ -193,8 +193,8 @@ P value adjustment method: bonferroni </code></pre>
 <div id="d.-5-points" class="section level3">
 <h3>d. (5 points)</h3>
 <p><strong>Perform a randomization test by scrambling the <code>happiness</code> variable and calculate the values of R<sup>2</sup> of the scrambled data. Repeat the experiment at least 5000 times. (3 pts)</strong></p>
-<p><strong>Note: The result of your randomization test must be <em>reproducible</em>. Therefore, you must set a seed number before calling any function involving random numbers. Use <code>set.seed(your UIN number)</code>. You can simply follow the procedure in <a href="http://courses.atlas.illinois.edu/spring2018/STAT/STAT200/RProgramming/ANOVA.html" target="_blank">this week’s notes</a>. You are not required to optimize the code.</strong></p>
-<p>Following the same method as in <a href="http://courses.atlas.illinois.edu/spring2018/STAT/STAT200/RProgramming/ANOVA.html" target="_blank">this week’s notes</a>, the code is as follows.</p>
+<p><strong>Note: The result of your randomization test must be <em>reproducible</em>. Therefore, you must set a seed number before calling any function involving random numbers. Use <code>set.seed(your UIN number)</code>. You can simply follow the procedure in <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/Week11/ANOVA.html" target="_blank">this week’s notes</a>. You are not required to optimize the code.</strong></p>
+<p>Following the same method as in <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/Week11/ANOVA.html" target="_blank">this week’s notes</a>, the code is as follows.</p>
 <pre class="r"><code># Define a function that computes R^2
 computeR2 &lt;- function(y,x) {
   summary(lm(y~x))$r.squared

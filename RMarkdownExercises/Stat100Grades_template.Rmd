@@ -8,7 +8,7 @@ output:
 
 Stat 100 is one of the most popular courses at U of I. There are about 1500 students every semester. Starting from Fall 2016, three sections of Stat 100 classes (L1, L2 and online) are synchronized. The L1 and L2 sections were in-person classes taught by the same instructor and students had to attend the lectures at the Lincoln Hall Theater. In Spring 2017, L1 classes were on Mondays, Wednesdays and Fridays from 12:00pm to 12:50pm; L2 classes were on Tuesdays and Thursdays from 11:00am to 12:20pm. Students in the online section did not have to go to class. Students in all three sections were given the exact same lectures, homework assignments, bonus assignments, and exams. They also had the same TAs and office hours. The only difference between the online and in-person classes was that students in the online class watched videos recorded from the L2 lectures. Each lecture video was usually available for the online students within two hours after the L2 class ended.
 
-In this exercise, you are going to analyze the scores of the Stat 100 students in Spring 2017 and see if there is any significant difference between the online and in-person sections. The data can be downloaded <a href="http://courses.atlas.illinois.edu/spring2017/STAT/STAT200/RProgramming/data/Stat100Spring2017_combined.csv" target="_blank">here</a>. The file has the following 8 columns:
+In this exercise, you are going to analyze the scores of the Stat 100 students in Spring 2017 and see if there is any significant difference between the online and in-person sections. The data can be downloaded <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/RMarkdownExercises/Stat100Spring2017_combined.csv" target="_blank">here</a>. The file has the following 8 columns:
 
 **Availability**: Yes/No indicating whether the student was still enrolled in the class at the end of the semester.</p>
 
@@ -122,7 +122,7 @@ Hint: All of the questions below that are worth 1 point can be done with one lin
 
 ###12. (2 points) 
 
-**Now add the bonus points to the weighted total according to the formula stated on the <a href="http://courses.las.illinois.edu/stat/stat100/grade.html" target="_blank">Stat 100 Grading webpage</a>:**
+**Now add the bonus points to the weighted total according to the formula stated on the <a href="http://go.illinois.edu/stat100/grade.html" target="_blank">Stat 100 Grading webpage</a>:**
 
 **weighted total with bonus = (weighted total + 0.25&times;Bonus)/(100 + 0.25&times;Bonus) &times; 100.**
 
@@ -133,7 +133,7 @@ Hint: All of the questions below that are worth 1 point can be done with one lin
 
 ###13. (7 points) 
 
-**Based on the weighted total (with bonus) and the letter grade table below (copied from the <a href="http://courses.las.illinois.edu/stat/stat100/grade.html" target="_blank">Stat 100 Grading webpage</a>), assign letter grades to the students and store the result in a new column of the data frame. There are many ways to do this, some good and some bad. This is your last assignment and we really want you to use a good method. Read <a href="http://go.illinois.edu/stat390/grade_assignment.html" target="_blank">this page</a>, where you will see a comparison of three methods.**
+**Based on the weighted total (with bonus) and the letter grade table below (copied from the <a href="http://go.illinois.edu/stat100/grade.html" target="_blank">Stat 100 Grading webpage</a>), assign letter grades to the students and store the result in a new column of the data frame. There are many ways to do this, some good and some bad. This is your last assignment and we really want you to use a good method. Read <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/RMarkdownExercises/grade_assignment.html" target="_blank">this page</a>, where you will see a comparison of three methods.**
 
 | &nbsp; | &nbsp;       | &nbsp;| &nbsp;       | &nbsp; | &nbsp;       |
 |--------|--------------|-------|--------------|--------|--------------|
