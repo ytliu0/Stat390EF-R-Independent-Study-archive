@@ -13,6 +13,22 @@
 <div id="wrapper">
 
 <script src="navigation_menu.js" type="text/JavaScript"></script>
+<script src="jquery-3.3.1.min.js"></script>
+<script> 
+$(document).ready(function(){
+   $("button.accordion").text(function(i, origText) {
+       return (i+1)+". "+origText;
+   });
+});
+
+$(document).ready(function(){
+    $("button.accordion").click(function(){
+        $(this).toggleClass("active");
+        $(this).next("div.panel").slideToggle(1);
+    });
+});
+    </script>
+
 <hr />
 <article>
 <br />
@@ -170,7 +186,7 @@ satisfy my desire for such a service.</button>
 </div>
 <br /> <br />
     
-<script>
+<!-- script>
 var acc = document.getElementsByClassName("accordion");
 var i;
 
@@ -186,6 +202,6 @@ for (i = 0; i < acc.length; i++) {
     } 
   }
 }
-</script>
+</script -->
 </body>
 </html>

@@ -24,6 +24,19 @@ th, td {
 <div id="wrapper">
 
 <script src="navigation_menu.js" type="text/JavaScript"></script>
+<script src="jquery-3.3.1.min.js"></script>
+<script> 
+$(document).ready(function(){
+    $("button.accordion").click(function(){
+        $(this).toggleClass("active");
+        $(this).next("div.panel").slideToggle(1);
+    });
+});
+    
+$(document).ready(function(){
+    $("button.accordion").click();
+});
+</script>
 
 <article>
 <hr />
@@ -669,7 +682,7 @@ student's t distributions.</li>
 
 </div>
 
-<script src="accordion_schedule.js"></script>
+<!-- script src="accordion_schedule.js"></script -->
     
 <br /><br />
 

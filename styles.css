@@ -138,6 +138,7 @@ button.accordion {
     outline: none;
     font-size: 16px;
     font-weight: bold;
+    margin: 7px 0px 7px 0px;
 }
 
 button.accordion.active, button.accordion:hover {
@@ -160,7 +161,7 @@ button.accordion.active:before {
 div.panel, div.panelopen {
     padding: 0px 18px;
     background-color: white;
-    max-height: 0;
+    display:none;
     overflow: hidden;
     outline: 1px solid #E0E0E0;
 }
