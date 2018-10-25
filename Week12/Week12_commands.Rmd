@@ -279,7 +279,7 @@ system.time                                 computes the time needed for evaluat
 
 ## ANOVA Tests
 
-The syntax is summarized in the <a href="ANOVA.html#summary" target="_blank">summary of Week 11's notes</a>.
+The syntax is summarized in the <a href="../Week11/ANOVA.html#summary" target="_blank">summary of Week 11's notes</a>.
 
 Command                                        Purpose                        
 -----------------------------   ------------------------------------------------------------------
