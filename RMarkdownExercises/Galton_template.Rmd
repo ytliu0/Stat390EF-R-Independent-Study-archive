@@ -8,25 +8,25 @@ output:
 
 Sir Francis Galton (1822&ndash;1911) was an English statistician. He founded many concepts in statistics, such as correlation, quartile, percentile and regression, that are still being used today.
 
-In this R markdown exercise, you are going to analyze the famous Galton data on the heights of parents and their children. The data were collected in the late 19th century in England. He coined the term <a href="http://galton.org/essays/1880-1889/galton-1886-jaigi-regression-stature.pdf" target="_blank">regression towards mediocrity</a> to describe the result of his linear model. (Note that the paper was written in 1886. The "computer" mentioned in the paper was actually a person whose job was to do number crunching.) Surprisingly, Galton's analysis is still useful today (see e.g. <a href="https://www.wired.com/2009/03/predicting-height-the-victorian-approach-beats-modern-genomics/" target="_blank">Predicting height: the Victorian approach beats modern genomics</a>, <a href="http://www.nature.com/ejhg/journal/v17/n8/full/ejhg20095a.html?foxtrotcallback=true" target="_blank">Predicting human height by Victorian and genomic methods</a>).
+In this R markdown exercise, you are going to analyze the famous Galton data on the heights of parents and their children. The data were collected in the late 19th century in England. He coined the term <a href="http://galton.org/essays/1880-1889/galton-1886-jaigi-regression-stature.pdf" target="_blank">regression towards mediocrity</a> to describe the result of his linear model. (Note that the paper was written in 1886. The "computer" mentioned in the paper was actually a person whose job was to do number crunching.) Surprisingly, Galton's analysis is still useful today (see e.g. <a href="https://www.wired.com/2009/03/predicting-height-the-victorian-approach-beats-modern-genomics/" target="_blank">Predicting height: the Victorian approach beats modern genomics</a>, <a href="https://www.nature.com/articles/ejhg20095" target="_blank">Predicting human height by Victorian and genomic methods</a>).
 
 Galton's height data can be download 
 <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/RMarkdownExercises/Galton.txt" target="_blank">here</a> (right click and choose Save Link As...). The description of the data can be found on <a href="https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/RMarkdownExercises/GaltonData.html" target="_blank">this webpage</a>. Note that this is not a csv file. You need to use the `read.table()` function with appropriate parameters to load the data correctly to R.
 
-###a. (1 point)
+### a. (1 point)
 
 **Calculate the correlation matrix between `Height`, `Father` and `Mother`.**
 
 <span style="color:green;">Show how you load the data file. Then show your code for the correlation matrix and the result here...</span>
 
-###b. (2 points) 
+### b. (2 points) 
 
 **Use the `pairs()` function to create a matrix of scatterplots of the columns `Height`, `Father` and `Mother`. This is a graphical representation of the correlation matrix calculated above. (Hint: You need to subset the data frame to pull the 3 columns and then pass them to the `pairs()` function.)**
 
 <span style="color:green;">Show your code and plot here...</span>
 
 
-###c. (5 points) 
+### c. (5 points) 
 
 **Fit a multiple regression model predicting children's height (`Height`) from father's height (`Father`), mother's height (`Mother`), and gender (`Gender`). In other words, the model should contain the following terms:**
 
@@ -39,7 +39,7 @@ $$\hat{H}_{children} = \beta_0 + \beta_1  f_{gender} + \beta_2 H_{father} + \bet
 
 <span style="color:green;">Write your answer here...</span>
 
-###d. (2 points)
+### d. (2 points)
 
 **Plot the residuals versus the fitted values for the multiple regression model above.**
 
@@ -49,7 +49,7 @@ $$\hat{H}_{children} = \beta_0 + \beta_1  f_{gender} + \beta_2 H_{father} + \bet
 **Instead of fitting a multiple regression model, Galton constructed a simple model predicting children's height from parents' heights. However, he first had to deal with the gender difference between male and female heights.**
 <br />
 
-###e. (4 points) 
+### e. (4 points) 
 
 **Calculate the means of Father's and Mother's heights in the data set. Then show that Father's mean height is about 8% higher than Mother's mean height. (2 pts)**
 
@@ -59,7 +59,7 @@ $$\hat{H}_{children} = \beta_0 + \beta_1  f_{gender} + \beta_2 H_{father} + \bet
 
 <span style="color:green;">Show your calculation here...</span>
 
-###f. (4 points)
+### f. (4 points)
 
 **Calculate the medians of Father's and Mother's heights in the data set. Then show that Father's median height is about 8% higher than Mother's median height. (2 pts)**
 
@@ -75,7 +75,7 @@ $$H_{midparental} = \frac{1}{2} (H_{father} + 1.08 H_{mother}) ,$$
 **where the factor 1.08 was introduced to account for the gender difference. He also "transmuted" the heights of all female children to the male equivalents by multiplying the female heights by 1.08. He then fitted a model predicting children's adjusted height from the mid-parental height.**
 <br />
 
-###g. (4 points)
+### g. (4 points)
 
 **Add a column to the data frame that stores the mid-parental heights. (1 pt)**
 
@@ -89,7 +89,7 @@ $$H_{midparental} = \frac{1}{2} (H_{father} + 1.08 H_{mother}) ,$$
 
 <span style="color:green;">Show your calculation here...</span>
 
-###h. (4 points)
+### h. (4 points)
 
 **Fit a simple regression model predicting children's adjusted height from the mid-parental height. (2 pts)**
 
@@ -99,17 +99,17 @@ $$H_{midparental} = \frac{1}{2} (H_{father} + 1.08 H_{mother}) ,$$
 
 <span style="color:green;">Show your code and plot here...</span>
 
-###i. (2 points)
+### i. (2 points)
 
 **Plot the residuals versus the fitted values for the simple regression model above.**
 
 <span style="color:green;">Show your code and plot here...</span>
 
 <br />
-**How does the simple regression model in (h) compare with the multiple regression model in (c)? One measure of the "goodness of fit" is R<sup>2</sup>. However, comparing R<sup>2</sup> returned by the model in (c) and R<sup>2</sup> of the model in (h) is midleading because their predicted variables are different. In (c), the predicted variable is children's height, whereas in (h) the predicted variable is children's adjusted height. To have a fair comparison, we want to calculate the R<sup>2</sup> of the model in (c) for the adjusted height and then compare it with the R<sup>2</sup> in (h).**
+**How does the simple regression model in (h) compare with the multiple regression model in (c)? One measure of the "goodness of fit" is R<sup>2</sup>. However, comparing R<sup>2</sup> returned by the model in (c) and R<sup>2</sup> of the model in (h) is misleading because their predicted variables are different. In (c), the predicted variable is children's height, whereas in (h) the predicted variable is children's adjusted height. To have a fair comparison, we want to calculate the R<sup>2</sup> of the model in (c) for the adjusted height and then compare it with the R<sup>2</sup> in (h).**
 <br />
 
-###j. (8 points)
+### j. (8 points)
 
 **1. (2 points) Calculate the predicted values of children's adjusted height from the multiple regression model by multiplying the predicted heights by 1.08 for female children and keeping the predicted heights of the male children unchanged. Store the result in a new variable.**
 
@@ -127,23 +127,23 @@ $$H_{midparental} = \frac{1}{2} (H_{father} + 1.08 H_{mother}) ,$$
 **Alan is a boy born in Guatemala. Carly is a girl born in India. They are both two years old. The heights of Alan's father and mother are 62 inches and 58 inches, respectively. The heights of Carly's father and mother are 68 inches and 65 inches, respectively.**
 <br />
 
-###k. (4 points)
+### k. (4 points)
 
 **Use the multiple regression model above to predict the height of Alan and Carly when they become adults.**
 
 <span style="color:green;">Show your code and result here...</span>
 
-###l. (4 points)
+### l. (4 points)
 
 **Use the simple regression model above to predict the height of Alan and Carly when they become adults.**<br />
 **Note: You'll need to convert the predicted adjusted height back to height for Carly.**
 
 <span style="color:green;">Show your calculation here...</span>
 
-###m. (2 points) 
+### m. (2 points) 
 
 **Explain why the multiple and simple regression models above may not be suitable for predicting the adult heights for Alan and Carly.**<br />
-**Hint: Watch <a href="https://youtu.be/C_NTLtM-f2I#t=6m54s" target="_blank">this video</a> for a similar question, or read Example 1e in <a href="http://go.illinois.edu/stat100/Notes/Chap17.pdf" target="_blank">this Stat 100 notes</a>, or the bottom of P.35 in the Fall 2017 Stat 200 notebook for two other similar questions.**
+**Hint: Watch <a href="https://youtu.be/C_NTLtM-f2I#t=6m54s" target="_blank">this video</a> for a similar question, or read the bottom of P.35 in the Fall 2017 Stat 200 notebook for two other similar questions.**
 
 <span style="color:green;">Write your answer here...</span>
 
